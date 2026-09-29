@@ -350,7 +350,7 @@ var DMParse = (function () {
 
   /* ---------- PPM schedule (plan) ---------- */
   var PPM_TRADE_RULES = [
-    ['MECH', /fire|a\/c|\bac\b|cac|fcu|split|window ac|chiller|cooler|refrigerat|elevator|escalator|lift|crane|cradle|dumb ?waiter|gas|cooker|mist/i],
+    ['MECH', /water cool|refrig|fire|a\/c|\bac\b|cac|fcu|split|window ac|chiller|cooler|refrigerat|elevator|escalator|lift|crane|cradle|dumb ?waiter|gas|cooker|mist/i],
     ['PLM', /\bwm\d|pump|tank|fountain|swimming|pool|\bwb\d|water body|vacuum|water heater|irrigation/i],
     ['ELEC', /electric|light|ups|generator|solar|night inspection|panel|cbs|hotwire|sim card|app service/i],
     ['CIVIL', /door|gate|barrier|shutter|bridge|walkway|revolving|swing/i]
@@ -390,8 +390,47 @@ var DMParse = (function () {
         });
       }
     });
-    if (!visits.length) throw new Error('No PPM schedule rows found. Expected a "PPM Task Description" header with start/end date columns.');
-    return { rows: visits, tasks: tasks };
+    if (!visits.length) {
+      var wo = parsePMWO(XLSX, wb);
+      if (wo) return wo;
+      throw new Error('No PPM rows found. Upload either the Maximo PM work-order export (columns "Work Order", "Route", "Target Start", "Status") or the PPM Services Schedule ("PPM Task Description" with start/end dates).');
+    }
+    return { rows: visits, tasks: tasks, kind: 'plan' };
+  }
+
+  /* ---------- Maximo PM work orders (PPM tracker, e.g. "PM-All") ---------- */
+  function parsePMWO(XLSX, wb) {
+    for (var i = 0; i < wb.SheetNames.length; i++) {
+      var sn = wb.SheetNames[i], rows = rowsOf(XLSX, wb.Sheets[sn]), hr = -1;
+      for (var r = 0; r < Math.min(rows.length, 20); r++) {
+        var n = (rows[r] || []).map(norm);
+        if (n.indexOf('work order') >= 0 && n.indexOf('target start') >= 0 && n.indexOf('status') >= 0) { hr = r; break; }
+      }
+      if (hr < 0) continue;
+      var head = rows[hr].map(norm);
+      function c(name) { return head.indexOf(name); }
+      var cWO = c('work order'), cD = c('description'), cR = c('route'), cT = c('target start'), cS = c('status'),
+        cSch = c('scheduled start'), cAF = ['actual finish', 'actual finish date', 'completion date', 'finish date'].map(c).filter(function (x) { return x >= 0; })[0],
+        cCost = c('boq total cost for this wo'), cPM = c('pm');
+      var out = [], seen = {}, skipped = 0;
+      for (var r2 = hr + 1; r2 < rows.length; r2++) {
+        var x = rows[r2]; if (!x) continue;
+        var wo = clean(x[cWO]); if (!wo || seen[wo]) { if (wo) skipped++; continue; } seen[wo] = 1;
+        var st = serialToMs(x[cT]); if (st == null && cSch >= 0) st = serialToMs(x[cSch]);
+        if (st == null) { skipped++; continue; }
+        var desc = cD >= 0 ? clean(x[cD]) : '', route = cR >= 0 ? clean(x[cR]) : '';
+        var at = desc.indexOf('@');
+        var sys = clean(at >= 0 ? desc.slice(0, at) : desc).replace(/^PPM of /i, '');
+        var site = at >= 0 ? clean(desc.slice(at + 1)) : '';
+        var zm = route.match(/^R-([A-H])[A-Z]\d/i);
+        var af = cAF != null ? serialToMs(x[cAF]) : null;
+        out.push({ id: wo, sheet: 'PM-WO', item: cPM >= 0 ? clean(x[cPM]) : '', desc: desc.slice(0, 160), sys: sys.slice(0, 60), site: site.slice(0, 100),
+          route: route, sc: zm ? zm[1].toUpperCase() : '', freq: cS >= 0 ? clean(x[cS]).toUpperCase() : '',
+          tr: ppmTrade(desc), st: st, en: af == null ? st : af });
+      }
+      if (out.length) return { rows: out, tasks: out.length, kind: 'wo', skipped: skipped, sheet: sn, hasFinish: cAF != null };
+    }
+    return null;
   }
 
   /* ---------- compact columnar encoding ---------- */
@@ -538,12 +577,12 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var snaps = chk(await sb.from('snapshots').select('c,t,o').order('c'));
     progress(1, 'Opening dashboard…');
     sr.forEach(function (o) { o.rd = +o.rd; o.cd = o.cd == null ? null : +o.cd; o.pr = o.pr || 0; ['wo', 'sum', 'wt', 'svc', 'tr', 'rbn', 'dept', 'mx', 'loc', 'locd', 'zn', 'fz', 'area', 'sup', 'ist', 'st', 'cnote', 'rem', 'park'].forEach(function (k) { if (o[k] == null) o[k] = ''; }); });
-    ppm.forEach(function (v) { v.st = +v.st; v.en = +v.en; });
+    ppm.forEach(function (v) { v.st = +v.st; v.en = +v.en; ['sheet', 'item', 'desc', 'sys', 'site', 'route', 'sc', 'freq', 'tr'].forEach(function (k) { if (v[k] == null) v[k] = ''; }); });
     var cfg = cfgRow.config || {}, lg = cfgRow.logos || {}, dl = logos();
     return {
       config: cfg, logos: { left: lg.left || dl.left, lw: lg.lw || dl.lw, right: lg.right || dl.right, rw: lg.rw || dl.rw },
       cm: sr, ppm: ppm, snapshots: snaps.map(function (s) { return { c: +s.c, t: s.t, o: s.o }; }),
-      meta: { cmFile: cfg.lastUpload ? cfg.lastUpload.file : 'SR Master Tracker', updated: cfg.lastUpload ? cfg.lastUpload.at : '' }
+      meta: { ppmFile: cfg.ppmFile || '', cmFile: cfg.lastUpload ? cfg.lastUpload.file : 'SR Master Tracker', updated: cfg.lastUpload ? cfg.lastUpload.at : '' }
     };
   }
   async function enter() {
@@ -734,7 +773,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     try {
       if (d.ppm !== raw.ppm) {
         var rows = Array.isArray(d.ppm) ? d.ppm : DMParse.decode(d.ppm), B = 1000;
-        for (var i = 0; i < rows.length; i += B) { chk(await sb.rpc('replace_ppm', { rows: rows.slice(i, i + B), first_batch: i === 0 })); h.setSt(stId, 'Saving PPM plan… ' + h.fmt(Math.min(i + B, rows.length)) + ' of ' + h.fmt(rows.length)); }
+        for (var i = 0; i < rows.length; i += B) { chk(await sb.rpc('replace_ppm', { rows: rows.slice(i, i + B), first_batch: i === 0 })); h.setSt(stId, 'Saving PPM data… ' + h.fmt(Math.min(i + B, rows.length)) + ' of ' + h.fmt(rows.length)); }
       }
       var cfgChanged = JSON.stringify(d.config || {}) !== JSON.stringify(raw.config || {}), lgChanged = JSON.stringify(d.logos || {}) !== JSON.stringify(raw.logos || {});
       if (cfgChanged || lgChanged) { var upd = { updated_at: new Date().toISOString() }; if (cfgChanged) upd.config = d.config; if (lgChanged) upd.logos = d.logos; chk(await sb.from('app_config').update(upd).eq('id', 1)); }
@@ -793,6 +832,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     // Internal Status = what happened on site; Final Status = closure in Maximo
     internalDone: 'CLOSED|DONE|AD-HOC|ARAMCO',
     internalNA: 'NOT UNDER|NOT OUR|DUPLICATE|UNDER IFM|UNDER RTA|QUOTATION|REJECTED',
+    ppmDone: 'CLOSE|COMP', ppmInsp: 'WINSP|ZEWINSP', ppmGraceDays: 7,
     otherChannels: { label: 'Direct contact through other channels', total: 2011, closed: 2011 },
     tradeLabels: { CIVIL: 'Civil', ELEC: 'Electrical', MECH: 'Mechanical', PLM: 'Plumbing', 'AD-HOC': 'Ad-hoc', OTHER: 'Other', UNSPECIFIED: 'Unspecified' },
     tradeOrder: ['CIVIL', 'ELEC', 'MECH', 'PLM', 'AD-HOC'],
@@ -810,6 +850,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   var ROLE = null, PERMS = null, USER = null;
   function initCfg(raw) { var c = merge(clone(DEFAULT_CONFIG), raw.config || {}); if (!c.failureRules || !c.failureRules.length) c.failureRules = DEFAULT_CONFIG.failureRules; return c; }
   function rowsOf(x) { return Array.isArray(x) ? x.map(function (o) { return Object.assign({}, o); }) : DMParse.decode(x); }
+  var HASWO = false, PPM_ST = { CLOSE: 'Closed', COMP: 'Completed', WINSP: 'Waiting inspection', ZEWINSP: 'Waiting inspection', APPR: 'Approved, not yet done', INPRG: 'In progress', REWORK: 'Rework required', ZMWAPPR: 'Waiting approval', ZERETURNED: 'Returned', CANREQUEST: 'Cancellation requested', WAPPR: 'Waiting approval', CAN: 'Cancelled' };
   var CM = [], PPM = [], FR = [], CUT = 0, CUT_END = 0, AREA_ZONE = {}, AREA_KEYS = [];
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -854,9 +895,18 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     CM.forEach(function (o) { var k = normArea(o.area); if (!k) return; az[k] = az[k] || {}; az[k][o.fz] = (az[k][o.fz] || 0) + 1; });
     AREA_ZONE = {}; Object.keys(az).forEach(function (k) { var best = null, n = -1; for (var z in az[k]) if (az[k][z] > n) { n = az[k][z]; best = z; } AREA_ZONE[k] = best; });
     AREA_KEYS = Object.keys(AREA_ZONE).filter(function (k) { return k.length > 2; }).sort(function (a, b) { return b.length - a.length; });
+    var rxPD = safeRx(CFG.ppmDone), rxPI = safeRx(CFG.ppmInsp), grace = (+CFG.ppmGraceDays || 0) * DAY;
     PPM = rowsOf(RAW.ppm).map(function (v) {
-      v.mk = monthKey(v.st); v.due = v.en < CUT_END; v.zone = ppmZone(v); v.done = null; return v;
+      v.mk = monthKey(v.st);
+      if (v.sheet === 'PM-WO') {
+        v.wo = true; v.ws = v.freq || ''; v.zone = /^[A-H]$/.test(v.sc || '') ? v.sc : ppmZone(v);
+        v.due = v.st < CUT_END; v.done = rxPD.test(v.ws); v.insp = !v.done && rxPI.test(v.ws);
+        v.od = v.due && !v.done && !v.insp && v.st + grace < CUT_END;
+        v.af = v.en !== v.st ? v.en : null; v.ot = v.done && v.af != null ? v.af <= v.st + grace : null;
+      } else { v.due = v.en < CUT_END; v.zone = ppmZone(v); v.done = null; }
+      return v;
     });
+    HASWO = PPM.some(function (v) { return v.wo; });
   }
   function safeRx(p) { try { return new RegExp('^(' + (p || '$^') + ')', 'i'); } catch (e) { return /$^/; } }
   function community(l) { return String(l || '').split(/_| - /)[0].trim().toLowerCase(); }
@@ -977,7 +1027,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     R.k.snapNew = last ? last.nw : null;
     // PPM
     var due = ppm.filter(function (v) { return v.due; });
-    R.p = { planned: ppm.length, due: due.length, done: null, overdue: null, comp: null, ontime: null, tasks: uniq(ppm.map(function (v) { return v.route + v.desc; })).length };
+    R.p = { planned: ppm.length, due: due.length, done: null, overdue: null, comp: null, ontime: null, wo: HASWO, tasks: uniq(ppm.map(function (v) { return v.route + v.desc; })).length };
 
     /* S1 CM by trade & month (long format) */
     var s1 = [];
@@ -1057,7 +1107,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     for (var w2 = nWT - 1; w2 >= 0; w2--) { var a2 = cm.filter(function (o) { return o.wk === w2; }), c2 = count(a2, function (o) { return o.st === 'C'; }); s7w.push({ week: 'WE ' + dshort(CUT - w2 * WEEK), rec: a2.length, done: c2, open: a2.length - c2 }); }
     R.s7w = s7w;
     var ppmMonths = monthsRange(PPM, 'mk'), bpm = groupBy(ppm, function (v) { return v.mk; });
-    R.s7p = ppmMonths.map(function (m) { var a = bpm[m] || []; return { month: mkLabel(m), planned: a.length, due: count(a, function (v) { return v.due; }), done: null }; });
+    R.s7p = ppmMonths.map(function (m) { var a = bpm[m] || []; return { month: mkLabel(m), planned: a.length, due: count(a, function (v) { return v.due; }), done: HASWO ? count(a, function (v) { return v.done; }) : null, insp: HASWO ? count(a, function (v) { return v.insp; }) : null }; });
     R.ppmMonths = ppmMonths;
 
     /* S8 open by trade / zone + ranking */
@@ -1071,7 +1121,12 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     R.s8s = openRank('zn', function (z) { return z || '—'; }, uniq(open.map(function (o) { return o.zn; })));
 
     /* S9 PPM compliance (plan now, completion once the PPM tracker is loaded) */
-    function ppmRow(label, a, cls) { var d = count(a, function (v) { return v.due; }); return { name: label, planned: a.length, due: d, done: null, overdue: null, comp: null, ontime: null, _cls: cls }; }
+    function ppmRow(label, a, cls) {
+      var d = a.filter(function (v) { return v.due; });
+      if (!HASWO) return { name: label, planned: a.length, due: d.length, done: null, insp: null, overdue: null, comp: null, compI: null, ontime: null, _cls: cls };
+      var dn = count(d, function (v) { return v.done; }), ins = count(d, function (v) { return v.insp; }), fin = d.filter(function (v) { return v.ot != null; });
+      return { name: label, planned: a.length, due: d.length, done: dn, insp: ins, overdue: count(a, function (v) { return v.od; }), comp: pct(dn, d.length), compI: pct(dn + ins, d.length), ontime: fin.length ? pct(count(fin, function (v) { return v.ot; }), fin.length) : null, _cls: cls };
+    }
     var ptr = groupBy(ppm, function (v) { return v.tr; });
     R.s9t = Object.keys(ptr).sort(function (a, b) { return ptr[b].length - ptr[a].length; }).map(function (t) { return ppmRow(tl(t), ptr[t]); });
     R.s9t.push(ppmRow('Total', ppm, 'tot'));
@@ -1083,6 +1138,12 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     // PPM trade x month planned matrix
     R.s1p = Object.keys(ptr).map(function (t) { var r = { trade: tl(t) }; var g = groupBy(ptr[t], function (v) { return v.mk; }); ppmMonths.forEach(function (m) { r['m' + m] = (g[m] || []).length; }); r.total = ptr[t].length; return r; });
     var tp = { trade: 'Total', _cls: 'tot', total: ppm.length }; ppmMonths.forEach(function (m) { tp['m' + m] = (bpm[m] || []).length; }); R.s1p.push(tp);
+    var ptot = R.s9t[R.s9t.length - 1]; if (HASWO) { R.p.done = ptot.done; R.p.insp = ptot.insp; R.p.overdue = ptot.overdue; R.p.comp = ptot.comp; R.p.compI = ptot.compI; R.p.ontime = ptot.ontime; }
+    var pws = groupBy(ppm.filter(function (v) { return v.wo; }), function (v) { return v.ws || '(blank)'; });
+    R.s9w = Object.keys(pws).sort(function (a, b) { return pws[b].length - pws[a].length; }).map(function (k) { var a = pws[k]; return { st: k, mean: PPM_ST[k] || '', cls: a[0].done ? 'Completed' : a[0].insp ? 'Awaiting inspection' : 'Not completed', total: a.length, due: count(a, function (v) { return v.due; }), od: count(a, function (v) { return v.od; }), share: pct(a.length, ppm.length) }; });
+    if (R.s9w.length) R.s9w.push({ st: 'Total', mean: '', cls: '', total: ppm.length, due: due.length, od: R.p.overdue, share: 1, _cls: 'tot' });
+    var odl = ppm.filter(function (v) { return v.od; }).sort(function (a, b) { return a.st - b.st; });
+    R.s9o = odl.slice(0, 200).map(function (v) { return { wo: v.id, desc: v.desc, zone: zl(v.zone), trade: tl(v.tr), ts: dstr(v.st), days: Math.floor((CUT_END - v.st) / DAY), ws: v.ws }; });
 
     /* S10 on-site completion (Internal Status) vs Maximo closure (Final Status) */
     function s10row(label, a, cls) {
@@ -1151,16 +1212,19 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     S.s6 = { title: 'Weekly backlog movement', ar: 'حركة التراكم الأسبوعية', cols: [{ k: 'period', label: 'Week', t: 'text' }, { k: 'opening', label: 'Opening backlog', t: 'int' }, { k: 'nw', label: 'New SRs', t: 'int' }, { k: 'closed', label: 'Closed SRs', t: 'int' }, { k: 'closing', label: 'Closing backlog', t: 'int' }, { k: 'change', label: 'Change', t: 'delta' }, { k: 'changePct', label: 'Change %', t: 'dpct' }], rows: R.moves };
     S.s6i = { title: 'Weekly intake and current status', ar: 'البلاغات الواردة أسبوعياً وحالتها', cols: [{ k: 'week', label: 'Week ending', t: 'text' }, { k: 'rec', label: 'Received', t: 'int' }, { k: 'done', label: 'Completed', t: 'int' }, { k: 'open', label: 'Pending', t: 'int' }, { k: 'comp', label: 'Completion %', t: 'pct' }], rows: R.s6 };
     S.s7m = { title: 'Monthly CM trend', ar: 'الاتجاه الشهري', cols: [{ k: 'month', label: 'Month', t: 'text' }, { k: 'rec', label: 'Received', t: 'int' }, { k: 'done', label: 'Completed', t: 'int' }, { k: 'open', label: 'Pending', t: 'int' }, { k: 'comp', label: 'Completion %', t: 'pct' }], rows: R.s7m };
-    S.s7p = { title: 'Monthly PPM plan', ar: 'خطة الصيانة الوقائية الشهرية', cols: [{ k: 'month', label: 'Month', t: 'text' }, { k: 'planned', label: 'Planned', t: 'int' }, { k: 'due', label: 'Due by cut-off', t: 'int' }, { k: 'done', label: 'Completed', t: 'int' }], rows: R.s7p };
+    S.s7p = { title: 'Monthly PPM', ar: 'الصيانة الوقائية الشهرية', cols: [{ k: 'month', label: 'Month', t: 'text' }, { k: 'planned', label: 'Planned', t: 'int' }, { k: 'due', label: 'Due by cut-off', t: 'int' }, { k: 'done', label: 'Completed', t: 'int' }].concat(HASWO ? [{ k: 'insp', label: 'Awaiting inspection', t: 'int' }] : []), rows: R.s7p };
     var rk = [{ k: 'rank', label: '#', t: 'int' }, { k: 'name', label: 'Name', t: 'text' }, { k: 'open', label: 'Open', t: 'int' }, { k: 'od', label: 'Overdue', t: 'int' }, { k: 'within', label: 'Within SLA', t: 'int' }, { k: 'odShare', label: '% overdue', t: 'pct' }];
     S.s8t = { title: 'Ranking — trades by open SRs', ar: 'ترتيب التخصصات', cols: rk, rows: R.s8t };
     S.s8z = { title: 'Ranking — zones by open SRs', ar: 'ترتيب المناطق', cols: rk, rows: R.s8z };
     S.s8s = { title: 'Ranking — sub-zones by open SRs', ar: 'ترتيب المناطق الفرعية', cols: rk, rows: R.s8s };
-    var pc = [{ k: 'name', label: 'Group', t: 'text' }, { k: 'planned', label: 'Planned', t: 'int' }, { k: 'due', label: 'Due by cut-off', t: 'int' }, { k: 'done', label: 'Completed', t: 'int' }, { k: 'overdue', label: 'Overdue', t: 'int' }, { k: 'comp', label: 'Completion %', t: 'pct' }, { k: 'ontime', label: 'On-time %', t: 'pct' }];
+    var pc = HASWO ? [{ k: 'name', label: 'Group', t: 'text' }, { k: 'planned', label: 'Planned', t: 'int' }, { k: 'due', label: 'Due by cut-off', t: 'int' }, { k: 'done', label: 'Completed', t: 'int' }, { k: 'insp', label: 'Awaiting inspection', t: 'int' }, { k: 'overdue', label: 'Overdue', t: 'int' }, { k: 'comp', label: 'Completion %', t: 'band' }, { k: 'compI', label: 'Incl. inspection %', t: 'pct' }, { k: 'ontime', label: 'On-time %', t: 'pct' }]
+      : [{ k: 'name', label: 'Group', t: 'text' }, { k: 'planned', label: 'Planned', t: 'int' }, { k: 'due', label: 'Due by cut-off', t: 'int' }, { k: 'done', label: 'Completed', t: 'int' }, { k: 'overdue', label: 'Overdue', t: 'int' }, { k: 'comp', label: 'Completion %', t: 'pct' }, { k: 'ontime', label: 'On-time %', t: 'pct' }];
+    S.s9w = { title: 'PPM work orders by Maximo status', ar: 'أوامر العمل حسب الحالة', cols: [{ k: 'st', label: 'Status', t: 'text' }, { k: 'mean', label: 'Meaning', t: 'text' }, { k: 'cls', label: 'Counted as', t: 'text' }, { k: 'total', label: 'Work orders', t: 'int' }, { k: 'due', label: 'Due by cut-off', t: 'int' }, { k: 'od', label: 'Overdue', t: 'int' }, { k: 'share', label: 'Share', t: 'pct' }], rows: R.s9w || [] };
+    S.s9o = { title: 'Overdue PPM work orders (oldest first)', ar: 'أوامر الصيانة الوقائية المتأخرة', cols: [{ k: 'wo', label: 'Work order', t: 'text' }, { k: 'desc', label: 'Description', t: 'wrap' }, { k: 'zone', label: 'Zone', t: 'text' }, { k: 'trade', label: 'Trade', t: 'text' }, { k: 'ts', label: 'Target start', t: 'text' }, { k: 'days', label: 'Days late', t: 'int' }, { k: 'ws', label: 'Status', t: 'text' }], rows: R.s9o || [] };
     S.s9m = { title: 'PPM compliance by month', ar: 'الالتزام بالصيانة الوقائية حسب الشهر', cols: pc, rows: R.s9m };
     S.s9t = { title: 'PPM compliance by trade', ar: 'حسب التخصص', cols: pc, rows: R.s9t };
-    S.s9z = { title: 'PPM compliance by zone (inferred from site name)', ar: 'حسب المنطقة', cols: pc, rows: R.s9z };
-    S.s9s = { title: 'PPM plan by system (top 15)', ar: 'حسب النظام', cols: pc, rows: R.s9s };
+    S.s9z = { title: HASWO ? 'PPM compliance by zone (from route code)' : 'PPM compliance by zone (inferred from site name)', ar: 'حسب المنطقة', cols: pc, rows: R.s9z };
+    S.s9s = { title: 'PPM by system (top 15)', ar: 'حسب النظام', cols: pc, rows: R.s9s };
     S.s10 = { title: 'On-site completion vs Maximo closure', ar: 'الإنجاز في الموقع مقابل الإغلاق على ماكسيمو', cols: [{ k: 'month', label: 'Month', t: 'text' }, { k: 'rec', label: 'Received', t: 'int' }, { k: 'site', label: 'Done on site', t: 'int' }, { k: 'na', label: 'Not in scope', t: 'int' }, { k: 'mx', label: 'Closed in Maximo', t: 'int' }, { k: 'gap', label: 'Done, not closed in Maximo', t: 'int' }, { k: 'gapPct', label: 'Gap %', t: 'pct' }, { k: 'rev', label: 'Closed in Maximo, open on site', t: 'int' }], rows: R.s10 };
     S.s10c = { title: 'SR channels', ar: 'قنوات البلاغات', cols: [{ k: 'src', label: 'Source', t: 'text' }, { k: 'total', label: 'Total', t: 'int' }, { k: 'done', label: 'Closed', t: 'int' }, { k: 'open', label: 'Pending', t: 'int' }, { k: 'comp', label: 'Completion %', t: 'pct' }], rows: R.s10c };
     S.s10s = { title: 'Internal (on-site) status vs Final (Maximo) status', ar: 'الحالة الداخلية مقابل الحالة النهائية', cols: [{ k: 'ist', label: 'Internal status', t: 'text' }, { k: 'site', label: 'Treated as', t: 'text' }, { k: 'total', label: 'SRs', t: 'int' }, { k: 'act', label: 'Final: CLOSED', t: 'int' }, { k: 'open', label: 'Final: OPEN', t: 'int' }], rows: R.s10s };
@@ -1249,7 +1313,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var C = {};
     C.mTrend = { type: 'line', title: 'Monthly CM — received / completed / pending', labels: R.s7m.map(function (r) { return r.month; }), series: [{ name: 'Received', data: R.s7m.map(function (r) { return r.rec; }), color: 's1' }, { name: 'Completed', data: R.s7m.map(function (r) { return r.done; }), color: 's3' }, { name: 'Pending', data: R.s7m.map(function (r) { return r.open; }), color: 's2' }] };
     C.wTrend = { type: 'line', title: 'Weekly CM — received / completed / pending (last 26 weeks)', labels: R.s7w.map(function (r) { return r.week.replace('WE ', ''); }), series: [{ name: 'Received', data: R.s7w.map(function (r) { return r.rec; }), color: 's1' }, { name: 'Completed', data: R.s7w.map(function (r) { return r.done; }), color: 's3' }, { name: 'Pending', data: R.s7w.map(function (r) { return r.open; }), color: 's2' }] };
-    C.pTrend = { type: 'line', title: 'Monthly PPM — planned / due', labels: R.s7p.map(function (r) { return r.month; }), series: [{ name: 'Planned', data: R.s7p.map(function (r) { return r.planned; }), color: 's1' }, { name: 'Completed', data: R.s7p.map(function (r) { return r.done; }), color: 's3' }] };
+    C.pTrend = { type: 'line', title: HASWO ? 'Monthly PPM — planned / completed / awaiting inspection' : 'Monthly PPM — planned', labels: R.s7p.map(function (r) { return r.month; }), series: [{ name: 'Planned', data: R.s7p.map(function (r) { return r.planned; }), color: 's1' }, { name: 'Completed', data: R.s7p.map(function (r) { return r.done; }), color: 's3' }].concat(HASWO ? [{ name: 'Awaiting inspection', data: R.s7p.map(function (r) { return r.insp; }), color: 's4' }] : []) };
     C.openTrade = { type: 'bar', horizontal: true, stacked: true, title: 'Open CM SRs by trade', labels: R.s8t.map(function (r) { return r.name; }), series: [{ name: 'Overdue', data: R.s8t.map(function (r) { return r.od; }), color: 'crit' }, { name: 'Within SLA', data: R.s8t.map(function (r) { return r.within; }), color: 's1' }] };
     C.openZone = { type: 'bar', horizontal: true, stacked: true, title: 'Open CM SRs by zone', labels: R.s8z.map(function (r) { return r.name; }), series: [{ name: 'Overdue', data: R.s8z.map(function (r) { return r.od; }), color: 'crit' }, { name: 'Within SLA', data: R.s8z.map(function (r) { return r.within; }), color: 's1' }] };
     C.openSub = { type: 'bar', horizontal: true, stacked: true, title: 'Open CM SRs by sub-zone', labels: R.s8s.map(function (r) { return r.name; }), series: [{ name: 'Overdue', data: R.s8s.map(function (r) { return r.od; }), color: 'crit' }, { name: 'Within SLA', data: R.s8s.map(function (r) { return r.within; }), color: 's1' }] };
@@ -1263,7 +1327,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     C.repeat = { type: 'bar', horizontal: true, title: 'Repeat SRs (≤' + CFG.repeatWindow + ' days) by failure type', labels: R.s12c.map(function (r) { return r.cat; }), series: [{ name: 'Repeat SRs', data: R.s12c.map(function (r) { return r.within; }), color: 's7' }] };
     var mv = R.moves;
     C.backlog = { type: 'line', title: 'Closing backlog by week', labels: mv.map(function (r) { return dshort(r.cut); }), series: [{ name: 'Closing backlog', data: mv.map(function (r) { return r.closing; }), color: 's2' }] };
-    C.ppmTrade = { type: 'bar', horizontal: true, title: 'PPM planned visits by trade', labels: R.s9t.filter(function (r) { return r._cls !== 'tot'; }).map(function (r) { return r.name; }), series: [{ name: 'Planned', data: R.s9t.filter(function (r) { return r._cls !== 'tot'; }).map(function (r) { return r.planned; }), color: 's1' }, { name: 'Due by cut-off', data: R.s9t.filter(function (r) { return r._cls !== 'tot'; }).map(function (r) { return r.due; }), color: 's4' }] };
+    C.ppmTrade = { type: 'bar', horizontal: true, title: 'PPM planned visits by trade', labels: R.s9t.filter(function (r) { return r._cls !== 'tot'; }).map(function (r) { return r.name; }), series: [{ name: 'Planned', data: R.s9t.filter(function (r) { return r._cls !== 'tot'; }).map(function (r) { return r.planned; }), color: 's1' }, { name: 'Due by cut-off', data: R.s9t.filter(function (r) { return r._cls !== 'tot'; }).map(function (r) { return r.due; }), color: 's4' }].concat(HASWO ? [{ name: 'Completed', data: R.s9t.filter(function (r) { return r._cls !== 'tot'; }).map(function (r) { return r.done; }), color: 's3' }] : []) };
     return C;
   }
   function shorten(s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
@@ -1282,7 +1346,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       kpiTile('Total PPM', fmt(R.p.planned), fmt(R.p.due) + ' due by cut-off') +
       kpiTile('Open CM', fmt(k.open), fp(pct(k.open, k.total)) + ' of received') +
       kpiTile('Overdue CM', '<span class="' + (k.overdue ? 'od' : '') + '">' + fmt(k.overdue) + '</span>', fp(pct(k.overdue, k.open)) + ' of open, past SLA') +
-      kpiTile('PPM compliance', '—', '<span class="pill na">Awaiting PPM tracker</span>') +
+      (R.p.wo ? kpiTile('PPM compliance', fp(R.p.comp), '<span class="pill ' + band(R.p.comp).cls + '">' + esc(band(R.p.comp).label) + '</span> ' + fmt(R.p.done) + ' of ' + fmt(R.p.due) + ' due · ' + fmt(R.p.overdue) + ' overdue') : kpiTile('PPM compliance', '—', '<span class="pill na">Awaiting PPM tracker</span>')) +
       kpiTile('SLA compliance', fp(k.sla), '<span class="pill ' + sb.cls + '">' + esc(sb.label) + '</span> ' + fmt(k.met + k.breach) + ' measurable') +
       kpiTile('New SRs this week', fmt(k.newWeek), 'WE ' + dstr(CUT)) +
       kpiTile('Closed SRs this week', k.closedWeek == null ? '—' : fmt(k.closedWeek), k.hasPrevSnap ? 'from weekly snapshots' : 'Needs last week\'s tracker') +
@@ -1300,7 +1364,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<p><b>Weekly backlog.</b> Built from weekly tracker snapshots: Opening = last week\'s closing backlog; New = growth in total SRs; Closed = Opening + New − Closing. Weeks end on the cut-off weekday.</p>' +
       '<p><b>On-site vs Maximo.</b> <i>Internal Status</i> records the work on site; <i>Final Status</i> records closure in Maximo. Done on site = Internal Status starting with ' + esc(String(CFG.internalDone).split('|').join(' / ')) + '. Not in scope = ' + esc(String(CFG.internalNA).split('|').join(' / ')) + '. Gap = done on site but still OPEN in Maximo.</p>' +
       '<p><b>Repeat failures.</b> SRs at the same location with the same failure type (derived from the SR summary). A repeat is an SR raised within ' + CFG.repeatWindow + ' days of the previous one; locations with ' + CFG.repeatMin + '+ SRs of one type are listed.</p>' +
-      '<p><b>PPM.</b> Planned visits come from the 2026 PPM Services Schedule (start date = planned month; end date = due date). Zones are inferred from the site name. Completion, overdue and on-time figures appear once the PPM tracker is loaded.</p>' +
+      (HASWO ? '<p><b>PPM.</b> PPM work orders come from the Maximo PM export. Due = target start on or before the cut-off. Completed = status ' + esc(String(CFG.ppmDone).split('|').join(' / ')) + '. Awaiting inspection = ' + esc(String(CFG.ppmInsp).split('|').join(' / ')) + ' (shown separately, not counted as completed). Overdue = due, not completed or awaiting inspection, and target start more than ' + fmt(+CFG.ppmGraceDays || 0) + ' days before the cut-off. Zone comes from the route code (R-<b>A</b>B93 = Zone A). On-time % needs an Actual Finish column in the export.</p>'
+        : '<p><b>PPM.</b> Planned visits come from the 2026 PPM Services Schedule (start date = planned month; end date = due date). Zones are inferred from the site name. Completion, overdue and on-time figures appear once the PPM tracker is loaded.</p>') +
       '</div>';
   };
 
@@ -1333,8 +1398,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         '<div class="grid">' + tablePanel(S.s5) + panel('SLA compliance by priority', '', chartBox('c_sla')) + '</div><div style="margin-top:16px">' + tablePanel(S.s5p) + '</div>' +
         '<div class="notice" style="margin-top:12px">Performance bands (contract): ' + CFG.bands.map(function (b) { return '<span class="pill ' + b.cls + '">' + esc(b.label) + ' ≥ ' + b.min + '%</span>'; }).join(' ') + '. SLA coverage improves as closing dates are recorded for every closed SR.</div>');
     } else if (tab === 'ppm') {
-      out += '<div class="notice" style="margin-top:18px"><b>PPM completion is not loaded yet.</b> The plan below comes from the 2026 PPM Services Schedule (' + fmt(PPM.length) + ' visits across ' + fmt(R.p.tasks) + ' tasks). Completed, overdue, completion % and on-time % will fill in when the PPM tracker is added.</div>';
-      out += section('9', 'PPM compliance', 'الالتزام بالصيانة الوقائية', 'Planned = visits scheduled in the period. Due = visits whose end date is on or before the cut-off.', '<div class="grid">' + tablePanel(S.s9m) + '<div style="display:grid;gap:16px;align-content:start;min-width:0">' + panel('Monthly PPM plan', '', chartBox('c_pt')) + tablePanel(S.s9t) + '</div></div><div class="grid" style="margin-top:16px">' + tablePanel(S.s9z, '', { max: 420 }) + tablePanel(S.s9s, '', { max: 420 }) + '</div>');
+      if (!HASWO) out += '<div class="notice" style="margin-top:18px"><b>PPM completion is not loaded yet.</b> The plan below comes from the 2026 PPM Services Schedule (' + fmt(PPM.length) + ' visits across ' + fmt(R.p.tasks) + ' tasks). Completed, overdue, completion % and on-time % will fill in when the PPM tracker is added.</div>';
+      out += section('9', 'PPM compliance', 'الالتزام بالصيانة الوقائية', HASWO ? 'Maximo PM work orders' + (RAW.meta && RAW.meta.ppmFile ? ' (' + esc(RAW.meta.ppmFile) + ')' : '') + '. Due = target start on or before the cut-off. Completed = ' + esc(String(CFG.ppmDone).split('|').join('/')) + '; awaiting inspection = ' + esc(String(CFG.ppmInsp).split('|').join('/')) + '. Overdue = due, not completed and more than ' + fmt(+CFG.ppmGraceDays || 0) + ' days past target start.' : 'Planned = visits scheduled in the period. Due = visits whose end date is on or before the cut-off.', '<div class="grid">' + tablePanel(S.s9m) + '<div style="display:grid;gap:16px;align-content:start;min-width:0">' + panel(HASWO ? 'Monthly PPM' : 'Monthly PPM plan', '', chartBox('c_pt')) + tablePanel(S.s9t) + '</div></div><div class="grid" style="margin-top:16px">' + tablePanel(S.s9z, '', { max: 420 }) + tablePanel(S.s9s, '', { max: 420 }) + '</div>' +
+        (HASWO ? '<div class="grid" style="margin-top:16px">' + tablePanel(S.s9w) + tablePanel(S.s9o, '', { max: 420 }) + '</div>' : ''));
       out += section('1', 'PPM by trade', 'الصيانة الوقائية حسب التخصص', 'Planned visits per month.', tableHTML(S.s1p));
     } else if (tab === 'loc') {
       out += section('11', 'Top locations', 'تحليل أعلى المواقع', 'Locations as recorded in the tracker (Location Description).', '<div class="grid">' + panel('Top locations by open SRs', '', chartBox('c_tl', true)) + tablePanel(S.s11a) + '</div><div class="grid" style="margin-top:16px">' + tablePanel(S.s11b) + tablePanel(S.s11c) + '</div><div style="margin-top:16px">' + tablePanel(S.s11d) + '</div>');
@@ -1588,7 +1654,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var ws = sheet('Summary'); var r = header(ws, '', 'Dashboard summary', 'ملخص مؤشرات الأداء');
     var k = R.k, rows = [
       ['Total CM SRs', k.total, 'int'], ['Total PPM visits planned', R.p.planned, 'int'], ['PPM visits due by cut-off', R.p.due, 'int'], ['Open CM', k.open, 'int'], ['Overdue CM (past SLA)', k.overdue, 'int'],
-      ['CM completion %', k.comp, 'pct'], ['PPM compliance', 'Awaiting PPM tracker', 'text'], ['SLA compliance', k.sla, 'pct'], ['SLA performance band', band(k.sla).label, 'text'],
+      ['CM completion %', k.comp, 'pct'], ['PPM compliance', R.p.wo ? R.p.comp : 'Awaiting PPM tracker', R.p.wo ? 'pct' : 'text'], ['PPM overdue work orders', R.p.wo ? R.p.overdue : '—', R.p.wo ? 'int' : 'text'], ['SLA compliance', k.sla, 'pct'], ['SLA performance band', band(k.sla).label, 'text'],
       ['New SRs this week', k.newWeek, 'int'], ['Closed SRs this week', k.closedWeek == null ? 'Needs previous weekly tracker' : k.closedWeek, k.closedWeek == null ? 'text' : 'int'],
       ['Backlog change % (week on week)', k.backlogChange == null ? 'Needs previous weekly tracker' : k.backlogChange, k.backlogChange == null ? 'text' : 'pct'],
       ['Done on site, not closed in Maximo', k.mxGap, 'int'], ['Closed in Maximo, internal status still open', k.mxRev, 'int'], ['Closed SRs without a closing date (SLA not measurable)', k.closedNoDate, 'int']];
@@ -1618,7 +1684,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     ws = sheet('8 Open by Trade-Zone'); r = header(ws, '8', 'Open SRs by trade and zone — ranking', 'البلاغات المفتوحة حسب التخصص والمنطقة'); r = table(ws, S.s8t, r); r = table(ws, S.s8z, r); r = table(ws, S.s8s, r);
     ri = img(ws, C.openTrade, 9, 8, 760, 300); ri = img(ws, C.openZone, ri, 8, 760, 320); widths(ws, [6, 18, 10, 10, 11, 11, 3]);
     // 9
-    ws = sheet('9 PPM Compliance'); r = header(ws, '9', 'PPM compliance', 'الالتزام بالصيانة الوقائية', 'Completion fills in when the PPM tracker is loaded'); r = table(ws, S.s9m, r); r = table(ws, S.s9t, r); r = table(ws, S.s9z, r); r = table(ws, S.s9s, r); widths(ws, [34, 11, 14, 12, 11, 13, 11]);
+    ws = sheet('9 PPM Compliance'); r = header(ws, '9', 'PPM compliance', 'الالتزام بالصيانة الوقائية', HASWO ? 'Maximo PM work orders · cut-off ' + dstr(CUT) : 'Completion fills in when the PPM tracker is loaded'); r = table(ws, S.s9m, r); r = table(ws, S.s9t, r); r = table(ws, S.s9z, r); r = table(ws, S.s9s, r); if (HASWO) { r = table(ws, S.s9w, r); r = table(ws, S.s9o, r); } widths(ws, [34, 30, 16, 12, 14, 13, 11, 13, 11]);
     // 10
     ws = sheet('10 On-site vs Maximo'); r = header(ws, '10', 'On-site completion vs Maximo closure', 'الإنجاز في الموقع مقابل الإغلاق على ماكسيمو'); r = table(ws, S.s10, r); r = table(ws, S.s10c, r); r = table(ws, S.s10s, r); img(ws, C.maximo, 9, 9, 860, 360); widths(ws, [36, 11, 13, 13, 16, 16, 9, 3]);
     // 11
@@ -1767,7 +1833,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     h += panel('2 · Previous weekly tracker', 'optional, for backlog history', '<p>Load an older tracker (for example last week\'s) to record its backlog snapshot only. Current data is not replaced.</p><div class="drop" id="dropSN" tabindex="0">Drop an older tracker here<input type="file" id="fileSN" accept=".xlsx,.xlsm,.xls" hidden></div><div id="pendSN"></div><div class="status" id="stSN"></div>' +
       '<h3 style="margin-top:14px">Snapshots</h3><div class="tw"><table class="t"><thead><tr><th>Cut-off</th><th class="n">Total SRs</th><th class="n">Open</th><th></th></tr></thead><tbody>' + snaps.map(function (s) { return '<tr><td>' + dstr(s.c) + '</td><td class="n">' + fmt(s.t) + '</td><td class="n">' + fmt(s.o) + '</td><td><button class="btn danger" data-delsnap="' + s.c + '">Remove</button></td></tr>'; }).join('') + '</tbody></table></div>');
     if (!OPER && !CLOUD) h += panel('Sync from the operator file', 'bring the operator\'s latest data into this admin file', '<p>The CAFM operator keeps the data up to date in his own file. Before you change settings, drop his latest <b>DM_Dashboard_OPERATOR.html</b> here. His SR data and backlog snapshots are copied in; your settings and logos stay as they are.</p><div class="drop" id="dropSY" tabindex="0">Drop DM_Dashboard_OPERATOR.html here<input type="file" id="fileSY" accept=".html,.htm" hidden></div><div id="pendSY"></div><div class="status" id="stSY"></div>');
-    if (!OPER) h += panel('3 · PPM schedule', 'PPM Services Schedule (.xlsx)', '<p>Replace the PPM plan. Current plan: ' + fmt(PPM.length) + ' visits' + (RAW.meta && RAW.meta.ppmFile ? ' from ' + esc(RAW.meta.ppmFile) : '') + '.</p><div class="drop" id="dropPPM" tabindex="0">Drop the PPM schedule here<input type="file" id="filePPM" accept=".xlsx,.xlsm,.xls" hidden></div><div id="pendPPM"></div><div class="status" id="stPPM"></div>');
+    if (!OPER) h += panel('3 · PPM data', 'Maximo PM work orders (PM-All export) or PPM Services Schedule (.xlsx)', '<p>Upload the latest Maximo PM work-order export (e.g. PM-All). It replaces the current PPM data. Current: ' + fmt(PPM.length) + (HASWO ? ' work orders' : ' planned visits') + (RAW.meta && RAW.meta.ppmFile ? ' from ' + esc(RAW.meta.ppmFile) : '') + '.</p><div class="drop" id="dropPPM" tabindex="0">Drop the PPM file here<input type="file" id="filePPM" accept=".xlsx,.xlsm,.xls" hidden></div><div id="pendPPM"></div><div class="status" id="stPPM"></div>');
     if (!OPER) h += panel('4 · Report settings', '', '<div class="form">' +
       fld('cfgTitle', 'Dashboard title', CFG.title, 'full') + fld('cfgTitleAr', 'Arabic title', CFG.titleAr, 'full') + fld('cfgSub', 'Subtitle', CFG.subtitle, 'full') +
       '<div class="f"><label for="cfgCut">Cut-off date</label><input type="date" id="cfgCut" value="' + iso(CUT) + '"></div>' +
@@ -1886,8 +1952,10 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       setSt('stPPM', 'Reading ' + file.name + '…');
       try {
         var wb = await readWorkbook(file), p = DMParse.parsePPM(XLSX, wb);
-        $('#pendPPM').innerHTML = '<p>' + fmt(p.rows.length) + ' planned visits from ' + fmt(p.tasks) + ' task rows.</p><button class="btn primary" id="pubPPM">Publish PPM plan</button>';
-        $('#pubPPM').onclick = function () { var d = clone(RAW); d.ppm = DMParse.encode(p.rows); d.meta = d.meta || {}; d.meta.ppmFile = file.name; publish(d, 'stPPM'); };
+        var stc = {}; if (p.kind === 'wo') p.rows.forEach(function (v) { stc[v.freq] = (stc[v.freq] || 0) + 1; });
+        $('#pendPPM').innerHTML = p.kind === 'wo' ? '<p><b>' + fmt(p.rows.length) + '</b> PPM work orders (sheet ' + esc(p.sheet) + '). Status: ' + Object.keys(stc).sort(function (a, b) { return stc[b] - stc[a]; }).map(function (k) { return esc(k) + ' ' + fmt(stc[k]); }).join(' · ') + '</p><button class="btn primary" id="pubPPM">Publish PPM data</button>'
+          : '<p>' + fmt(p.rows.length) + ' planned visits from ' + fmt(p.tasks) + ' task rows.</p><button class="btn primary" id="pubPPM">Publish PPM plan</button>';
+        $('#pubPPM').onclick = function () { var d = clone(RAW); d.ppm = DMParse.encode(p.rows); d.meta = d.meta || {}; d.meta.ppmFile = file.name; d.config = d.config || {}; d.config.ppmFile = file.name; publish(d, 'stPPM'); };
         setSt('stPPM', 'Ready to publish.', 'ok');
       } catch (e) { setSt('stPPM', e.message || String(e), 'err'); }
     });
