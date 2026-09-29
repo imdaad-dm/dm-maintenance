@@ -270,15 +270,18 @@ var DMParse = (function () {
     }
     return null;
   }
+  var ALIAS = { 'sr no.': 'sr no', 'sr number': 'sr no', 'sr #': 'sr no', 'sr#': 'sr no', 'sr num': 'sr no', 'service request': 'sr no', 'ticket no': 'sr no', 'ticket number': 'sr no',
+    'reported date/time': 'reported date', 'reported on': 'reported date', 'report date': 'reported date', 'reported datetime': 'reported date', 'reported date time': 'reported date', 'date reported': 'reported date' };
+  function canon(s) { var n = norm(s).replace(/[:*]+$/, '').trim(); return ALIAS[n] || n; }
   function rowsOf(XLSX, ws) { return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, blankrows: false }); }
 
   /* ---------- CM tracker ---------- */
   function findCMSheet(XLSX, wb) {
     for (var i = 0; i < wb.SheetNames.length; i++) {
       var ws = wb.Sheets[wb.SheetNames[i]];
-      var rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, range: 0, blankrows: false }).slice(0, 15);
+      var rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, range: 0, blankrows: false }).slice(0, 40);
       for (var r = 0; r < rows.length; r++) {
-        var names = (rows[r] || []).map(norm);
+        var names = (rows[r] || []).map(canon);
         if (names.indexOf('sr no') >= 0 && names.indexOf('reported date') >= 0) return { name: wb.SheetNames[i], headerRow: r };
       }
     }
@@ -286,9 +289,16 @@ var DMParse = (function () {
   }
   function parseCM(XLSX, wb) {
     var f = findCMSheet(XLSX, wb);
-    if (!f) throw new Error('Could not find a sheet with "SR No" and "Reported Date" columns. Upload the SR Master Tracker.');
+    if (!f) {
+      var info = wb.SheetNames.slice(0, 6).map(function (n) {
+        var r0 = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: null, blankrows: false }).slice(0, 40);
+        var best = null; r0.forEach(function (row) { var c = (row || []).filter(function (v) { return v != null && v !== ''; }); if (!best || c.length > best.length) best = c; });
+        return '"' + n + '": ' + (best ? best.slice(0, 8).map(function (v) { return String(v).slice(0, 25); }).join(' | ') : '(empty)');
+      }).join(' ; ');
+      throw new Error('Could not find a sheet with "SR No" and "Reported Date" columns. Upload the SR Master Tracker. Sheets in this file: ' + (info || '(none)'));
+    }
     var rows = rowsOf(XLSX, wb.Sheets[f.name]);
-    var head = rows[f.headerRow].map(norm);
+    var head = rows[f.headerRow].map(canon);
     function col(name, nth) {
       var n = 0;
       for (var i = 0; i < head.length; i++) if (head[i] === name) { if (n === (nth || 0)) return i; n++; }
