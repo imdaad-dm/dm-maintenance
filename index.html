@@ -846,11 +846,17 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function svDubaiDay() { return new Date(Date.now() + 4 * 3600000).toISOString().slice(0, 10); }
   function svDays(rd) { var t = Date.parse(svDubaiDay() + 'T00:00:00Z'); return Math.max(0, Math.floor((t - rd) / 86400000)); }
   var SV_TR = { CIVIL: 'Civil', ELEC: 'Electrical', MECH: 'Mechanical', PLM: 'Plumbing' };
+  // the API returns at most 1000 rows per call: read set-returning functions page by page
+  async function rpcAll(name) {
+    var rows = [], from = 0, B = 1000;
+    while (true) { var r = await sb.rpc(name).order('id').range(from, from + B - 1); if (r.error) throw r.error; rows = rows.concat(r.data || []); if (!r.data || r.data.length < B) break; from += B; }
+    return rows;
+  }
   async function supervisorApp() {
     loadingScreen('Loading your works…');
     try {
-      var res = await Promise.all([sb.rpc('my_works'), sb.rpc('my_today'), sb.rpc('my_materials'), sb.rpc('my_emergencies')]);
-      SV.rows = chk(res[0]) || [];
+      var res = await Promise.all([rpcAll('my_works'), sb.rpc('my_today'), sb.rpc('my_materials'), sb.rpc('my_emergencies')]);
+      SV.rows = res[0] || [];
       var t = res[1].error ? null : (res[1].data || [])[0]; SV.today = t ? { started: +t.started || 0, completed: +t.completed || 0 } : { started: 0, completed: 0 };
       SV.mats = res[2].error ? [] : (res[2].data || []);
       SV.emg = res[3].error ? [] : (res[3].data || []); SV.emgSeen = SV.emgSeen || {}; SV.emg.forEach(function (e) { SV.emgSeen[e.id] = 1; });
@@ -860,8 +866,10 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     SV.rows.forEach(function (r) { r.rd = +r.rd; r.pr = +r.pr || 0; });
     svDraw();
   }
+  function svArea(r) { var a = String(r.area || '').trim(); if (a) return a; var c = String(r.locd || '').split(/_| - /)[0].trim(); return c || 'No area'; }
+  function svInArea(r) { return !SV.area || svArea(r) === SV.area; }
   function svDraw() {
-    var L = logos(), rows = SV.rows;
+    var L = logos(), rows = SV.rows.filter(svInArea);
     var n = { todo: 0, work: 0, done: 0, sub: 0 }; rows.forEach(function (r) { n[svState(r)]++; });
     var names = (profile.sup_names || []).filter(function (x) { return x.toUpperCase() !== String(profile.full_name || '').toUpperCase(); }).join(' · ');
     $('#app').innerHTML = '<div class="sv">' +
@@ -871,10 +879,11 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="sv-today">Today: <b>' + SV.today.started + '</b> started &nbsp;·&nbsp; <b>' + SV.today.completed + '</b> completed</div></header>' +
       '<div class="sv-sum">' + [['todo', 'To do', '', n.todo], ['work', 'Working', '', n.work], ['done', 'Done', '', n.done], ['sub', 'Contractor', '', n.sub]].map(function (x) {
         return '<button class="sv-k k-' + x[0] + '" data-f="' + x[0] + '" aria-pressed="' + (SV.f === x[0]) + '"><b>' + x[3] + '</b><span>' + x[1] + '</span></button>'; }).join('') + '</div>' +
-      '<div class="sv-search"><input type="search" id="svQ" placeholder="Search SR, location, text" value="' + esc(SV.q) + '"></div>' +
+      '<div class="sv-search">' + svAreaSel() + '<input type="search" id="svQ" placeholder="Search SR, location, text" value="' + esc(SV.q) + '"></div>' +
       svPushHTML() + '<div id="svEmg">' + svEmgHTML() + '</div>' +
       '<main id="svList" class="sv-list"></main><div id="svSheet"></div><div class="sv-toast" id="svToast" role="status" aria-live="polite"></div></div>';
     Array.prototype.forEach.call(document.querySelectorAll('.sv-k'), function (b) { b.onclick = function () { SV.f = b.getAttribute('data-f'); svDraw(); }; });
+    var asel = $('#svArea'); if (asel) asel.onchange = function () { SV.area = asel.value; svDraw(); };
     var qt; $('#svQ').oninput = function (e) { clearTimeout(qt); qt = setTimeout(function () { SV.q = e.target.value; svList(); }, 250); };
     $('#svRef').onclick = supervisorApp; $('#svOut').onclick = signOut;
     $('#svPw').onsubmit = async function (e) { e.preventDefault(); var r = await sb.auth.updateUser({ password: $('#svP').value }); setMsg('svPwSt', r.error ? r.error.message : 'Password changed.', r.error ? 'err' : 'ok'); };
@@ -903,7 +912,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var on = $('#svPOn'); if (on) on.onclick = async function () { on.disabled = true; try { await pushEnable(); SV.push = 'on'; svToast('Alerts are on for this phone.'); } catch (e) { svToast(e.message || String(e), true); SV.push = await pushState(); } svDraw(); };
     var te = $('#svPTest'); if (te) te.onclick = async function () { try { var r = await pushTest(); svToast(r.ok ? 'Test sent — check your notifications.' : 'No phone received it. Turn alerts off and on again.', !r.ok); } catch (e) { svToast('Test failed: ' + (e.message || e), true); } };
     Array.prototype.forEach.call(document.querySelectorAll('[data-ack]'), function (b) { b.onclick = async function () { b.disabled = true; var r = await sb.rpc('emergency_ack', { p_id: +b.getAttribute('data-ack') }); if (r.error) { svToast('Not saved: ' + r.error.message.replace(/^RM:\s*/, ''), true); b.disabled = false; return; } (SV.emg || []).forEach(function (e) { if (e.id === +b.getAttribute('data-ack')) { e.status = 'acked'; e.acked_at = new Date().toISOString(); } }); svToast('Received — the engineer can see it.'); svDraw(); }; });
-    Array.prototype.forEach.call(document.querySelectorAll('[data-esr]'), function (b) { b.onclick = function () { var sr = b.getAttribute('data-esr'), row = SV.rows.filter(function (x) { return x.id === sr; })[0]; SV.q = sr; SV.f = row ? svState(row) : 'todo'; svDraw(); var c = document.querySelector('.sv-card[data-id="' + sr + '"]'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'center' }); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-esr]'), function (b) { b.onclick = function () { svShowJob(b.getAttribute('data-esr')); }; });
   }
   function svBeep() { try { navigator.vibrate && navigator.vibrate([400, 150, 400, 150, 800]); var A = window.AudioContext || window.webkitAudioContext; if (!A) return; var c = new A(), o = c.createOscillator(), g = c.createGain(); o.type = 'square'; o.frequency.value = 880; g.gain.value = 0.08; o.connect(g); g.connect(c.destination); o.start(); setTimeout(function () { o.frequency.value = 660; }, 250); setTimeout(function () { o.stop(); c.close(); }, 700); } catch (e) { } }
   function svPoll() {
@@ -913,21 +922,20 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       var r = await sb.rpc('my_emergencies'); if (r.error) return;
       var fresh = (r.data || []).filter(function (e) { return e.status === 'open' && !SV.emgSeen[e.id]; });
       SV.emg = r.data || []; SV.emg.forEach(function (e) { SV.emgSeen[e.id] = 1; });
-      if (fresh.length) { svBeep(); svToast('🚨 New emergency: SR ' + fresh.map(function (e) { return e.sr; }).join(', '), true); try { var w = await sb.rpc('my_works'); if (!w.error) { SV.rows = w.data || []; SV.rows.forEach(function (x) { x.rd = +x.rd; x.pr = +x.pr || 0; }); } } catch (x) { } var y = window.scrollY; svDraw(); window.scrollTo(0, y); }
+      if (fresh.length) { svBeep(); svToast('🚨 New emergency: SR ' + fresh.map(function (e) { return e.sr; }).join(', '), true); try { SV.rows = await rpcAll('my_works'); SV.rows.forEach(function (x) { x.rd = +x.rd; x.pr = +x.pr || 0; }); } catch (x) { } var y = window.scrollY; svDraw(); window.scrollTo(0, y); }
       else { var box = $('#svEmg'); if (box) { box.innerHTML = svEmgHTML(); svBindTop(); } }
     }, 60000);
   }
+  function svAreaSel() {
+    var cnt = {}; SV.rows.forEach(function (r) { if (svState(r) === 'done') return; var a = svArea(r); cnt[a] = (cnt[a] || 0) + 1; });
+    var keys = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a] || (a < b ? -1 : 1); });
+    if (SV.area && keys.indexOf(SV.area) < 0) keys.unshift(SV.area);
+    if (keys.length < 2 && !SV.area) return '';
+    return '<label class="sv-lbl" for="svArea" style="margin-top:0">Area</label><select id="svArea" class="sv-in" style="margin-bottom:8px"><option value="">All areas (' + SV.rows.filter(function (r) { return svState(r) !== 'done'; }).length + ' open)</option>' +
+      keys.map(function (k) { return '<option value="' + esc(k) + '"' + (SV.area === k ? ' selected' : '') + '>' + esc(k) + ' (' + (cnt[k] || 0) + ')</option>'; }).join('') + '</select>';
+  }
   function svBtn(cls, act, en, ar, pressed, dis) { return '<button class="sv-b ' + cls + '" data-a="' + act + '"' + (pressed != null ? ' aria-pressed="' + pressed + '"' : '') + (dis ? ' disabled' : '') + '>' + en + '</button>'; }
-  function svList() {
-    var q = SV.q.trim().toLowerCase();
-    var list = SV.rows.filter(function (r) {
-      if (svState(r) !== (SV.f === 'emg' ? 'todo' : SV.f)) return false;
-      if (q && (r.id + ' ' + (r.wo || '') + ' ' + (r.summary || '') + ' ' + (r.locd || '') + ' ' + (r.area || '')).toLowerCase().indexOf(q) < 0) return false;
-      return true;
-    }).sort(function (a, b) { var pa = a.pr || 9, pb = b.pr || 9; return (pa > 2 ? 3 : pa) - (pb > 2 ? 3 : pb) || a.rd - b.rd; });
-    if (SV.f === 'done') list.sort(function (a, b) { return String(svD(b).doneAt || '') < String(svD(a).doneAt || '') ? -1 : 1; });
-    var shown = list.slice(0, 150), today = svDubaiDay();
-    var html = shown.map(function (r) {
+  function svCardHTML(r, today) {
       var p = svPri(r.pr), d = svD(r), st = svState(r), v = svNeed(r), busy = !!SV.busy[r.id], days = svDays(r.rd), loc = String(r.locd || '').replace(/_/g, ' · ');
       var mat = d.mat && SV_MAT[d.mat] ? '<span class="pill ' + SV_MAT[d.mat][2] + '">' + SV_MAT[d.mat][0] + '</span>' : '';
       var acts = '';
@@ -945,9 +953,29 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       }
       return '<article class="sv-card s-' + st + '" data-id="' + esc(r.id) + '">' +
         '<div class="sv-row"><b class="sv-sr">SR ' + esc(r.id) + '</b><span class="pill ' + p[2] + '">' + p[0] + '</span><span class="sv-days' + (days > 30 ? ' old' : '') + '">' + days + ' d</span></div>' +
-        '<div class="sv-meta">' + esc(SV_TR[r.tr] || r.tr || '') + ' · Zone ' + esc(r.fz || '?') + (r.area ? ' · ' + esc(r.area) : '') + (r.wo ? ' · WO ' + esc(r.wo) : '') + '</div>' +
+        '<div class="sv-meta">' + esc(SV_TR[r.tr] || r.tr || '') + ' · Zone ' + esc(r.fz || '?') + ' · ' + esc(svArea(r)) + (r.wo ? ' · WO ' + esc(r.wo) : '') + '</div>' +
         '<div class="sv-loc">' + esc(loc) + '</div><div class="sv-sum2">' + esc(r.summary || '') + '</div>' + svTr(r.summary) + (mat ? '<div style="margin-top:6px">' + mat + '</div>' : '') + acts + '</article>';
-    }).join('');
+  }
+  async function svShowJob(sr) {
+    SV.deep = null;
+    var row = SV.rows.filter(function (x) { return x.id === sr; })[0];
+    if (!row) { try { SV.rows = await rpcAll('my_works'); SV.rows.forEach(function (x) { x.rd = +x.rd; x.pr = +x.pr || 0; }); } catch (e) { } row = SV.rows.filter(function (x) { return x.id === sr; })[0]; }
+    if (!row) { svToast('SR ' + sr + ' is not in your open works (it may be closed in Maximo). Call the engineer.', true); return; }
+    svSheet('<div class="sv-shh"><div><b>Job details</b></div><button class="sv-x" id="svX" aria-label="Close">✕</button></div><div class="sv-jobw">' + svCardHTML(row, svDubaiDay()) + '</div>');
+    $('#svX').onclick = svClose;
+    Array.prototype.forEach.call(document.querySelectorAll('.sv-jobw [data-a]'), function (b) { b.onclick = function () { var a = b.getAttribute('data-a'); svClose(); svAct(row, a); }; });
+  }
+  function svList() {
+    var q = SV.q.trim().toLowerCase();
+    var list = SV.rows.filter(function (r) {
+      if (svState(r) !== (SV.f === 'emg' ? 'todo' : SV.f)) return false;
+      if (!svInArea(r)) return false;
+      if (q && (r.id + ' ' + (r.wo || '') + ' ' + (r.summary || '') + ' ' + (r.locd || '') + ' ' + (r.area || '')).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    }).sort(function (a, b) { var pa = a.pr || 9, pb = b.pr || 9; return (pa > 2 ? 3 : pa) - (pb > 2 ? 3 : pb) || a.rd - b.rd; });
+    if (SV.f === 'done') list.sort(function (a, b) { return String(svD(b).doneAt || '') < String(svD(a).doneAt || '') ? -1 : 1; });
+    var shown = list.slice(0, 150), today = svDubaiDay();
+    var html = shown.map(function (r) { return svCardHTML(r, today); }).join('');
     var empty = { todo: 'All works are started or done.', work: 'Nothing in progress. Tap ▶ Start work on a job.', done: 'No completed works waiting for Maximo closure.', sub: 'No contractor works.' };
     if (!SV.rows.length) html = '<p class="sv-empty">No open works are assigned to you. If this looks wrong, ask the admin to check your supervisor name.</p>';
     else if (!list.length) html = '<p class="sv-empty">' + (q ? 'No match.' : empty[SV.f]) + '</p>';
@@ -2712,7 +2740,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="note">Open SRs only (Maximo Final Status = OPEN), for the filters above. Civil works go to the labour supervisor of the zone; MEP works to the supervisor named in the tracker. Visible to Imdaad engineers and the GM only.' + (RM_W ? '' : ' <b>You can view this page but not change statuses.</b>') + (RM_ERR ? ' <span class="bad-t">' + esc(RM_ERR) + '</span>' : '') + '</div></div>' +
       '<div class="rmbar">' + seg('rmDisc', RMV.disc, [['ALL', 'All works'], ['CIVIL', 'Civil'], ['MEP', 'MEP']]) +
       seg('rmView', RMV.view, [['dist', 'Distribution'], ['list', 'Team works'], ['quote', 'Contractor works']].concat(CLOUD ? [['emg', '🚨 Emergencies'], ['daily', 'Daily progress'], ['mat', 'Materials']] : [])) +
-      '<span class="chip">' + (RM_LIVE ? 'Live · statuses shared with all engineers' : 'Connecting…') + '</span></div>' +
+      '<span class="chip" id="rmLive">' + (RM_LIVE ? 'Live · statuses shared with all engineers' : 'Connecting…') + '</span></div>' +
       '<div id="rmBody">' + rmBody() + '</div></section>';
     return h;
   }
@@ -3115,6 +3143,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (!force && a && b.contains(a) && /INPUT|SELECT|TEXTAREA/.test(a.tagName)) { rmRefresh.pending = true; return; }
     rmRefresh.pending = false;
     b.innerHTML = rmBody(); bindRMBody(); topScrolls();
+    var lv = $('#rmLive'); if (lv) lv.textContent = RM_LIVE ? 'Live · statuses shared with all engineers' : (RM_ERR ? RM_ERR : 'Connecting…');
   }
   document.addEventListener('focusout', function () { if (rmRefresh.pending) setTimeout(function () { rmRefresh(false); }, 50); });
   async function rmCsv(quotes) {
