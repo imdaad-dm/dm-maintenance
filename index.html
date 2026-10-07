@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DM Maintenance Portal</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"><style>:root{color-scheme:light}body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;background:#f3f5f4}img{max-width:100%}[hidden]{display:none!important}</style><style id="app-style">/* Layout: operations console — sticky header + filter rail, tabbed sections, dense tables beside line/bar charts. */
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DM Maintenance Portal</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1c3b67"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="DM Maintenance"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"><style>:root{color-scheme:light}body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;background:#f3f5f4}img{max-width:100%}[hidden]{display:none!important}</style><style id="app-style">/* Layout: operations console — sticky header + filter rail, tabbed sections, dense tables beside line/bar charts. */
 :root{
   --bg:#f3f5f4; --surface:#ffffff; --surface-2:#eaeeec; --ink:#14201c; --ink-2:#48564f; --ink-3:#77837e;
   --line:#d9dfdc; --accent:#0b5d52; --accent-ink:#ffffff; --accent-soft:#dcebe7;
@@ -250,6 +250,84 @@ table.perm input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent
 .notice{border-color:var(--gold-2);background:var(--gold-soft)}
 .foot{border-top:2px solid var(--gold)}
 #view a{color:var(--accent);font-weight:600;text-decoration-color:var(--gold-2)}
+
+/* ===== Labour supervisor mobile page ===== */
+.sv{min-height:100vh;background:var(--bg);color:var(--ink);font-family:var(--f-body);padding-bottom:40px}
+.sv .ar{font-family:var(--f-ar);direction:rtl;unicode-bidi:isolate}
+.sv-top{background:linear-gradient(100deg,#1c3b67 0%,#264d85 100%);border-bottom:4px solid #c09a52;color:#fff;padding:12px 16px 14px}
+.sv-logos{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.sv-logos img{height:34px;background:#fff;border-radius:6px;padding:3px 6px}
+.sv-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.sv-h h1{margin:0;font-size:1.25rem;line-height:1.2;color:#fff}.sv-h h1 .ar{display:block;font-size:.95rem;color:#e3cf9f;font-weight:500}
+.sv-who{font-size:.78rem;color:#c9d5e8;margin-top:3px}
+.sv-act{display:flex;gap:6px;position:relative}
+.sv-ib{list-style:none;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:8px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#fff;font-size:1.2rem;cursor:pointer}
+.sv-ib::-webkit-details-marker{display:none}
+.sv-menu{position:relative}.sv-pop{position:absolute;right:0;top:46px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:8px;min-width:230px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.sv-pop form{display:grid;gap:6px}.sv-pop label{font-size:.75rem;color:var(--ink-2)}.sv-pop input{border:1px solid var(--line);border-radius:6px;padding:8px;font-size:1rem}
+.sv-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:12px 12px 4px}
+.sv-k{display:flex;flex-direction:column;align-items:center;gap:1px;border:1px solid var(--line);border-top:3px solid var(--ink-3);background:var(--surface);border-radius:8px;padding:8px 4px;cursor:pointer;color:var(--ink)}
+.sv-k b{font-family:var(--f-num);font-size:1.35rem;line-height:1.1}.sv-k span{font-size:.68rem;color:var(--ink-2);text-align:center;line-height:1.2}
+.sv-k.k-todo{border-top-color:var(--warn)}.sv-k.k-yes{border-top-color:var(--crit)}.sv-k.k-no{border-top-color:var(--good)}.sv-k.k-all{border-top-color:var(--accent)}
+.sv-k[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.sv-search{padding:8px 12px}.sv-search input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:11px 12px;font-size:1rem;background:var(--surface)}
+.sv-list{display:grid;gap:10px;padding:4px 12px}
+.sv-card{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--warn);border-radius:10px;padding:12px}
+.sv-card.s-sub{border-left-color:var(--crit)}.sv-card.s-work{border-left-color:var(--s1)}.sv-card.s-done{border-left-color:var(--good)}
+.sv-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.sv-sr{font-size:1.02rem}
+.sv-days{margin-left:auto;font-family:var(--f-num);font-weight:600;color:var(--ink-2)}.sv-days.old{color:var(--crit-ink)}
+.sv-meta{font-size:.78rem;color:var(--ink-2);margin-top:4px}
+.sv-loc{font-size:.85rem;font-weight:600;margin-top:6px}.sv-sum2{font-size:.88rem;margin-top:4px;color:var(--ink);word-break:break-word}
+.sv-q{font-size:.78rem;color:var(--ink-2);margin-top:10px}
+.sv-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.sv-b{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:54px;border-radius:8px;border:2px solid var(--line);background:var(--surface);font-weight:600;font-size:.88rem;cursor:pointer;color:var(--ink);padding:6px}
+.sv-b .ar{font-size:.8rem;font-weight:500}
+.sv-b.b-yes[aria-pressed="true"]{background:var(--crit);border-color:var(--crit);color:#fff}
+.sv-b.b-no[aria-pressed="true"]{background:var(--good-ink);border-color:var(--good-ink);color:#fff}
+.sv-b:disabled{opacity:.6}
+.sv-lock{margin-top:10px;font-size:.8rem;background:var(--surface-2);border-radius:6px;padding:8px;color:var(--ink-2)}
+.sv-empty{text-align:center;color:var(--ink-2);padding:24px 8px}
+.sv-toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(120px);background:#14223a;color:#fff;padding:10px 16px;border-radius:8px;font-size:.88rem;transition:transform .2s;max-width:92vw;z-index:10}
+.sv-toast.on{transform:translateX(-50%) translateY(0)}.sv-toast.bad{background:#b12a2a}
+@media (min-width:700px){.sv{max-width:720px;margin:0 auto}}
+
+.sv-today{margin-top:8px;font-size:.85rem;color:#e3cf9f}.sv-today b{color:#fff;font-size:1rem}
+.sv-k.k-work{border-top-color:var(--s1)}.sv-k.k-done{border-top-color:var(--good)}.sv-k.k-sub{border-top-color:var(--crit)}
+.sv-btns.three{grid-template-columns:1fr 1fr 1fr}.sv-btns.one{grid-template-columns:1fr}
+.sv-b.b-start{border-color:var(--s1);color:var(--s1)}.sv-b.b-done{background:var(--good-ink);border-color:var(--good-ink);color:#fff}.sv-b.b-mat{border-color:var(--gold,#b8934f)}
+.sv-since{display:flex;align-items:center;justify-content:center;text-align:center;font-size:.78rem;color:var(--s1);border:2px dashed var(--line);border-radius:8px;padding:6px}
+.sv-donel{margin-top:10px;font-size:.85rem;color:var(--good-ink);font-weight:600}
+.sv-link{background:none;border:0;color:var(--accent);text-decoration:underline;font-size:.82rem;padding:8px 0 0;cursor:pointer}
+.sv-trl{display:inline-block;margin-top:6px;font-size:.82rem;font-weight:600;color:var(--accent)}
+.sv-ov{position:fixed;inset:0;background:rgba(10,20,40,.55);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sv-sh{background:var(--surface);width:100%;max-width:720px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px 28px;box-sizing:border-box}
+.sv-sh h3{margin:14px 0 8px;font-size:1.05rem;color:var(--accent)}
+.sv-shh{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:10px}
+.sv-x{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;width:38px;height:38px;font-size:1rem;cursor:pointer;flex:none;color:var(--ink)}
+.sv-cam{display:flex;align-items:center;justify-content:center;min-height:56px;border:2px dashed var(--accent);border-radius:10px;color:var(--accent);font-weight:600;cursor:pointer;background:var(--accent-soft)}
+.sv-th{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.sv-tm{position:relative}.sv-tm img{width:84px;height:84px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.sv-tm button{position:absolute;top:-6px;right:-6px;width:26px;height:26px;border-radius:50%;border:0;background:var(--crit);color:#fff;cursor:pointer}
+.sv-hint{font-size:.76rem;color:var(--ink-2);margin-top:6px}
+.sv-lbl{display:block;font-size:.78rem;color:var(--ink-2);margin:12px 0 4px}
+.sv-in{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:1rem;background:var(--surface);color:var(--ink)}
+.sv-it{display:grid;grid-template-columns:1fr 74px 82px;gap:6px;margin-bottom:6px}
+.sv-go{width:100%;min-height:52px;margin-top:14px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:1rem;cursor:pointer}.sv-go:disabled{opacity:.45}
+.sv-prev{font-size:.8rem;display:grid;gap:4px;background:var(--surface-2);border-radius:8px;padding:8px;margin-bottom:8px}
+.rmph{display:flex;flex-wrap:wrap;gap:4px}.rmph img{width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:var(--surface-2)}
+.t td.hl{background:var(--accent-soft);font-weight:600}
+/* emergencies */
+.sv-push{margin:10px 12px 0;padding:12px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-size:.86rem}
+.sv-push .sv-go{margin-top:10px}.sv-push.on{background:var(--accent-soft);border-color:var(--accent);padding:8px 12px}.sv-push.on .sv-link{padding:0;margin-left:6px}
+.sv-push.warn{background:#fff5e6;border-color:var(--warn);color:var(--ink)}
+.sv-emg{padding:10px 12px 0;display:grid;gap:10px}
+.sv-ecard{background:#fff1f1;border:2px solid var(--crit);border-radius:12px;padding:12px;animation:svPulse 1.6s ease-in-out 3}
+.sv-ecard.hl{box-shadow:0 0 0 4px rgba(208,59,59,.35)}
+.sv-ecard b{color:var(--crit-ink)}.sv-enote{margin-top:6px;font-size:.86rem;font-weight:600}
+.sv-b.b-ack{background:var(--crit);border-color:var(--crit);color:#fff}
+.sv-eok{font-size:.8rem;color:var(--good-ink);padding:2px 2px 0}
+@keyframes svPulse{50%{box-shadow:0 0 0 6px rgba(208,59,59,.25)}}
+@media (prefers-color-scheme: dark){.sv-ecard{background:#3a1b1b}.sv-push.warn{background:#3a2f1b}}
+.t tr.od-row td{background:rgba(208,59,59,.07)}
 </style></head><body><div id="app"></div><script>
 /* ==== PORTAL CONNECTION — fill in from Supabase: Project Settings > API ==== */
 window.DM_CLOUD_CONFIG = {
@@ -533,9 +611,9 @@ var DMParse = (function () {
         var af = cAF != null ? serialToMs(x[cAF]) : null;
         out.push({ id: wo, sheet: 'PM-WO', item: cPM >= 0 ? clean(x[cPM]) : '', desc: desc.slice(0, 160), sys: sys.slice(0, 60), site: site.slice(0, 100),
           route: route, sc: zm ? zm[1].toUpperCase() : '', freq: cS >= 0 ? clean(x[cS]).toUpperCase() : '',
-          tr: ppmTrade(desc), st: st, en: af == null ? st : af });
+          tr: ppmTrade(desc), st: st, en: af == null ? st : af, cost: cCost >= 0 && typeof x[cCost] === 'number' && isFinite(x[cCost]) ? Math.round(x[cCost] * 100) / 100 : (cCost >= 0 && x[cCost] != null && !isNaN(parseFloat(x[cCost])) ? parseFloat(x[cCost]) : 0) });
       }
-      if (out.length) return { rows: out, tasks: out.length, kind: 'wo', skipped: skipped, sheet: sn, hasFinish: cAF != null };
+      if (out.length) return { rows: out, tasks: out.length, kind: 'wo', hasCost: cCost >= 0, skipped: skipped, sheet: sn, hasFinish: cAF != null };
     }
     return null;
   }
@@ -603,7 +681,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
 (function () {
   'use strict';
   var CONF = window.DM_CLOUD_CONFIG || {};
-  var ROLES = [['admin', 'Admin'], ['operator', 'CAFM operator'], ['manager', 'Manager'], ['dm_engineer', 'DM engineer'], ['imdaad_engineer', 'Imdaad engineer']];
+  var ROLES = [['admin', 'Admin'], ['operator', 'CAFM operator'], ['manager', 'Manager'], ['dm_engineer', 'DM engineer'], ['imdaad_engineer', 'Imdaad engineer'], ['supervisor', 'Labour supervisor']];
   var ALL_TABS = ['summary', 'cm', 'backlog', 'sla', 'ppm', 'site', 'loc', 'maximo', 'register'];
   var DEFAULT_PERMS = {
     operator: { tabs: ALL_TABS.slice(), export: true, print: true, rm: 'none', deck: false },
@@ -690,11 +768,11 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     progress(0.08, 'Loading service requests…');
     var sr = await fetchAll('sr', SR_COLS, 'id', function (n) { progress(Math.min(0.85, 0.08 + n / 15000), 'Loading service requests… ' + n.toLocaleString('en-US')); });
     progress(0.86, 'Loading PPM plan…');
-    var ppm = await fetchAll('ppm', PPM_COLS, 'id');
+    var ppm; try { ppm = await fetchAll('ppm', PPM_COLS + ',cost', 'id'); } catch (e) { ppm = await fetchAll('ppm', PPM_COLS, 'id'); }
     var snaps = chk(await sb.from('snapshots').select('c,t,o').order('c'));
     progress(1, 'Opening dashboard…');
     sr.forEach(function (o) { o.rd = +o.rd; o.cd = o.cd == null ? null : +o.cd; o.pr = o.pr || 0; ['wo', 'sum', 'wt', 'svc', 'tr', 'rbn', 'dept', 'mx', 'loc', 'locd', 'zn', 'fz', 'area', 'sup', 'ist', 'st', 'cnote', 'rem', 'park'].forEach(function (k) { if (o[k] == null) o[k] = ''; }); });
-    ppm.forEach(function (v) { v.st = +v.st; v.en = +v.en; ['sheet', 'item', 'desc', 'sys', 'site', 'route', 'sc', 'freq', 'tr'].forEach(function (k) { if (v[k] == null) v[k] = ''; }); });
+    ppm.forEach(function (v) { v.st = +v.st; v.en = +v.en; v.cost = v.cost == null ? 0 : +v.cost; ['sheet', 'item', 'desc', 'sys', 'site', 'route', 'sc', 'freq', 'tr'].forEach(function (k) { if (v[k] == null) v[k] = ''; }); });
     var cfg = cfgRow.config || {}, lg = cfgRow.logos || {}, dl = logos();
     return {
       config: cfg, logos: { left: lg.left || dl.left, lw: lg.lw || dl.lw, right: lg.right || dl.right, rw: lg.rw || dl.rw },
@@ -705,28 +783,292 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   async function enter() {
     loadingScreen('Checking your account…');
     var u = (await sb.auth.getUser()).data.user; if (!u) return loginScreen();
-    profile = chk(await sb.from('profiles').select('id,email,full_name,role,active,must_set_password').eq('id', u.id).maybeSingle());
+    var pr0 = await sb.from('profiles').select('id,email,full_name,role,active,must_set_password,sup_names').eq('id', u.id).maybeSingle();
+    if (pr0.error && /sup_names/.test(pr0.error.message || '')) pr0 = await sb.from('profiles').select('id,email,full_name,role,active,must_set_password').eq('id', u.id).maybeSingle();
+    profile = chk(pr0);
     cleanUrl();
     if (profile && profile.must_set_password) return newPasswordScreen(true, u.email);
     if (!profile || !profile.role || !profile.active) {
       screen('<div class="auth-f"><p><b>Your account is waiting for access.</b></p><p>Signed in as ' + esc(u.email) + '. Ask the portal administrator to assign you a role.</p><button class="btn" id="soBtn">Sign out</button></div>');
       $('#soBtn').onclick = signOut; return;
     }
+    if (profile.role === 'supervisor') return supervisorApp();
     try { RAWC = await loadData(); } catch (e) { screen('<div class="auth-f"><p class="status err">Could not load data: ' + esc(e.message) + '</p><button class="btn" id="rtBtn">Try again</button> <button class="btn" id="soBtn">Sign out</button></div>'); $('#rtBtn').onclick = enter; $('#soBtn').onclick = signOut; return; }
     start();
   }
   function start() {
     window.DMApp.start(RAWC, { role: profile.role, perms: permsFor(profile.role, RAWC.config), user: { name: profile.full_name, email: profile.email } });
+    if (profile.role === 'admin') setTimeout(function () { purgePhotos(false).catch(function () { }); }, 4000);
   }
   async function reload(msg) { RAWC = await loadData(); start(); if (msg) H().toast(msg); }
   async function signOut() { try { await sb.auth.signOut(); } catch (e) { } profile = null; RAWC = null; loginScreen('Signed out.', 'ok'); }
 
+  /* ---------- emergency alerts: this phone's notifications ---------- */
+  var PUSH = { key: null };
+  function pushSupported() { return location.protocol === 'https:' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+  function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+  function isStandalone() { return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+  function siteUrl() { return location.origin + location.pathname; }
+  function b64u(s) { var p = '='.repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+  async function pushKey() { if (PUSH.key) return PUSH.key; var r = await sb.functions.invoke('push-send', { body: { event: 'key' } }); if (r.error || !r.data || !r.data.publicKey) throw new Error('The alert sender is not set up yet (Edge Function "push-send"). Ask the admin.'); PUSH.key = r.data.publicKey; return PUSH.key; }
+  async function pushState() {
+    if (!pushSupported()) return isIOS() && !isStandalone() ? 'ios-install' : 'unsupported';
+    if (Notification.permission === 'denied') return 'denied';
+    try { var reg = await navigator.serviceWorker.getRegistration(); var sub = reg && await reg.pushManager.getSubscription(); return sub && Notification.permission === 'granted' ? 'on' : 'off'; } catch (e) { return 'off'; }
+  }
+  async function pushEnable() {
+    if (!pushSupported()) throw new Error(isIOS() ? 'On iPhone: tap Share, then Add to Home Screen, then open DM Maintenance from the icon and turn alerts on there.' : 'This browser cannot receive alerts. Use Chrome on Android or Safari on iPhone.');
+    var perm = await Notification.requestPermission();
+    if (perm !== 'granted') throw new Error('Notifications were not allowed. Allow them in the phone settings for this site, then try again.');
+    var reg = await navigator.serviceWorker.register('sw.js'); await navigator.serviceWorker.ready;
+    var sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(await pushKey()) });
+    var r = await sb.rpc('push_subscribe', { p_sub: sub.toJSON(), p_ua: navigator.userAgent }); if (r.error) throw r.error;
+    return true;
+  }
+  async function pushResync() { try { if ((await pushState()) === 'on') { var reg = await navigator.serviceWorker.getRegistration(), sub = await reg.pushManager.getSubscription(); await sb.rpc('push_subscribe', { p_sub: sub.toJSON(), p_ua: navigator.userAgent }); } } catch (e) { } }
+  async function pushTest() { var r = await sb.functions.invoke('push-send', { body: { event: 'test', site: siteUrl() } }); if (r.error) throw r.error; return r.data || {}; }
+  function pushNote(st) {
+    return st === 'ios-install' ? 'To get emergency alerts on iPhone: tap <b>Share</b> ⬆, then <b>Add to Home Screen</b>. Open <b>DM Maintenance</b> from the new icon, sign in and turn alerts on.'
+      : st === 'unsupported' ? 'This browser cannot receive emergency alerts. Use Chrome on Android, or Safari on iPhone (from the home-screen icon).'
+      : st === 'denied' ? 'Notifications are blocked for this site. Allow them in the phone settings, then reload.' : '';
+  }
+
+  /* ---------- labour supervisor: mobile page (own open works only) ---------- */
+  var SV = { rows: [], f: 'todo', q: '', busy: {}, today: { started: 0, completed: 0 }, mats: [], sheet: null };
+  var SV_UNITS = ['pcs', 'm', 'm²', 'bag', 'kg', 'L', 'gal', 'box', 'roll', 'set', 'sheet', 'tin'];
+  var SV_MAT = { requested: ['Materials requested', '', 'avg'], approved: ['Materials approved', '', 'poor'], rejected: ['Materials rejected', '', 'bad'], issued: ['Materials issued', '', 'good'] };
+  function svPri(p) { return p === 1 ? ['Emergency', '', 'bad'] : p === 2 ? ['Urgent', '', 'poor'] : ['Routine', '', 'na']; }
+  function svD(r) { return r.rm || {}; }
+  function svNeed(r) { var d = svD(r); return d.need || (d.st === 'sub' ? 'yes' : ''); }
+  function svState(r) { var d = svD(r); if (svNeed(r) === 'yes') return 'sub'; if (d.st === 'done') return 'done'; if (d.st === 'inprog') return 'work'; return 'todo'; }
+  function svLocked(r) { var q = svD(r).q || {}; return !!(q.stage && q.stage !== 'nq'); }
+  function svDubaiDay() { return new Date(Date.now() + 4 * 3600000).toISOString().slice(0, 10); }
+  function svDays(rd) { var t = Date.parse(svDubaiDay() + 'T00:00:00Z'); return Math.max(0, Math.floor((t - rd) / 86400000)); }
+  var SV_TR = { CIVIL: 'Civil', ELEC: 'Electrical', MECH: 'Mechanical', PLM: 'Plumbing' };
+  async function supervisorApp() {
+    loadingScreen('Loading your works…');
+    try {
+      var res = await Promise.all([sb.rpc('my_works'), sb.rpc('my_today'), sb.rpc('my_materials'), sb.rpc('my_emergencies')]);
+      SV.rows = chk(res[0]) || [];
+      var t = res[1].error ? null : (res[1].data || [])[0]; SV.today = t ? { started: +t.started || 0, completed: +t.completed || 0 } : { started: 0, completed: 0 };
+      SV.mats = res[2].error ? [] : (res[2].data || []);
+      SV.emg = res[3].error ? [] : (res[3].data || []); SV.emgSeen = SV.emgSeen || {}; SV.emg.forEach(function (e) { SV.emgSeen[e.id] = 1; });
+      SV.push = await pushState(); if (SV.push === 'on') pushResync();
+      var qp = new URLSearchParams(location.search); if (qp.get('sr') && !SV.deep) { SV.deep = qp.get('sr'); SV.f = 'emg'; } svPoll();
+    } catch (e) { screen('<div class="auth-f"><p class="status err">Could not load your works: ' + esc(e.message) + '</p><button class="btn" id="rtBtn">Try again</button> <button class="btn" id="soBtn">Sign out</button></div>'); $('#rtBtn').onclick = supervisorApp; $('#soBtn').onclick = signOut; return; }
+    SV.rows.forEach(function (r) { r.rd = +r.rd; r.pr = +r.pr || 0; });
+    svDraw();
+  }
+  function svDraw() {
+    var L = logos(), rows = SV.rows;
+    var n = { todo: 0, work: 0, done: 0, sub: 0 }; rows.forEach(function (r) { n[svState(r)]++; });
+    var names = (profile.sup_names || []).filter(function (x) { return x.toUpperCase() !== String(profile.full_name || '').toUpperCase(); }).join(' · ');
+    $('#app').innerHTML = '<div class="sv">' +
+      '<header class="sv-top"><div class="sv-logos">' + (L.left ? '<img src="' + L.left + '" alt="Imdaad">' : '') + (L.right ? '<img src="' + L.right + '" alt="Dubai Municipality">' : '') + '</div>' +
+      '<div class="sv-h"><div><h1>My works </h1><div class="sv-who">' + esc(profile.full_name || profile.email) + (names ? ' · ' + esc(names) : '') + '</div></div>' +
+      '<div class="sv-act"><button class="sv-ib" id="svRef" aria-label="Refresh">↻</button><details class="sv-menu"><summary class="sv-ib" aria-label="Account">☰</summary><div class="sv-pop"><form id="svPw"><label for="svP">New password</label><input id="svP" type="password" minlength="8" autocomplete="new-password"><button class="btn" type="submit">Change password</button><div class="status" id="svPwSt"></div></form><button class="btn" id="svOut">Sign out</button></div></details></div></div>' +
+      '<div class="sv-today">Today: <b>' + SV.today.started + '</b> started &nbsp;·&nbsp; <b>' + SV.today.completed + '</b> completed</div></header>' +
+      '<div class="sv-sum">' + [['todo', 'To do', '', n.todo], ['work', 'Working', '', n.work], ['done', 'Done', '', n.done], ['sub', 'Contractor', '', n.sub]].map(function (x) {
+        return '<button class="sv-k k-' + x[0] + '" data-f="' + x[0] + '" aria-pressed="' + (SV.f === x[0]) + '"><b>' + x[3] + '</b><span>' + x[1] + '</span></button>'; }).join('') + '</div>' +
+      '<div class="sv-search"><input type="search" id="svQ" placeholder="Search SR, location, text" value="' + esc(SV.q) + '"></div>' +
+      svPushHTML() + '<div id="svEmg">' + svEmgHTML() + '</div>' +
+      '<main id="svList" class="sv-list"></main><div id="svSheet"></div><div class="sv-toast" id="svToast" role="status" aria-live="polite"></div></div>';
+    Array.prototype.forEach.call(document.querySelectorAll('.sv-k'), function (b) { b.onclick = function () { SV.f = b.getAttribute('data-f'); svDraw(); }; });
+    var qt; $('#svQ').oninput = function (e) { clearTimeout(qt); qt = setTimeout(function () { SV.q = e.target.value; svList(); }, 250); };
+    $('#svRef').onclick = supervisorApp; $('#svOut').onclick = signOut;
+    $('#svPw').onsubmit = async function (e) { e.preventDefault(); var r = await sb.auth.updateUser({ password: $('#svP').value }); setMsg('svPwSt', r.error ? r.error.message : 'Password changed.', r.error ? 'err' : 'ok'); };
+    svList(); svBindTop();
+    if (SV.deep) { var ec = document.querySelector('.sv-ecard.hl'); if (ec) ec.scrollIntoView({ block: 'center' }); }
+    if (SV.lt && Date.now() - SV.lt.at < 2500) svToast(SV.lt.t, SV.lt.bad);
+  }
+  function svPushHTML() {
+    var st = SV.push;
+    if (st === 'on') return '<div class="sv-push on">🔔 Emergency alerts are on for this phone · <button class="sv-link" id="svPTest">Send a test</button></div>';
+    if (st === 'off') return '<div class="sv-push"><b>Turn on emergency alerts</b> so you get urgent jobs even when the phone is locked.<button class="sv-go" id="svPOn">🔔 Turn on alerts</button></div>';
+    return '<div class="sv-push warn">' + pushNote(st) + '</div>';
+  }
+  function svEmgHTML() {
+    var open = (SV.emg || []).filter(function (e) { return e.status === 'open'; }), done = (SV.emg || []).filter(function (e) { return e.status === 'acked'; });
+    if (!open.length && !done.length) return '';
+    var byId = {}; SV.rows.forEach(function (r) { byId[r.id] = r; });
+    var t = function (x) { return x ? new Date(x).toLocaleTimeString('en-GB', { timeZone: 'Asia/Dubai', hour: '2-digit', minute: '2-digit' }) : ''; };
+    return '<section class="sv-emg">' + open.map(function (e) { var r = byId[e.sr] || {};
+        return '<article class="sv-ecard' + (SV.deep === e.sr ? ' hl' : '') + '" data-eid="' + e.id + '"><div class="sv-row"><b>🚨 EMERGENCY · SR ' + esc(e.sr) + '</b><span class="sv-days">' + t(e.flagged_at) + '</span></div>' +
+          '<div class="sv-loc">' + esc(String(r.locd || '').replace(/_/g, ' · ')) + '</div>' + (r.summary ? '<div class="sv-sum2">' + esc(r.summary) + '</div>' + svTr(r.summary) : '') + (e.note ? '<div class="sv-enote">Engineer: ' + esc(e.note) + '</div>' : '') +
+          '<div class="sv-btns"><button class="sv-b b-ack" data-ack="' + e.id + '">✓ Received</button><button class="sv-b" data-esr="' + esc(e.sr) + '">Show the job</button></div></article>'; }).join('') +
+      (done.length ? '<div class="sv-eok">' + done.map(function (e) { return '✓ SR ' + esc(e.sr) + ' received ' + t(e.acked_at); }).join(' · ') + '</div>' : '') + '</section>';
+  }
+  function svBindTop() {
+    var on = $('#svPOn'); if (on) on.onclick = async function () { on.disabled = true; try { await pushEnable(); SV.push = 'on'; svToast('Alerts are on for this phone.'); } catch (e) { svToast(e.message || String(e), true); SV.push = await pushState(); } svDraw(); };
+    var te = $('#svPTest'); if (te) te.onclick = async function () { try { var r = await pushTest(); svToast(r.ok ? 'Test sent — check your notifications.' : 'No phone received it. Turn alerts off and on again.', !r.ok); } catch (e) { svToast('Test failed: ' + (e.message || e), true); } };
+    Array.prototype.forEach.call(document.querySelectorAll('[data-ack]'), function (b) { b.onclick = async function () { b.disabled = true; var r = await sb.rpc('emergency_ack', { p_id: +b.getAttribute('data-ack') }); if (r.error) { svToast('Not saved: ' + r.error.message.replace(/^RM:\s*/, ''), true); b.disabled = false; return; } (SV.emg || []).forEach(function (e) { if (e.id === +b.getAttribute('data-ack')) { e.status = 'acked'; e.acked_at = new Date().toISOString(); } }); svToast('Received — the engineer can see it.'); svDraw(); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-esr]'), function (b) { b.onclick = function () { var sr = b.getAttribute('data-esr'), row = SV.rows.filter(function (x) { return x.id === sr; })[0]; SV.q = sr; SV.f = row ? svState(row) : 'todo'; svDraw(); var c = document.querySelector('.sv-card[data-id="' + sr + '"]'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'center' }); }; });
+  }
+  function svBeep() { try { navigator.vibrate && navigator.vibrate([400, 150, 400, 150, 800]); var A = window.AudioContext || window.webkitAudioContext; if (!A) return; var c = new A(), o = c.createOscillator(), g = c.createGain(); o.type = 'square'; o.frequency.value = 880; g.gain.value = 0.08; o.connect(g); g.connect(c.destination); o.start(); setTimeout(function () { o.frequency.value = 660; }, 250); setTimeout(function () { o.stop(); c.close(); }, 700); } catch (e) { } }
+  function svPoll() {
+    clearInterval(SV.pt);
+    SV.pt = setInterval(async function () {
+      if (document.hidden || !profile || profile.role !== 'supervisor' || !$('#svEmg')) return;
+      var r = await sb.rpc('my_emergencies'); if (r.error) return;
+      var fresh = (r.data || []).filter(function (e) { return e.status === 'open' && !SV.emgSeen[e.id]; });
+      SV.emg = r.data || []; SV.emg.forEach(function (e) { SV.emgSeen[e.id] = 1; });
+      if (fresh.length) { svBeep(); svToast('🚨 New emergency: SR ' + fresh.map(function (e) { return e.sr; }).join(', '), true); try { var w = await sb.rpc('my_works'); if (!w.error) { SV.rows = w.data || []; SV.rows.forEach(function (x) { x.rd = +x.rd; x.pr = +x.pr || 0; }); } } catch (x) { } var y = window.scrollY; svDraw(); window.scrollTo(0, y); }
+      else { var box = $('#svEmg'); if (box) { box.innerHTML = svEmgHTML(); svBindTop(); } }
+    }, 60000);
+  }
+  function svBtn(cls, act, en, ar, pressed, dis) { return '<button class="sv-b ' + cls + '" data-a="' + act + '"' + (pressed != null ? ' aria-pressed="' + pressed + '"' : '') + (dis ? ' disabled' : '') + '>' + en + '</button>'; }
+  function svList() {
+    var q = SV.q.trim().toLowerCase();
+    var list = SV.rows.filter(function (r) {
+      if (svState(r) !== (SV.f === 'emg' ? 'todo' : SV.f)) return false;
+      if (q && (r.id + ' ' + (r.wo || '') + ' ' + (r.summary || '') + ' ' + (r.locd || '') + ' ' + (r.area || '')).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    }).sort(function (a, b) { var pa = a.pr || 9, pb = b.pr || 9; return (pa > 2 ? 3 : pa) - (pb > 2 ? 3 : pb) || a.rd - b.rd; });
+    if (SV.f === 'done') list.sort(function (a, b) { return String(svD(b).doneAt || '') < String(svD(a).doneAt || '') ? -1 : 1; });
+    var shown = list.slice(0, 150), today = svDubaiDay();
+    var html = shown.map(function (r) {
+      var p = svPri(r.pr), d = svD(r), st = svState(r), v = svNeed(r), busy = !!SV.busy[r.id], days = svDays(r.rd), loc = String(r.locd || '').replace(/_/g, ' · ');
+      var mat = d.mat && SV_MAT[d.mat] ? '<span class="pill ' + SV_MAT[d.mat][2] + '">' + SV_MAT[d.mat][0] + '</span>' : '';
+      var acts = '';
+      if (st === 'sub') {
+        acts = svLocked(r) ? '<div class="sv-lock">Contractor work — the quotation is with the engineer / DM.</div>'
+          : '<div class="sv-q">Marked for a contractor quotation.</div><div class="sv-btns">' + svBtn('b-no', 'no', 'Change to our team', '', null, busy) + svBtn('b-mat', 'mat', '📦 Materials', '', null, busy) + '</div>';
+      } else if (st === 'done') {
+        acts = '<div class="sv-donel">✓ Completed ' + esc(d.doneAt || '') + ' · ' + ((d.photos || []).length) + ' photo(s)</div>' +
+          (String(d.doneAt || '').slice(0, 10) === today ? '<div class="sv-btns one">' + svBtn('b-undo', 'undo', '↩ Undo (mistake)', '', null, busy) + '</div>' : '');
+      } else {
+        if (!v && st === 'todo') acts += '<div class="sv-q">Contractor quotation needed?</div><div class="sv-btns">' + svBtn('b-yes', 'yes', 'Yes – contractor', '', false, busy) + svBtn('b-no', 'no', 'No – our team', '', false, busy) + '</div>';
+        acts += '<div class="sv-btns three">' + (st === 'todo' ? svBtn('b-start', 'start', '▶ Start work', '', null, busy) : '<div class="sv-since">Working since ' + esc(d.startAt || '') + '</div>') +
+          svBtn('b-done', 'done', '✓ Completed 📷', '', null, busy) + svBtn('b-mat', 'mat', '📦 Materials', '', null, busy) + '</div>' +
+          (v === 'no' ? '<button class="sv-link" data-a="yes"' + (busy ? ' disabled' : '') + '>Needs a contractor instead?</button>' : '');
+      }
+      return '<article class="sv-card s-' + st + '" data-id="' + esc(r.id) + '">' +
+        '<div class="sv-row"><b class="sv-sr">SR ' + esc(r.id) + '</b><span class="pill ' + p[2] + '">' + p[0] + '</span><span class="sv-days' + (days > 30 ? ' old' : '') + '">' + days + ' d</span></div>' +
+        '<div class="sv-meta">' + esc(SV_TR[r.tr] || r.tr || '') + ' · Zone ' + esc(r.fz || '?') + (r.area ? ' · ' + esc(r.area) : '') + (r.wo ? ' · WO ' + esc(r.wo) : '') + '</div>' +
+        '<div class="sv-loc">' + esc(loc) + '</div><div class="sv-sum2">' + esc(r.summary || '') + '</div>' + svTr(r.summary) + (mat ? '<div style="margin-top:6px">' + mat + '</div>' : '') + acts + '</article>';
+    }).join('');
+    var empty = { todo: 'All works are started or done.', work: 'Nothing in progress. Tap ▶ Start work on a job.', done: 'No completed works waiting for Maximo closure.', sub: 'No contractor works.' };
+    if (!SV.rows.length) html = '<p class="sv-empty">No open works are assigned to you. If this looks wrong, ask the admin to check your supervisor name.</p>';
+    else if (!list.length) html = '<p class="sv-empty">' + (q ? 'No match.' : empty[SV.f]) + '</p>';
+    else if (list.length > shown.length) html += '<p class="sv-empty">Showing ' + shown.length + ' of ' + list.length + '. Use search to find others.</p>';
+    $('#svList').innerHTML = html;
+    Array.prototype.forEach.call(document.querySelectorAll('#svList [data-a]'), function (b) {
+      b.onclick = function () { var id = b.closest('.sv-card').getAttribute('data-id'), a = b.getAttribute('data-a'), row = SV.rows.filter(function (x) { return x.id === id; })[0]; if (row) svAct(row, a); };
+    });
+  }
+  async function svCall(row, fn, args, okMsg) {
+    if (SV.busy[row.id]) return; SV.busy[row.id] = true; svList();
+    var msg, bad = false;
+    try { var res = await sb.rpc(fn, args); if (res.error) throw res.error; if (res.data && typeof res.data === 'object' && !Array.isArray(res.data)) row.rm = res.data; msg = 'Saved — SR ' + row.id + ': ' + okMsg; }
+    catch (e) { msg = 'Not saved: ' + String((e && e.message) || e).replace(/^RM:\s*/, ''); bad = true; }
+    SV.busy[row.id] = false; var y = window.scrollY; svDraw(); window.scrollTo(0, y); svToast(msg, bad);
+    return !bad;
+  }
+  function svAct(row, a) {
+    if (a === 'yes') return svCall(row, 'sup_mark', { p_sr: row.id, p_need: 'yes' }, 'needs contractor');
+    if (a === 'no') return svCall(row, 'sup_mark', { p_sr: row.id, p_need: 'no' }, 'our team');
+    if (a === 'start') return svCall(row, 'sup_log', { p_sr: row.id, p_action: 'start', p_photos: [], p_note: null }, 'work started').then(function (ok) { if (ok) { SV.today.started++; svDraw(); } });
+    if (a === 'undo') return svCall(row, 'sup_log', { p_sr: row.id, p_action: 'undo', p_photos: [], p_note: null }, 'completion undone').then(function (ok) { if (ok) { SV.today.completed = Math.max(0, SV.today.completed - 1); svDraw(); } });
+    if (a === 'done') return svSheetDone(row);
+    if (a === 'mat') return svSheetMat(row);
+  }
+  /* -- photos: shrink on the phone before upload (fast on mobile data) -- */
+  function svShrink(file) {
+    return new Promise(function (res, rej) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () { var m = 1280, w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, m / Math.max(w, h)); var c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); c.toBlob(function (b) { b ? res(b) : rej(new Error('Could not read the photo')); }, 'image/jpeg', 0.72); };
+      img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('Could not read the photo')); };
+      img.src = url;
+    });
+  }
+  async function svUpload(row, blobs, tag) {
+    var uidv = uid(), out = [];
+    for (var i = 0; i < blobs.length; i++) {
+      var path = String(row.id).replace(/[^A-Za-z0-9_-]/g, '_') + '/' + uidv + '/' + svDubaiDay() + '_' + tag + '_' + Date.now() + '_' + i + '.jpg';
+      var r = await sb.storage.from('rm-photos').upload(path, blobs[i], { contentType: 'image/jpeg', upsert: false });
+      if (r.error) throw new Error('Photo upload failed: ' + r.error.message);
+      out.push(path);
+    }
+    return out;
+  }
+  function svSheet(html) { $('#svSheet').innerHTML = '<div class="sv-ov" id="svOv"><div class="sv-sh" role="dialog" aria-modal="true">' + html + '</div></div>'; document.body.style.overflow = 'hidden'; $('#svOv').onclick = function (e) { if (e.target.id === 'svOv') svClose(); }; }
+  function svClose() { $('#svSheet').innerHTML = ''; document.body.style.overflow = ''; }
+  function svTr(t) { t = String(t || ''); if (!/[\u0600-\u06FF]/.test(t)) return ''; return '<a class="sv-trl" target="_blank" rel="noopener noreferrer" href="https://translate.google.com/?sl=ar&tl=en&op=translate&text=' + encodeURIComponent(t.slice(0, 1500)) + '">Translate to English ↗</a>'; }
+  function svHead(row) { return '<div class="sv-shh"><div><b>SR ' + esc(row.id) + '</b><div class="sv-meta">' + esc(String(row.locd || '').replace(/_/g, ' · ')) + '</div><div class="sv-sum2">' + esc(row.summary || '') + '</div>' + svTr(row.summary) + '</div><button class="sv-x" id="svX" aria-label="Close">✕</button></div>'; }
+  function svPhotoPicker(id, need) {
+    return '<label class="sv-cam" for="' + id + '">📷 Take / add photo<input type="file" id="' + id + '" accept="image/*" capture="environment" multiple hidden></label><div class="sv-th" id="' + id + 'T"></div>' + (need ? '<div class="sv-hint" id="' + id + 'H">A photo of the finished work is required.</div>' : '');
+  }
+  function svBindPicker(id, store, max, onChange) {
+    function draw() { $('#' + id + 'T').innerHTML = store.map(function (b, i) { return '<span class="sv-tm"><img src="' + b.url + '" alt="Photo ' + (i + 1) + '"><button data-rm="' + i + '" aria-label="Remove photo">✕</button></span>'; }).join(''); Array.prototype.forEach.call(document.querySelectorAll('#' + id + 'T [data-rm]'), function (x) { x.onclick = function () { var k = +x.getAttribute('data-rm'); URL.revokeObjectURL(store[k].url); store.splice(k, 1); draw(); onChange(); }; }); onChange(); }
+    $('#' + id).onchange = async function (e) {
+      var files = Array.prototype.slice.call(e.target.files || []); e.target.value = '';
+      for (var i = 0; i < files.length && store.length < max; i++) { try { var b = await svShrink(files[i]); store.push({ blob: b, url: URL.createObjectURL(b) }); } catch (x) { svToast(x.message, true); } }
+      draw();
+    };
+    draw();
+  }
+  function svSheetDone(row) {
+    var photos = [];
+    svSheet(svHead(row) + '<h3>Mark as completed</h3>' + svPhotoPicker('svDP', true) +
+      '<label class="sv-lbl" for="svDN">Note (optional)</label><input id="svDN" class="sv-in" maxlength="300" placeholder="e.g. replaced 2 lights">' +
+      '<button class="sv-go" id="svDGo" disabled>Confirm completed</button><div class="sv-hint">Check the SR number and location above before you confirm.</div>');
+    $('#svX').onclick = svClose;
+    svBindPicker('svDP', photos, 4, function () { var go = $('#svDGo'); if (go) go.disabled = !photos.length; });
+    $('#svDGo').onclick = async function () {
+      var go = this; go.disabled = true; go.textContent = 'Uploading photos…';
+      try {
+        var paths = await svUpload(row, photos.map(function (p) { return p.blob; }), 'done');
+        go.textContent = 'Saving…';
+        svClose();
+        var ok = await svCall(row, 'sup_log', { p_sr: row.id, p_action: 'done', p_photos: paths, p_note: ($('#svDN') || {}).value || null }, 'completed');
+        if (ok) { SV.today.completed++; svDraw(); }
+      } catch (e) { go.disabled = false; go.textContent = 'Confirm completed'; svToast(e.message || String(e), true); }
+    };
+  }
+  function svSheetMat(row) {
+    var photos = [], prev = SV.mats.filter(function (m) { return m.sr === row.id; });
+    var unitOpts = SV_UNITS.map(function (u) { return '<option>' + esc(u) + '</option>'; }).join('');
+    function itemRow() { return '<div class="sv-it"><input class="sv-in" data-f="name" maxlength="120" placeholder="Material"><input class="sv-in q" data-f="qty" inputmode="decimal" maxlength="20" placeholder="Qty"><select class="sv-in u" data-f="unit">' + unitOpts + '</select></div>'; }
+    svSheet(svHead(row) + '<h3>Material request</h3>' +
+      (prev.length ? '<div class="sv-prev">' + prev.map(function (m) { var s = SV_MAT[m.status] || [m.status, '', 'na']; return '<div><span class="pill ' + s[2] + '">' + esc(s[0]) + '</span> ' + esc(String(m.created_at).slice(0, 10)) + ' — ' + esc((m.items || []).map(function (i) { return i.name + ' ' + (i.qty || '') + ' ' + (i.unit || ''); }).join(', ')) + '</div>'; }).join('') + '</div>' : '') +
+      '<div id="svItems">' + itemRow() + itemRow() + '</div><button class="sv-link" id="svAddIt">+ Add item</button>' +
+      svPhotoPicker('svMP', false) +
+      '<label class="sv-lbl" for="svMN">Note (optional)</label><input id="svMN" class="sv-in" maxlength="300">' +
+      '<button class="sv-go" id="svMGo">Send request</button>');
+    $('#svX').onclick = svClose;
+    $('#svAddIt').onclick = function () { var box = $('#svItems'); if (box.children.length < 20) box.insertAdjacentHTML('beforeend', itemRow()); };
+    svBindPicker('svMP', photos, 3, function () { });
+    $('#svMGo').onclick = async function () {
+      var items = Array.prototype.map.call(document.querySelectorAll('#svItems .sv-it'), function (el) { var o = {}; Array.prototype.forEach.call(el.querySelectorAll('[data-f]'), function (i) { o[i.getAttribute('data-f')] = i.value.trim(); }); return o; }).filter(function (o) { return o.name; });
+      if (!items.length) return svToast('Add at least one material.', true);
+      if (items.some(function (o) { return !o.qty; })) return svToast('Enter the quantity for each material.', true);
+      var go = this; go.disabled = true; go.textContent = 'Sending…';
+      try {
+        var paths = photos.length ? await svUpload(row, photos.map(function (p) { return p.blob; }), 'mat') : [];
+        var r = await sb.rpc('sup_material', { p_sr: row.id, p_items: items, p_note: ($('#svMN') || {}).value || null, p_photos: paths });
+        if (r.error) throw r.error;
+        row.rm = Object.assign({}, row.rm || {}, { mat: 'requested' });
+        SV.mats.unshift({ id: r.data, sr: row.id, items: items, status: 'requested', created_at: new Date().toISOString() });
+        svClose(); var y = window.scrollY; svDraw(); window.scrollTo(0, y); svToast('Material request sent — SR ' + row.id);
+      } catch (e) { go.disabled = false; go.textContent = 'Send request'; svToast('Not sent: ' + String((e && e.message) || e).replace(/^RM:\s*/, ''), true); }
+    };
+  }
+  function svToast(t, bad) { SV.lt = { t: t, bad: bad, at: Date.now() }; var el = $('#svToast'); if (!el) return; el.textContent = t; el.className = 'sv-toast on' + (bad ? ' bad' : ''); clearTimeout(svToast.t); svToast.t = setTimeout(function () { el.className = 'sv-toast'; }, 3200); }
+
   /* ---------- account menu ---------- */
   function afterShell() {
     var pop = $('#acctPop'); if (!pop) return;
-    pop.innerHTML = '<form id="cpF" style="display:grid;gap:6px;min-width:220px"><label for="cpP" style="font-size:.75rem">New password</label><input id="cpP" type="password" minlength="8" autocomplete="new-password" style="border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--surface)"><button class="btn" type="submit">Change password</button><div class="status" id="cpSt"></div></form><button class="btn" id="soBtn2">Sign out</button>';
+    pop.innerHTML = '<div id="apPush" style="font-size:.8rem;min-width:220px;margin-bottom:8px"></div><form id="cpF" style="display:grid;gap:6px;min-width:220px"><label for="cpP" style="font-size:.75rem">New password</label><input id="cpP" type="password" minlength="8" autocomplete="new-password" style="border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--surface)"><button class="btn" type="submit">Change password</button><div class="status" id="cpSt"></div></form><button class="btn" id="soBtn2">Sign out</button>';
     $('#cpF').onsubmit = async function (e) { e.preventDefault(); var r = await sb.auth.updateUser({ password: $('#cpP').value }); setMsg('cpSt', r.error ? r.error.message : 'Password changed.', r.error ? 'err' : 'ok'); };
     $('#soBtn2').onclick = signOut;
+    (async function () {
+      var box = $('#apPush'); if (!box) return; var st = await pushState();
+      var draw = function () { box.innerHTML = st === 'on' ? '🔔 Emergency alerts on this device: <b>on</b> <button class="btn xs" id="apPT">Test</button>' : st === 'off' ? '<button class="btn xs" id="apPO">🔔 Get escalation alerts on this device</button>' : '<span class="muted">' + pushNote(st) + '</span>';
+        var o = $('#apPO'); if (o) o.onclick = async function () { try { await pushEnable(); st = 'on'; draw(); } catch (e) { box.insertAdjacentHTML('beforeend', '<div class="status err">' + esc(e.message || e) + '</div>'); } };
+        var t = $('#apPT'); if (t) t.onclick = async function () { try { var r = await pushTest(); t.textContent = r.ok ? 'Sent ✓' : 'Not received'; } catch (e) { t.textContent = 'Failed'; } }; };
+      draw(); if (st === 'on') pushResync();
+    })();
   }
 
   /* ---------- Data update tab (admin + CAFM operator) ---------- */
@@ -808,7 +1150,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function adminPanels() {
     var h = H(), cfg = RAWC.config, TABS = h.tabs();
     var perm = '<div class="tw"><table class="t"><thead><tr><th>Role</th>' + TABS.map(function (t) { return '<th>' + esc(t[1]) + '</th>'; }).join('') + '<th>Excel export</th><th>Print</th><th>Weekly deck (PPTX)</th><th>RM works</th></tr></thead><tbody>' +
-      ROLES.filter(function (r) { return r[0] !== 'admin'; }).map(function (r) {
+      ROLES.filter(function (r) { return r[0] !== 'admin' && r[0] !== 'supervisor'; }).map(function (r) {
         var p = permsFor(r[0], cfg);
         return '<tr><td>' + esc(r[1]) + '</td>' + TABS.map(function (t) { return '<td><input type="checkbox" data-pr="' + r[0] + '" data-pt="' + t[0] + '"' + (p.tabs.indexOf(t[0]) >= 0 ? ' checked' : '') + ' aria-label="' + esc(r[1] + ' ' + t[1]) + '"></td>'; }).join('') +
           '<td><input type="checkbox" data-pr="' + r[0] + '" data-pt="_export"' + (p.export ? ' checked' : '') + '></td><td><input type="checkbox" data-pr="' + r[0] + '" data-pt="_print"' + (p.print ? ' checked' : '') + '></td>' +
@@ -819,6 +1161,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<h3 style="margin-top:16px">Invite by email</h3><p>The person receives an email link. After clicking it they choose their own password, then sign in with email and password every time.</p><form id="invU" class="form"><div class="f"><label for="ivN">Full name</label><input id="ivN" required></div><div class="f"><label for="ivE">Email</label><input id="ivE" type="email" required></div><div class="f"><label for="ivR">Role</label><select id="ivR">' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (r[0] === 'dm_engineer' ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></div><div class="f full"><button class="btn primary" type="submit">Send invitation</button></div></form>' +
       '<details style="margin-top:10px"><summary>Or create the account with a temporary password</summary><p>Give the person the temporary password yourself. At first sign-in they must replace it with their own.</p><form id="addU" class="form"><div class="f"><label for="auN">Full name</label><input id="auN" required></div><div class="f"><label for="auE">Email</label><input id="auE" type="email" required></div><div class="f"><label for="auP">Temporary password</label><input id="auP" type="text" minlength="8" required></div><div class="f"><label for="auR">Role</label><select id="auR">' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (r[0] === 'dm_engineer' ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></div><div class="f full"><button class="btn" type="submit">Create account</button></div></form></details>' +
       '<div class="status" id="stU"></div>', 'wide') +
+      h.panel('Work photo clean-up', 'keeps photo storage under the free 1 GB', '<p>Once a day, photos <b>older than the number of days below</b> are deleted automatically, but only when their SR is <b>no longer open</b> (closed in Maximo or removed from the tracker). Photos of open SRs are never deleted. The records (who, when, what) are kept; only the image files are removed.</p>' +
+        '<div class="form"><div class="f"><label for="pkDays">Keep photos for (days)</label><input id="pkDays" type="number" min="7" max="3650" value="' + keepDays() + '"></div><div class="f full"><button class="btn" id="pkSave">Save</button> <button class="btn" id="pkRun">Run clean-up now</button></div></div>' +
+        '<p class="muted">Last run: ' + esc((cfg.photoPurge && cfg.photoPurge.day) || 'not yet') + (cfg.photoPurge ? ' · removed ' + cfg.photoPurge.removed + ' · total removed ' + cfg.photoPurge.total : '') + '</p><div class="status" id="stPk"></div>', 'wide') +
       h.panel('Permissions', 'what each role can open', '<p>Admin always has full access. Data update is available to Admin and CAFM operator only; nobody else can change data or settings. <b>RM works</b> is the follow-up page for Imdaad engineers; DM engineers can never open it, and edit rights (civil / MEP / all) are checked again by the database on every save.</p>' + perm + '<div style="margin-top:10px"><button class="btn primary" id="savePerm">Save permissions</button></div><div class="status" id="stPerm"></div>', 'wide');
   }
   async function bindAdminExtra() {
@@ -826,16 +1171,17 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     async function drawUsers() {
       var el = $('#usersT'); if (!el) return;
       try {
-        USERS = chk(await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password').order('created_at'));
-        el.innerHTML = '<div class="tw"><table class="t"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Active</th><th></th></tr></thead><tbody>' + USERS.map(function (u) {
+        var ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password,sup_names').order('created_at'); if (ur0.error && /sup_names/.test(ur0.error.message || '')) ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password').order('created_at'); USERS = chk(ur0);
+        var SUPN = (h.supNames ? h.supNames() : []);
+        el.innerHTML = '<div class="tw"><table class="t"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Supervisor name (labour supervisors)</th><th>Status</th><th>Active</th><th></th></tr></thead><tbody>' + USERS.map(function (u) {
           var me = u.id === profile.id;
-          return '<tr><td><input data-un="' + u.id + '" value="' + esc(u.full_name || '') + '" style="width:150px"></td><td>' + esc(u.email) + '</td><td><select data-ur="' + u.id + '"' + (me ? ' disabled' : '') + '><option value="">No access</option>' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></td><td>' + (u.must_set_password ? '<span class="pill avg">Invited, password not set</span>' : '<span class="pill good">Active account</span>') + '</td><td><input type="checkbox" data-ua="' + u.id + '"' + (u.active ? ' checked' : '') + (me ? ' disabled' : '') + '></td><td><button class="btn xs" data-us="' + u.id + '">Save</button> ' + (u.must_set_password ? '<button class="btn xs" data-ri="' + esc(u.email) + '" data-rn="' + esc(u.full_name || '') + '">Resend invitation</button>' : '<button class="btn xs" data-rs="' + esc(u.email) + '" title="Email this user a link to set a new password">Reset password</button>') + '</td></tr>';
+          return '<tr><td><input data-un="' + u.id + '" value="' + esc(u.full_name || '') + '" style="width:150px"></td><td>' + esc(u.email) + '</td><td><select data-ur="' + u.id + '"' + (me ? ' disabled' : '') + '><option value="">No access</option>' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></td><td>' + (u.role === 'supervisor' ? '<select multiple size="4" data-usn="' + u.id + '" aria-label="Supervisor names" style="min-width:190px">' + SUPN.concat((u.sup_names || []).filter(function (x) { return SUPN.indexOf(x) < 0; })).map(function (n) { return '<option value="' + esc(n) + '"' + ((u.sup_names || []).indexOf(n) >= 0 ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Ctrl+click for more than one</div>' : '<span class="muted">—</span>') + '</td><td>' + (u.must_set_password ? '<span class="pill avg">Invited, password not set</span>' : '<span class="pill good">Active account</span>') + '</td><td><input type="checkbox" data-ua="' + u.id + '"' + (u.active ? ' checked' : '') + (me ? ' disabled' : '') + '></td><td><button class="btn xs" data-us="' + u.id + '">Save</button> ' + (u.must_set_password ? '<button class="btn xs" data-ri="' + esc(u.email) + '" data-rn="' + esc(u.full_name || '') + '">Resend invitation</button>' : '<button class="btn xs" data-rs="' + esc(u.email) + '" title="Email this user a link to set a new password">Reset password</button>') + '</td></tr>';
         }).join('') + '</tbody></table></div>';
         Array.prototype.forEach.call(document.querySelectorAll('[data-us]'), function (b) {
           b.onclick = async function () {
             var id = b.getAttribute('data-us'), q = function (a) { return document.querySelector('[' + a + '="' + id + '"]'); };
-            var upd = { full_name: q('data-un').value.trim() }; if (!q('data-ur').disabled) { upd.role = q('data-ur').value || null; upd.active = q('data-ua').checked; }
-            try { chk(await sb.from('profiles').update(upd).eq('id', id)); b.textContent = 'Saved'; setTimeout(function () { b.textContent = 'Save'; }, 1500); } catch (e) { h.setSt('stU', e.message, 'err'); }
+            var upd = { full_name: q('data-un').value.trim() }; if (!q('data-ur').disabled) { upd.role = q('data-ur').value || null; upd.active = q('data-ua').checked; } var sn = q('data-usn'); if (sn) upd.sup_names = Array.prototype.filter.call(sn.options, function (o) { return o.selected; }).map(function (o) { return o.value; });
+            try { var was = (USERS.filter(function (x) { return x.id === id; })[0] || {}).role; chk(await sb.from('profiles').update(upd).eq('id', id)); b.textContent = 'Saved'; setTimeout(function () { b.textContent = 'Save'; }, 1500); if ((upd.role === 'supervisor') !== (was === 'supervisor')) drawUsers(); } catch (e) { h.setSt('stU', e.message, 'err'); }
           };
         });
         Array.prototype.forEach.call(document.querySelectorAll('[data-ri]'), function (b) {
@@ -874,6 +1220,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         h.setSt('stU', 'Account created for ' + email + '. Give them the portal link and the temporary password; they will be asked to choose their own password at first sign-in.', 'ok'); f.reset(); drawUsers();
       } catch (err) { h.setSt('stU', /registered/i.test(err.message) ? 'This email already has an account. Its role was updated; use "Resend invitation" or "Reset password" in the list.' : err.message, 'err'); drawUsers(); }
     };
+    var pk = $('#pkSave'); if (pk) pk.onclick = async function () { var d = Math.max(7, Math.min(3650, parseInt($('#pkDays').value, 10) || 90)); var cfg = h.clone(RAWC.config); cfg.photoKeepDays = d; try { chk(await sb.from('app_config').update({ config: cfg, updated_at: new Date().toISOString() }).eq('id', 1)); RAWC.config = cfg; h.setSt('stPk', 'Saved: photos are kept at least ' + d + ' days, and always while the SR is open.', 'ok'); } catch (e) { h.setSt('stPk', e.message, 'err'); } };
+    var pr = $('#pkRun'); if (pr) pr.onclick = async function () { pr.disabled = true; h.setSt('stPk', 'Cleaning up…'); try { var n = await purgePhotos(true); h.setSt('stPk', 'Done: ' + (n || 0) + ' old photos removed.', 'ok'); } catch (e) { h.setSt('stPk', 'Clean-up failed: ' + e.message, 'err'); } pr.disabled = false; };
     var sp = $('#savePerm'); if (sp) sp.onclick = async function () {
       var perms = {};
       ROLES.forEach(function (r) { if (r[0] !== 'admin') perms[r[0]] = { tabs: [], export: false, print: false, deck: false, rm: 'none', known: true }; });
@@ -955,7 +1303,47 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   }
   function uid() { return (session && session.user && session.user.id) || (profile && profile.id) || null; }
 
-  window.DM_CLOUD = { rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
+  /* ---------- daily supervisor log, materials, photos (dashboard side) ---------- */
+  async function rmActivity(fromDay, toDay) {
+    var rows = [], from = 0, B = 1000;
+    while (true) { var r = await sb.from('rm_activity').select('id,sr,user_id,sup_name,action,photos,note,at,day').gte('day', fromDay).lte('day', toDay).order('at').range(from, from + B - 1); if (r.error) throw r.error; rows = rows.concat(r.data || []); if (!r.data || r.data.length < B) break; from += B; }
+    return rows;
+  }
+  async function materials() { var r = await sb.from('rm_material').select('*').order('created_at', { ascending: false }).range(0, 999); if (r.error) throw r.error; return r.data || []; }
+  async function matDecide(id, status, note) { var r = await sb.rpc('material_decide', { p_id: id, p_status: status, p_note: note || null }); if (r.error) throw r.error; }
+  var PH_CACHE = {};
+  async function photoUrls(paths) {
+    var need = paths.filter(function (p) { var c = PH_CACHE[p]; return !c || c.t < Date.now() - 50 * 60000; });
+    if (need.length) { var r = await sb.storage.from('rm-photos').createSignedUrls(need, 3600); if (!r.error) (r.data || []).forEach(function (x) { if (x.signedUrl) PH_CACHE[x.path] = { u: x.signedUrl, t: Date.now() }; }); }
+    var out = {}; paths.forEach(function (p) { if (PH_CACHE[p]) out[p] = PH_CACHE[p].u; }); return out;
+  }
+
+  /* ---------- automatic clean-up of old work photos (runs once a day when an admin opens the portal) ---------- */
+  function keepDays() { var d = +((RAWC && RAWC.config && RAWC.config.photoKeepDays) || 90); return d >= 7 ? d : 90; }
+  async function purgePhotos(force) {
+    if (!profile || profile.role !== 'admin') return null;
+    var today = new Date(Date.now() + 4 * 3600000).toISOString().slice(0, 10), cfg0 = (RAWC && RAWC.config) || {};
+    if (!force && cfg0.photoPurge && cfg0.photoPurge.day === today) return null;
+    var removed = 0, rounds = 0;
+    while (rounds++ < 10) {
+      var r = await sb.rpc('photos_to_purge', { p_days: keepDays() }); if (r.error) throw r.error;
+      var paths = (r.data || []).map(function (x) { return x.path || x; }).filter(Boolean); if (!paths.length) break;
+      for (var i = 0; i < paths.length; i += 100) { var part = paths.slice(i, i + 100), d = await sb.storage.from('rm-photos').remove(part); if (d.error) throw d.error; var m = await sb.rpc('photos_mark_purged', { paths: part }); if (m.error) throw m.error; removed += part.length; }
+      if (paths.length < 500) break;
+    }
+    var cfg = JSON.parse(JSON.stringify(RAWC.config || {})); cfg.photoPurge = { day: today, removed: removed, total: ((cfg0.photoPurge && cfg0.photoPurge.total) || 0) + removed };
+    var u = await sb.from('app_config').update({ config: cfg, updated_at: new Date().toISOString() }).eq('id', 1); if (!u.error) RAWC.config = cfg;
+    return removed;
+  }
+
+  /* ---------- emergencies (dashboard side) ---------- */
+  async function emgList(days) { var r = await sb.from('rm_emergency').select('*').gte('flagged_at', new Date(Date.now() - (days || 7) * 86400000).toISOString()).order('flagged_at', { ascending: false }).range(0, 499); if (r.error) throw r.error; return r.data || []; }
+  async function emgFlag(sr, note) { var r = await sb.rpc('rm_flag_emergency', { p_sr: String(sr), p_note: note || null, p_site: siteUrl() }); if (r.error) throw r.error; try { sb.functions.invoke('push-send', { body: { event: 'flag', id: r.data } }); } catch (e) { } return r.data; }
+  async function emgClear(id) { var r = await sb.rpc('rm_clear_emergency', { p_id: id }); if (r.error) throw r.error; }
+  async function emgPushStatus() { var r = await sb.rpc('push_status'); if (r.error) throw r.error; return r.data || []; }
+  async function emgSaveCfg(o) { var cfg = JSON.parse(JSON.stringify(RAWC.config || {})); cfg.emg = o; var r = await sb.from('app_config').update({ config: cfg, updated_at: new Date().toISOString() }).eq('id', 1); if (r.error) throw r.error; RAWC.config = cfg; }
+
+  window.DM_CLOUD = { emgList: emgList, emgFlag: emgFlag, emgClear: emgClear, emgPushStatus: emgPushStatus, emgSaveCfg: emgSaveCfg, purgePhotos: purgePhotos, rmActivity: rmActivity, materials: materials, matDecide: matDecide, photoUrls: photoUrls, rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
 
   /* ---------- boot ---------- */
   async function boot() {
@@ -1313,6 +1701,17 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     R.s9w = Object.keys(pws).sort(function (a, b) { return pws[b].length - pws[a].length; }).map(function (k) { var a = pws[k]; return { st: k, mean: PPM_ST[k] || '', cls: a[0].done ? 'Completed' : a[0].insp ? 'Awaiting inspection' : 'Not completed', total: a.length, due: count(a, function (v) { return v.due; }), od: count(a, function (v) { return v.od; }), share: pct(a.length, ppm.length) }; });
     if (R.s9w.length) R.s9w.push({ st: 'Total', mean: '', cls: '', total: ppm.length, due: due.length, od: R.p.overdue, share: 1, _cls: 'tot' });
     var odl = ppm.filter(function (v) { return v.od; }).sort(function (a, b) { return a.st - b.st; });
+    var HASCOST = HASWO && ppm.some(function (v) { return v.cost > 0; }); R.hasCost = HASCOST;
+    if (HASCOST) {
+      var sumc = function (a, f) { var t = 0; a.forEach(function (v) { if (!f || f(v)) t += +v.cost || 0; }); return t; };
+      var costRow = function (label, a, cls) { var due = sumc(a, function (v) { return v.due; }), dn = sumc(a, function (v) { return v.due && v.done; }), ins = sumc(a, function (v) { return v.due && v.insp; });
+        return { name: label, planned: sumc(a), due: due, done: dn, insp: ins, open: due - dn - ins, od: sumc(a, function (v) { return v.od; }), pctv: due ? dn / due : null, wos: a.length, _cls: cls }; };
+      R.c9m = ppmMonths.map(function (m) { return costRow(mkLabel(m), bpm[m] || []); }); R.c9m.push(costRow('Total', ppm, 'tot'));
+      R.c9t = Object.keys(ptr).sort(function (a, b) { return sumc(ptr[b]) - sumc(ptr[a]); }).map(function (t) { return costRow(tl(t), ptr[t]); }); R.c9t.push(costRow('Total', ppm, 'tot'));
+      R.c9z = Object.keys(pz).sort().map(function (z) { return costRow(zl(z), pz[z]); }); R.c9z.push(costRow('Total', ppm, 'tot'));
+      R.c9s = Object.keys(psys).sort(function (a, b) { return sumc(psys[b]) - sumc(psys[a]); }).slice(0, 15).map(function (k) { return costRow(k, psys[k]); });
+      R.pc = R.c9m[R.c9m.length - 1];
+    }
     R.s9o = odl.slice(0, 200).map(function (v) { return { wo: v.id, desc: v.desc, zone: zl(v.zone), trade: tl(v.tr), ts: dstr(v.st), days: Math.floor((CUT_END - v.st) / DAY), ws: v.ws }; });
 
     /* S10 on-site completion (Internal Status) vs Maximo closure (Final Status) */
@@ -1389,6 +1788,11 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     S.s8s = { title: 'Ranking — sub-zones by open SRs', ar: 'ترتيب المناطق الفرعية', cols: rk, rows: R.s8s };
     var pc = HASWO ? [{ k: 'name', label: 'Group', t: 'text' }, { k: 'planned', label: 'Planned', t: 'int' }, { k: 'due', label: 'Due by cut-off', t: 'int' }, { k: 'done', label: 'Completed', t: 'int' }, { k: 'insp', label: 'Awaiting inspection', t: 'int' }, { k: 'overdue', label: 'Overdue', t: 'int' }, { k: 'comp', label: 'Completion %', t: 'band' }, { k: 'compI', label: 'Incl. inspection %', t: 'pct' }, { k: 'ontime', label: 'On-time %', t: 'pct' }]
       : [{ k: 'name', label: 'Group', t: 'text' }, { k: 'planned', label: 'Planned', t: 'int' }, { k: 'due', label: 'Due by cut-off', t: 'int' }, { k: 'done', label: 'Completed', t: 'int' }, { k: 'overdue', label: 'Overdue', t: 'int' }, { k: 'comp', label: 'Completion %', t: 'pct' }, { k: 'ontime', label: 'On-time %', t: 'pct' }];
+    var cc = [{ k: 'name', label: 'Group', t: 'text' }, { k: 'wos', label: 'Work orders', t: 'int' }, { k: 'planned', label: 'Total value (AED)', t: 'aed' }, { k: 'due', label: 'Due by cut-off (AED)', t: 'aed' }, { k: 'done', label: 'Completed (AED)', t: 'aed' }, { k: 'insp', label: 'Awaiting inspection (AED)', t: 'aed' }, { k: 'open', label: 'Not completed (AED)', t: 'aed' }, { k: 'od', label: 'Overdue (AED)', t: 'aed' }, { k: 'pctv', label: 'Completed by value', t: 'pct' }];
+    S.c9m = { title: 'PPM value by month (BoQ, AED)', ar: 'قيمة الصيانة الوقائية حسب الشهر', cols: cc, rows: R.c9m || [] };
+    S.c9t = { title: 'PPM value by trade', ar: 'حسب التخصص', cols: cc, rows: R.c9t || [] };
+    S.c9z = { title: 'PPM value by zone', ar: 'حسب المنطقة', cols: cc, rows: R.c9z || [] };
+    S.c9s = { title: 'PPM value by system (top 15)', ar: 'حسب النظام', cols: cc, rows: R.c9s || [] };
     S.s9w = { title: 'PPM work orders by Maximo status', ar: 'أوامر العمل حسب الحالة', cols: [{ k: 'st', label: 'Status', t: 'text' }, { k: 'mean', label: 'Meaning', t: 'text' }, { k: 'cls', label: 'Counted as', t: 'text' }, { k: 'total', label: 'Work orders', t: 'int' }, { k: 'due', label: 'Due by cut-off', t: 'int' }, { k: 'od', label: 'Overdue', t: 'int' }, { k: 'share', label: 'Share', t: 'pct' }], rows: R.s9w || [] };
     S.s9o = { title: 'Overdue PPM work orders (oldest first)', ar: 'أوامر الصيانة الوقائية المتأخرة', cols: [{ k: 'wo', label: 'Work order', t: 'text' }, { k: 'desc', label: 'Description', t: 'wrap' }, { k: 'zone', label: 'Zone', t: 'text' }, { k: 'trade', label: 'Trade', t: 'text' }, { k: 'ts', label: 'Target start', t: 'text' }, { k: 'days', label: 'Days late', t: 'int' }, { k: 'ws', label: 'Status', t: 'text' }], rows: R.s9o || [] };
     S.s9m = { title: 'PPM compliance by month', ar: 'الالتزام بالصيانة الوقائية حسب الشهر', cols: pc, rows: R.s9m };
@@ -1413,6 +1817,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var t = c.t;
     if (t === 'auto') t = row.metric === 'Completion %' ? 'pct' : 'int';
     if (t === 'int') return '<td class="n">' + fmt(v) + '</td>';
+    if (t === 'aed') return '<td class="n">' + (v == null ? '—' : fmt(Math.round(v))) + '</td>';
     if (t === 'pct') return '<td class="n">' + fp(v) + '</td>';
     if (t === 'band') { var b = band(v); return '<td class="n">' + fp(v) + ' <span class="pill ' + b.cls + '">' + esc(b.label) + '</span></td>'; }
     if (t === 'delta') return '<td class="n ' + (v > 0 ? 'bad-t' : v < 0 ? 'good-t' : '') + '">' + (v == null ? '—' : (v > 0 ? '+' : '') + fmt(v)) + '</td>';
@@ -1483,6 +1888,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var C = {};
     C.mTrend = { type: 'line', title: 'Monthly CM — received / completed / pending', labels: R.s7m.map(function (r) { return r.month; }), series: [{ name: 'Received', data: R.s7m.map(function (r) { return r.rec; }), color: 's1' }, { name: 'Completed', data: R.s7m.map(function (r) { return r.done; }), color: 's3' }, { name: 'Pending', data: R.s7m.map(function (r) { return r.open; }), color: 's2' }] };
     C.wTrend = { type: 'line', title: 'Weekly CM — received / completed / pending (last 26 weeks)', labels: R.s7w.map(function (r) { return r.week.replace('WE ', ''); }), series: [{ name: 'Received', data: R.s7w.map(function (r) { return r.rec; }), color: 's1' }, { name: 'Completed', data: R.s7w.map(function (r) { return r.done; }), color: 's3' }, { name: 'Pending', data: R.s7w.map(function (r) { return r.open; }), color: 's2' }] };
+    C.pCost = { type: 'bar', title: 'PPM value by month — due vs completed (AED)', labels: (R.c9m || []).filter(function (r) { return !r._cls; }).map(function (r) { return r.name; }), series: [{ name: 'Due by cut-off', data: (R.c9m || []).filter(function (r) { return !r._cls; }).map(function (r) { return Math.round(r.due); }), color: 's1' }, { name: 'Completed', data: (R.c9m || []).filter(function (r) { return !r._cls; }).map(function (r) { return Math.round(r.done); }), color: 's3' }, { name: 'Awaiting inspection', data: (R.c9m || []).filter(function (r) { return !r._cls; }).map(function (r) { return Math.round(r.insp); }), color: 's4' }] };
     C.pTrend = { type: 'line', title: HASWO ? 'Monthly PPM — planned / completed / awaiting inspection' : 'Monthly PPM — planned', labels: R.s7p.map(function (r) { return r.month; }), series: [{ name: 'Planned', data: R.s7p.map(function (r) { return r.planned; }), color: 's1' }, { name: 'Completed', data: R.s7p.map(function (r) { return r.done; }), color: 's3' }].concat(HASWO ? [{ name: 'Awaiting inspection', data: R.s7p.map(function (r) { return r.insp; }), color: 's4' }] : []) };
     C.openTrade = { type: 'bar', horizontal: true, stacked: true, title: 'Open CM SRs by trade', labels: R.s8t.map(function (r) { return r.name; }), series: [{ name: 'Overdue', data: R.s8t.map(function (r) { return r.od; }), color: 'crit' }, { name: 'Within SLA', data: R.s8t.map(function (r) { return r.within; }), color: 's1' }] };
     C.openZone = { type: 'bar', horizontal: true, stacked: true, title: 'Open CM SRs by zone', labels: R.s8z.map(function (r) { return r.name; }), series: [{ name: 'Overdue', data: R.s8z.map(function (r) { return r.od; }), color: 'crit' }, { name: 'Within SLA', data: R.s8z.map(function (r) { return r.within; }), color: 's1' }] };
@@ -1571,6 +1977,13 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       if (!HASWO) out += '<div class="notice" style="margin-top:18px"><b>PPM completion is not loaded yet.</b> The plan below comes from the 2026 PPM Services Schedule (' + fmt(PPM.length) + ' visits across ' + fmt(R.p.tasks) + ' tasks). Completed, overdue, completion % and on-time % will fill in when the PPM tracker is added.</div>';
       out += section('9', 'PPM compliance', 'الالتزام بالصيانة الوقائية', HASWO ? 'Maximo PM work orders' + (RAW.meta && RAW.meta.ppmFile ? ' (' + esc(RAW.meta.ppmFile) + ')' : '') + '. Due = target start on or before the cut-off. Completed = ' + esc(String(CFG.ppmDone).split('|').join('/')) + '; awaiting inspection = ' + esc(String(CFG.ppmInsp).split('|').join('/')) + '. Overdue = due, not completed and more than ' + fmt(+CFG.ppmGraceDays || 0) + ' days past target start.' : 'Planned = visits scheduled in the period. Due = visits whose end date is on or before the cut-off.', '<div class="grid">' + tablePanel(S.s9m) + '<div style="display:grid;gap:16px;align-content:start;min-width:0">' + panel(HASWO ? 'Monthly PPM' : 'Monthly PPM plan', '', chartBox('c_pt')) + tablePanel(S.s9t) + '</div></div><div class="grid" style="margin-top:16px">' + tablePanel(S.s9z, '', { max: 420 }) + tablePanel(S.s9s, '', { max: 420 }) + '</div>' +
         (HASWO ? '<div class="grid" style="margin-top:16px">' + tablePanel(S.s9w) + tablePanel(S.s9o, '', { max: 420 }) + '</div>' : ''));
+      if (R.hasCost) { var pc = R.pc, aedK = function (v) { v = Math.round(v || 0); return 'AED ' + (Math.abs(v) >= 1e6 ? (v / 1e6).toFixed(2) + 'M' : Math.abs(v) >= 1e4 ? Math.round(v / 1e3) + 'K' : fmt(v)); };
+        out += section('9C', 'PPM cost calculation', 'حساب تكلفة الصيانة الوقائية', 'Value of each work order = "BoQ Total Cost for this WO" from the Maximo PM export (AED). Completed value = due work orders with status ' + esc(String(CFG.ppmDone).split('|').join('/')) + '. Overdue value = due, not completed and more than ' + fmt(+CFG.ppmGraceDays || 0) + ' days past target start.',
+          '<div class="kpis">' + kpiTile('Total PPM value', aedK(pc.planned), fmt(pc.wos) + ' work orders · AED ' + fmt(Math.round(pc.planned))) + kpiTile('Due by cut-off', aedK(pc.due), fp(pct(pc.due, pc.planned)) + ' of total value') +
+          kpiTile('Completed value', aedK(pc.done), '<span class="pill ' + band(pc.pctv).cls + '">' + fp(pc.pctv) + '</span> of due') + kpiTile('Awaiting inspection', aedK(pc.insp), fp(pct(pc.insp, pc.due)) + ' of due value') +
+          kpiTile('Not completed', '<span class="od">' + aedK(pc.open) + '</span>', fp(pct(pc.open, pc.due)) + ' of due value') + kpiTile('Overdue value', '<span class="od">' + aedK(pc.od) + '</span>', 'past target start + grace') + '</div>' +
+          '<div class="grid" style="margin-top:16px">' + panel('Value by month', '', chartBox('c_pc')) + tablePanel(S.c9t) + '</div><div style="margin-top:16px">' + tablePanel(S.c9m) + '</div><div class="grid" style="margin-top:16px">' + tablePanel(S.c9z, '', { max: 420 }) + tablePanel(S.c9s, '', { max: 420 }) + '</div>');
+      }
       out += section('1', 'PPM by trade', 'الصيانة الوقائية حسب التخصص', 'Planned visits per month.', tableHTML(S.s1p));
     } else if (tab === 'loc') {
       out += section('11', 'Top locations', 'تحليل أعلى المواقع', 'Locations as recorded in the tracker (Location Description).', '<div class="grid">' + panel('Top locations by open SRs', '', chartBox('c_tl', true)) + tablePanel(S.s11a) + '</div><div class="grid" style="margin-top:16px">' + tablePanel(S.s11b) + tablePanel(S.s11c) + '</div><div style="margin-top:16px">' + tablePanel(S.s11d) + '</div>');
@@ -1595,7 +2008,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     }
     out += '<div class="foot"><span>Source: ' + esc((RAW.meta && RAW.meta.cmFile) || 'SR Master Tracker') + (RAW.meta && RAW.meta.ppmFile ? ' · ' + esc(RAW.meta.ppmFile) : '') + '</span><span>Cut-off ' + dstr(CUT) + '</span><span>Last updated ' + esc((RAW.meta && RAW.meta.updated) || '') + '</span></div>';
     $('#view').innerHTML = out;
-    var map = { c_m: C.mTrend, c_w: C.wTrend, c_ot: C.openTrade, c_oz: C.openZone, c_os: C.openSub, c_ag: C.aging, c_bl: C.backlog, c_sla: C.sla, c_pt: C.pTrend, c_tl: C.topLoc, c_rp: C.repeat, c_mx: C.maximo };
+    var map = { c_m: C.mTrend, c_w: C.wTrend, c_ot: C.openTrade, c_oz: C.openZone, c_os: C.openSub, c_ag: C.aging, c_bl: C.backlog, c_sla: C.sla, c_pt: C.pTrend, c_pc: C.pCost, c_tl: C.topLoc, c_rp: C.repeat, c_mx: C.maximo };
     if (tab === 'site' && SD) { map.c_sm = SD.charts.m; map.c_sw = SD.charts.w; map.c_st = SD.charts.t; map.c_sf = SD.charts.f; }
     CHARTMAP = map;
     for (var id in map) drawChart(id, map[id]);
@@ -1772,7 +2185,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         sp.cols.forEach(function (c, i) {
           var cell = ws.getCell(r, c0 + i), v = row[c.k], t = c.t === 'auto' ? (row.metric === 'Completion %' ? 'pct' : 'int') : c.t;
           if (/pct|band|dpct/.test(t)) { cell.value = v == null ? '—' : v; cell.numFmt = '0.0%'; cell.alignment = { horizontal: 'right' }; }
-          else if (/int|delta/.test(t)) { cell.value = v == null ? '—' : v; cell.numFmt = '#,##0'; cell.alignment = { horizontal: 'right' }; }
+          else if (/int|delta|aed/.test(t)) { cell.value = v == null ? '—' : v; cell.numFmt = '#,##0'; cell.alignment = { horizontal: 'right' }; }
           else { cell.value = v == null ? '' : v; cell.alignment = { wrapText: t === 'wrap', vertical: 'top' }; }
           cell.border = border; cell.font = { size: 10, bold: row._cls === 'grp' || row._cls === 'tot', italic: row._cls === 'pc' };
           if (row._cls === 'grp') cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: SOFT } };
@@ -1861,7 +2274,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     ws = sheet('8 Open by Trade-Zone'); r = header(ws, '8', 'Open SRs by trade and zone — ranking', 'البلاغات المفتوحة حسب التخصص والمنطقة'); r = table(ws, S.s8t, r); r = table(ws, S.s8z, r); r = table(ws, S.s8s, r);
     ri = img(ws, C.openTrade, 9, 8, 760, 300); ri = img(ws, C.openZone, ri, 8, 760, 320); widths(ws, [6, 18, 10, 10, 11, 11, 3]);
     // 9
-    ws = sheet('9 PPM Compliance'); r = header(ws, '9', 'PPM compliance', 'الالتزام بالصيانة الوقائية', HASWO ? 'Maximo PM work orders · cut-off ' + dstr(CUT) : 'Completion fills in when the PPM tracker is loaded'); r = table(ws, S.s9m, r); r = table(ws, S.s9t, r); r = table(ws, S.s9z, r); r = table(ws, S.s9s, r); if (HASWO) { r = table(ws, S.s9w, r); r = table(ws, S.s9o, r); } widths(ws, [34, 30, 16, 12, 14, 13, 11, 13, 11]);
+    ws = sheet('9 PPM Compliance'); r = header(ws, '9', 'PPM compliance', 'الالتزام بالصيانة الوقائية', HASWO ? 'Maximo PM work orders · cut-off ' + dstr(CUT) : 'Completion fills in when the PPM tracker is loaded'); r = table(ws, S.s9m, r); r = table(ws, S.s9t, r); r = table(ws, S.s9z, r); r = table(ws, S.s9s, r); if (HASWO) { r = table(ws, S.s9w, r); r = table(ws, S.s9o, r); } if (R.hasCost) { r = table(ws, S.c9m, r); r = table(ws, S.c9t, r); r = table(ws, S.c9z, r); r = table(ws, S.c9s, r); } widths(ws, [34, 30, 16, 12, 14, 13, 11, 13, 11]);
     // 10
     ws = sheet('10 On-site vs Maximo'); r = header(ws, '10', 'On-site completion vs Maximo closure', 'الإنجاز في الموقع مقابل الإغلاق على ماكسيمو'); r = table(ws, S.s10, r); r = table(ws, S.s10c, r); r = table(ws, S.s10s, r); img(ws, C.maximo, 9, 9, 860, 360); widths(ws, [36, 11, 13, 13, 16, 16, 9, 3]);
     // 11
@@ -2298,7 +2711,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var h = '<section class="sec"><div class="sec-h"><span class="no">RM</span><h2>RM works — distribution and follow-up</h2><span class="ar">أعمال الصيانة — توزيع الأعمال والمتابعة</span>' +
       '<div class="note">Open SRs only (Maximo Final Status = OPEN), for the filters above. Civil works go to the labour supervisor of the zone; MEP works to the supervisor named in the tracker. Visible to Imdaad engineers and the GM only.' + (RM_W ? '' : ' <b>You can view this page but not change statuses.</b>') + (RM_ERR ? ' <span class="bad-t">' + esc(RM_ERR) + '</span>' : '') + '</div></div>' +
       '<div class="rmbar">' + seg('rmDisc', RMV.disc, [['ALL', 'All works'], ['CIVIL', 'Civil'], ['MEP', 'MEP']]) +
-      seg('rmView', RMV.view, [['dist', 'Distribution'], ['list', 'Team works'], ['quote', 'Contractor works']]) +
+      seg('rmView', RMV.view, [['dist', 'Distribution'], ['list', 'Team works'], ['quote', 'Contractor works']].concat(CLOUD ? [['emg', '🚨 Emergencies'], ['daily', 'Daily progress'], ['mat', 'Materials']] : [])) +
       '<span class="chip">' + (RM_LIVE ? 'Live · statuses shared with all engineers' : 'Connecting…') + '</span></div>' +
       '<div id="rmBody">' + rmBody() + '</div></section>';
     return h;
@@ -2307,7 +2720,170 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var rows = rmRows(RM_CM);
     if (RMV.view === 'list') return rmListHTML(rows);
     if (RMV.view === 'quote') return rmQuoteHTML(rows);
+    if (RMV.view === 'daily') return rmDailyHTML();
+    if (RMV.view === 'mat') return rmMatHTML();
+    if (RMV.view === 'emg') return rmEmgHTML();
     return rmDistHTML(rows);
+  }
+  /* -- emergencies flagged by the responsible engineer -> supervisor's phone -- */
+  var RM_EMG = { rows: null, at: 0, loading: false, err: '', ps: null }, RMV_EMG = { sr: '', note: '' };
+  setInterval(function () { if (tab === 'rm' && RMV.view === 'emg' && !document.hidden && CLOUD) rmLoadEmg(false); }, 30000);
+  function rmLoadEmg(force) {
+    if (RM_EMG.loading || (!force && RM_EMG.rows && Date.now() - RM_EMG.at < 30000)) return;
+    RM_EMG.loading = true;
+    Promise.all([window.DM_CLOUD.emgList(7), window.DM_CLOUD.emgPushStatus().catch(function () { return null; })]).then(function (x) {
+      RM_EMG = { rows: x[0], ps: x[1], at: Date.now(), loading: false, err: '' };
+      rmResolve(uniq(x[0].map(function (e) { return e.flagged_by; }).concat(x[0].map(function (e) { return e.acked_by; }))));
+      rmRefresh(false);
+    }, function (e) { RM_EMG.loading = false; RM_EMG.err = (e && e.message) || 'error'; RM_EMG.rows = RM_EMG.rows || []; RM_EMG.at = Date.now(); rmRefresh(false); });
+  }
+  function rmEmgHTML() {
+    if (!CLOUD) return '<p class="muted">Emergency alerts are available in the online portal.</p>';
+    rmLoadEmg(false);
+    var cfg = (RAW.config && RAW.config.emg) || {}, ackMin = +cfg.ackMinutes || 15, reps = cfg.repeats == null ? 2 : +cfg.repeats;
+    var t = function (x) { return x ? new Date(x).toLocaleString('en-GB', { timeZone: 'Asia/Dubai', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''; };
+    var o = RMV_EMG.sr ? rmSr(RMV_EMG.sr.trim()) : null, open = o && o.st === 'O', can = open && rmCan(o);
+    var active = (RM_EMG.rows || []).filter(function (e) { return e.status !== 'cleared' && e.status !== 'acked'; }), flaggedIds = {}; (RM_EMG.rows || []).forEach(function (e) { if (e.status !== 'cleared') flaggedIds[e.sr] = 1; });
+    var form = '<div class="panel" style="margin-top:6px"><h3 style="margin:0 0 8px">🚨 Flag an emergency</h3><div class="filters" style="padding:0"><div class="f"><label for="emSr">SR number</label><input id="emSr" value="' + esc(RMV_EMG.sr) + '" placeholder="e.g. 12345" inputmode="numeric" style="width:130px"></div>' +
+      '<div class="f grow"><label for="emNote">Message to the supervisor (optional)</label><input id="emNote" maxlength="300" value="' + esc(RMV_EMG.note) + '" placeholder="e.g. water flooding the prayer room, go now"></div>' +
+      '<button class="btn danger" id="emGo"' + (can ? '' : ' disabled') + '>🚨 Flag and alert supervisor</button></div>' +
+      (RMV_EMG.sr ? (o ? '<div class="notice" style="margin-top:8px"><b>SR ' + esc(o.id) + '</b> · ' + esc(o.grp) + ' · ' + esc(tl(o.tr)) + ' · ' + esc(zl(o.fz)) + ' — ' + esc(shorten(o.loc2, 90)) + '<br>' + esc(o.sum) + '<br>Supervisor: <b>' + esc(rmSup(o)) + '</b>' +
+        (!open ? ' · <span class="bad-t">This SR is closed.</span>' : !can ? ' · <span class="bad-t">Only the responsible engineer (' + (rmDisc(o) === 'CIVIL' ? 'civil' : 'MEP') + ') can flag it.</span>' : flaggedIds[o.id] ? ' · <span class="bad-t">Already flagged.</span>' : '') + '</div>'
+        : '<div class="notice" style="margin-top:8px">SR ' + esc(RMV_EMG.sr) + ' is not in the tracker.</div>') : '') + '<div class="status" id="stEm"></div></div>';
+    var head = '<div class="filters" style="padding:10px 0"><button class="btn" id="emRef">↻ Refresh</button><span class="factive">' + (RM_EMG.loading ? 'Loading…' : RM_EMG.err ? '<span class="bad-t">Could not load: ' + esc(RM_EMG.err) + '</span>' : 'Auto-refresh every 30 s') + '</span></div>';
+    if (!RM_EMG.rows) return form + head + '<p class="muted">Loading…</p>';
+    var row = function (e) {
+      var s = rmSr(e.sr) || {}, wait = Math.round(((e.acked_at ? Date.parse(e.acked_at) : Date.now()) - Date.parse(e.flagged_at)) / 60000), late = e.status === 'open' && wait >= ackMin;
+      var st = e.status === 'cleared' ? '<span class="pill na">Cleared</span>' : e.status === 'acked' ? '<span class="pill good">Received ' + esc(t(e.acked_at)) + '</span><div class="muted">by ' + esc(rmWho(e.acked_by)) + ' · after ' + wait + ' min</div>'
+        : '<span class="pill ' + (late ? 'bad' : 'avg') + '">' + (e.escalated_at ? 'Not received — escalated' : late ? 'Not received' : 'Waiting') + '</span><div class="muted">' + wait + ' min</div>';
+      var alerts = e.pushes ? fmt(e.pushes) + ' sent · ' + fmt(e.delivered) + ' to phones' : '<span class="bad-t">not sent yet</span>';
+      return '<tr' + (late ? ' class="od-row"' : '') + '><td><b>' + esc(e.sr) + '</b><div class="muted">' + esc(s.grp || '') + ' · ' + esc(s.tr ? tl(s.tr) : '') + '</div></td><td class="wrapc">' + esc(shorten(s.loc2 || '', 70)) + '<div class="muted">' + esc(shorten(s.sum || '', 90)) + '</div></td><td>' + esc(e.sup_name) + '</td><td class="wrapc">' + esc(e.note || '') + '</td><td>' + esc(t(e.flagged_at)) + '<div class="muted" data-by="' + esc(e.flagged_by || '') + '">' + esc(rmWho(e.flagged_by)) + '</div></td><td>' + alerts + '</td><td>' + st + '</td><td>' +
+        (e.status !== 'cleared' && (!s.id || rmCan(s)) ? '<button class="btn xs" data-emclr="' + e.id + '">Clear</button>' : '') + '</td></tr>';
+    };
+    var thead = '<thead><tr><th>SR</th><th>Location / summary</th><th>Supervisor</th><th>Message</th><th>Flagged</th><th>Alerts</th><th>Status</th><th></th></tr></thead>';
+    var activeT = '<div class="tw"><table class="t rmt">' + thead + '<tbody>' + (active.length ? active.map(row).join('') : '<tr><td colspan="8" class="muted">No open emergencies.</td></tr>') + '</tbody></table></div>';
+    var recent = (RM_EMG.rows || []).filter(function (e) { return active.indexOf(e) < 0; });
+    var recentT = '<div class="tw"><table class="t rmt">' + thead + '<tbody>' + (recent.length ? recent.map(row).join('') : '<tr><td colspan="8" class="muted">Nothing in the last 7 days.</td></tr>') + '</tbody></table></div>';
+    var p1 = rmRows(RM_CM).filter(function (x) { return x.pr === 1 && !flaggedIds[x.id] && x.age <= 3; }).slice(0, 30);
+    var sugg = p1.length ? '<div class="tw"><table class="t rmt"><thead><tr><th>SR</th><th>Reported</th><th>Trade</th><th>Location</th><th>Summary</th><th>Supervisor</th><th></th></tr></thead><tbody>' + p1.map(function (x) { return '<tr><td><b>' + esc(x.id) + '</b></td><td>' + dstr(x.rd) + '</td><td>' + esc(tl(x.tr)) + '</td><td class="wrapc">' + esc(shorten(x.loc2, 70)) + '</td><td class="wrapc">' + esc(shorten(x.sum, 100)) + '</td><td>' + esc(rmSup(x)) + '</td><td>' + (rmCan(x) ? '<button class="btn xs danger" data-empick="' + esc(x.id) + '">🚨 Flag…</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="muted">No new P1 SRs in the last 3 days that are not flagged.</p>';
+    var ps = RM_EMG.ps, psT = ps ? '<div class="tw"><table class="t"><thead><tr><th>Supervisor</th><th>Covers</th><th class="n">Phones with alerts on</th><th>Last alert delivered</th></tr></thead><tbody>' + ps.map(function (p) { return '<tr><td><b>' + esc(p.full_name) + '</b></td><td>' + esc((p.sup_names || []).join(', ')) + '</td><td class="n">' + (p.devices ? fmt(p.devices) : '<span class="pill bad">0 — not set up</span>') + '</td><td>' + esc(t(p.last_ok_at) || '—') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="muted">—</p>';
+    var cfgP = ADMIN ? '<details class="panel" style="margin-top:16px"><summary><b>Reminder and escalation settings</b> <span class="muted">(admins)</span></summary><div class="form" style="margin-top:10px"><div class="f"><label for="emAck">Minutes to confirm "Received"</label><input id="emAck" type="number" min="2" max="240" value="' + ackMin + '"></div><div class="f"><label for="emRep">Reminders to the supervisor before escalating</label><input id="emRep" type="number" min="0" max="5" value="' + reps + '"></div></div><button class="btn primary" id="emCfg" style="margin-top:8px">Save</button><span class="status" id="stEmCfg"></span></details>' : '';
+    return form + head +
+      section('E1', 'Open emergencies', 'البلاغات الطارئة المفتوحة', 'The supervisor gets a phone alert at once. If he does not tap "Received" within ' + ackMin + ' min he gets ' + reps + ' reminder(s); after that the engineer who flagged it, the admins and the managers are alerted.', activeT) +
+      section('E2', 'New P1 SRs — flag in one click', 'بلاغات P1 الجديدة', 'Open priority-1 SRs reported in the last 3 days that are not flagged yet. Flagging is always the engineer\'s decision.', sugg) +
+      section('E3', 'Supervisors — alerts on their phones', 'تفعيل التنبيهات لدى المشرفين', 'A supervisor with 0 phones will not get alerts: ask him to open the portal on his phone and tap "Turn on alerts".', psT) +
+      section('E4', 'Received / cleared — last 7 days', 'السجل', '', recentT) + cfgP;
+  }
+
+  /* -- daily supervisor progress + material requests (portal only) -- */
+  var RM_ACT = { key: '', rows: null, at: 0, loading: false, err: '' }, RM_MAT = { rows: null, at: 0, loading: false, err: '' }, RM_PH = {}, RM_IDX = null, RM_IDX_N = -1;
+  function rmDubaiDay(off) { return new Date(Date.now() + 4 * 3600000 + (off || 0) * 86400000).toISOString().slice(0, 10); }
+  function rmAddDay(d, n) { return new Date(Date.parse(d + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10); }
+  function rmSr(id) { if (!RM_IDX || RM_IDX_N !== CM.length) { RM_IDX = {}; CM.forEach(function (o) { RM_IDX[o.id] = o; }); RM_IDX_N = CM.length; } return RM_IDX[id] || null; }
+  function rmDiscOk(id) { if (RMV.disc === 'ALL') return true; var o = rmSr(id); if (!o) return true; return rmDisc(o) === RMV.disc; }
+  function rmLoadAct(force) {
+    var to = RMV.day || rmDubaiDay(), from = rmAddDay(to, -6), key = from + '|' + to;
+    if (RM_ACT.loading || (!force && RM_ACT.key === key && Date.now() - RM_ACT.at < 120000)) return;
+    RM_ACT.loading = true;
+    window.DM_CLOUD.rmActivity(from, to).then(function (rows) { RM_ACT = { key: key, rows: rows, at: Date.now(), loading: false, err: '' }; rmRefresh(false); },
+      function (e) { RM_ACT.loading = false; RM_ACT.err = (e && e.message) || 'error'; RM_ACT.key = key; RM_ACT.at = Date.now(); RM_ACT.rows = RM_ACT.rows || []; rmRefresh(false); });
+  }
+  function rmLoadMat(force) {
+    if (RM_MAT.loading || (!force && RM_MAT.rows && Date.now() - RM_MAT.at < 120000)) return;
+    RM_MAT.loading = true;
+    window.DM_CLOUD.materials().then(function (rows) { RM_MAT = { rows: rows, at: Date.now(), loading: false, err: '' }; rmRefresh(false); },
+      function (e) { RM_MAT.loading = false; RM_MAT.err = (e && e.message) || 'error'; RM_MAT.rows = RM_MAT.rows || []; RM_MAT.at = Date.now(); rmRefresh(false); });
+  }
+  // per SR and day: the last of done/undo decides whether it counts as completed that day
+  function rmDayStats(rows) {
+    var by = {};
+    rows.forEach(function (a) {
+      if (!rmDiscOk(a.sr)) return;
+      var d = by[a.day] = by[a.day] || { start: {}, done: {} };
+      if (a.action === 'start') d.start[a.sr] = a;
+      else if (a.action === 'done') d.done[a.sr] = a;
+      else if (a.action === 'undo') delete d.done[a.sr];
+    });
+    return by;
+  }
+  function rmPhotos(paths) {
+    if (!paths || !paths.length) return '<span class="muted">—</span>';
+    return '<div class="rmph">' + paths.map(function (p) { var u = RM_PH[p]; return '<a href="' + (u ? esc(u) : '#') + '" target="_blank" rel="noopener" data-phl="' + esc(p) + '"><img alt="Work photo" loading="lazy" data-ph="' + esc(p) + '"' + (u ? ' src="' + esc(u) + '"' : '') + '></a>'; }).join('') + '</div>';
+  }
+  function rmFillPhotos() {
+    var els = document.querySelectorAll('#rmBody [data-ph]'), need = [];
+    Array.prototype.forEach.call(els, function (e) { var p = e.getAttribute('data-ph'); if (!RM_PH[p] && need.indexOf(p) < 0) need.push(p); });
+    if (!need.length || !window.DM_CLOUD || !window.DM_CLOUD.photoUrls) return;
+    window.DM_CLOUD.photoUrls(need).then(function (m) {
+      Object.keys(m).forEach(function (p) { RM_PH[p] = m[p]; });
+      Array.prototype.forEach.call(document.querySelectorAll('#rmBody [data-ph]'), function (e) { var u = RM_PH[e.getAttribute('data-ph')]; if (u) { e.src = u; e.parentNode.href = u; } });
+    }).catch(function () { });
+  }
+  function rmDailyHTML() {
+    if (!CLOUD) return '<p class="muted">Daily progress is available in the online portal.</p>';
+    var day = RMV.day || (RMV.day = rmDubaiDay()); rmLoadAct(false);
+    var nav = '<div class="filters" style="padding:10px 0"><div class="f"><label for="rmDay">Day</label><input type="date" id="rmDay" value="' + day + '" max="' + rmDubaiDay() + '"></div>' +
+      '<button class="btn" data-dnav="-1">‹ Previous day</button><button class="btn" data-dnav="0">Today</button><button class="btn" data-dnav="1"' + (day >= rmDubaiDay() ? ' disabled' : '') + '>Next day ›</button><button class="btn" id="rmDref">↻ Refresh</button>' +
+      (CAN_SAVE() ? '<button class="btn" id="rmDcsv">Download day (CSV)</button>' : '') + '<span class="factive">' + (RM_ACT.loading ? 'Loading…' : RM_ACT.err ? '<span class="bad-t">Could not load: ' + esc(RM_ACT.err) + '</span>' : 'Updated ' + new Date(RM_ACT.at || Date.now()).toTimeString().slice(0, 5)) + '</span></div>';
+    if (!RM_ACT.rows) return nav + '<p class="muted">Loading the supervisors\' log…</p>';
+    var st = rmDayStats(RM_ACT.rows), D = st[day] || { start: {}, done: {} }, days = []; for (var i = 6; i >= 0; i--) days.push(rmAddDay(day, -i));
+    var sups = {};
+    RM_ACT.rows.forEach(function (a) { if (rmDiscOk(a.sr)) sups[a.sup_name || 'Unassigned'] = 1; });
+    var done = Object.keys(D.done).map(function (k) { return D.done[k]; }).sort(function (a, b) { return a.at < b.at ? 1 : -1; });
+    var started = Object.keys(D.start).map(function (k) { return D.start[k]; }).sort(function (a, b) { return a.at < b.at ? 1 : -1; });
+    var photosN = 0; done.forEach(function (a) { photosN += (a.photos || []).length; });
+    var matN = RM_MAT.rows ? count(RM_MAT.rows, function (m) { return m.day === day && rmDiscOk(m.sr); }) : null; rmLoadMat(false);
+    var k = '<div class="kpis">' + kpiTile('Completed', fmt(done.length), 'works finished on site, with photo') + kpiTile('Started', fmt(started.length), 'works started') +
+      kpiTile('Supervisors active', fmt(uniq(done.concat(started).map(function (a) { return a.sup_name; })).length), 'of ' + fmt(Object.keys(sups).length) + ' in the last 7 days') +
+      kpiTile('Photos', fmt(photosN), 'proof of completed work') + kpiTile('Material requests', matN == null ? '—' : fmt(matN), 'sent on this day') + '</div>';
+    var rowsS = Object.keys(sups).map(function (s) {
+      var r = { s: s, st: 0, dn: 0, em: 0, w: [], tot: 0 };
+      started.forEach(function (a) { if ((a.sup_name || 'Unassigned') === s) r.st++; });
+      done.forEach(function (a) { if ((a.sup_name || 'Unassigned') === s) { r.dn++; var o = rmSr(a.sr); if (o && o.grp === 'Emergency') r.em++; } });
+      days.forEach(function (d) { var x = st[d] ? count(Object.keys(st[d].done), function (sr) { return (st[d].done[sr].sup_name || 'Unassigned') === s; }) : 0; r.w.push(x); r.tot += x; });
+      return r;
+    }).sort(function (a, b) { return b.dn - a.dn || b.tot - a.tot || (a.s < b.s ? -1 : 1); });
+    var tbl = '<div class="tw"><table class="t"><thead><tr><th>Supervisor</th><th class="n">Started</th><th class="n">Completed</th><th class="n">Emergency completed</th>' + days.map(function (d) { return '<th class="n">' + esc(dshort(Date.parse(d + 'T00:00:00Z'))) + '</th>'; }).join('') + '<th class="n">7 days</th></tr></thead><tbody>' +
+      (rowsS.length ? rowsS.map(function (r) { return '<tr><td><b>' + esc(r.s) + '</b></td><td class="n">' + fmt(r.st) + '</td><td class="n"><b>' + fmt(r.dn) + '</b></td><td class="n">' + fmt(r.em) + '</td>' + r.w.map(function (x, i) { return '<td class="n' + (i === 6 ? ' hl' : '') + '">' + (x ? fmt(x) : '<span class="muted">0</span>') + '</td>'; }).join('') + '<td class="n"><b>' + fmt(r.tot) + '</b></td></tr>'; }).join('')
+        : '<tr><td colspan="12" class="muted">No supervisor activity in these 7 days.</td></tr>') + '</tbody></table></div>';
+    var item = function (a, withPh) {
+      var o = rmSr(a.sr) || {};
+      return '<tr><td>' + esc(String(new Date(a.at).toLocaleTimeString('en-GB', { timeZone: 'Asia/Dubai', hour: '2-digit', minute: '2-digit' }))) + '</td><td><b>' + esc(a.sr) + '</b>' + (o.wo ? '<div class="muted">WO ' + esc(o.wo) + '</div>' : '') + '</td><td>' + esc(a.sup_name || '') + '</td><td>' + esc(o.grp || '') + '</td><td>' + esc(o.tr ? tl(o.tr) : '') + '</td><td class="wrapc">' + esc(shorten(o.loc2 || '', 80)) + '</td><td class="wrapc">' + esc(o.sum || '') + '</td>' +
+        (withPh ? '<td class="wrapc">' + esc(a.note || '') + '</td><td>' + rmPhotos(a.photos) + '</td>' : '') + '</tr>';
+    };
+    var doneT = '<div class="tw"><table class="t rmt"><thead><tr><th>Time</th><th>SR</th><th>Supervisor</th><th>Priority</th><th>Trade</th><th>Location</th><th>Summary</th><th>Note</th><th>Photos</th></tr></thead><tbody>' + (done.length ? done.map(function (a) { return item(a, true); }).join('') : '<tr><td colspan="9" class="muted">No works completed on this day.</td></tr>') + '</tbody></table></div>';
+    var stT = '<div class="tw"><table class="t rmt"><thead><tr><th>Time</th><th>SR</th><th>Supervisor</th><th>Priority</th><th>Trade</th><th>Location</th><th>Summary</th></tr></thead><tbody>' + (started.length ? started.map(function (a) { return item(a, false); }).join('') : '<tr><td colspan="7" class="muted">No works started on this day.</td></tr>') + '</tbody></table></div>';
+    return nav + k + section('D1', 'Achievement by supervisor', 'إنجاز المشرفين', 'Completed = marked finished on the supervisor\'s phone with at least one photo (undone mistakes are not counted). Last 7 days ending ' + dstr(Date.parse(day + 'T00:00:00Z')) + '.', tbl) +
+      section('D2', 'Completed works — ' + dstr(Date.parse(day + 'T00:00:00Z')), 'الأعمال المنجزة', fmt(done.length) + ' works. Click a photo to open it full size.', doneT) +
+      section('D3', 'Started works — ' + dstr(Date.parse(day + 'T00:00:00Z')), 'الأعمال التي بدأت', fmt(started.length) + ' works.', stT);
+  }
+  var RM_MST = [['requested', 'Requested'], ['approved', 'Approved'], ['issued', 'Issued'], ['rejected', 'Rejected'], ['', 'All']];
+  var RM_MCLS = { requested: 'avg', approved: 'poor', issued: 'good', rejected: 'bad' };
+  function rmMatHTML() {
+    if (!CLOUD) return '<p class="muted">Material requests are available in the online portal.</p>';
+    rmLoadMat(false);
+    if (RMV.mst == null) RMV.mst = 'requested';
+    var head = '<div class="filters" style="padding:10px 0"><button class="btn" id="rmMref">↻ Refresh</button><span class="factive">' + (RM_MAT.loading ? 'Loading…' : RM_MAT.err ? '<span class="bad-t">Could not load: ' + esc(RM_MAT.err) + '</span>' : '') + '</span></div>';
+    if (!RM_MAT.rows) return head + '<p class="muted">Loading material requests…</p>';
+    var all = RM_MAT.rows.filter(function (m) { return rmDiscOk(m.sr); }), cnt = {}; RM_MST.forEach(function (x) { cnt[x[0]] = 0; }); all.forEach(function (m) { cnt[m.status] = (cnt[m.status] || 0) + 1; }); cnt[''] = all.length;
+    var flow = '<div class="rmflow">' + RM_MST.map(function (x) { return '<button class="rmstep s-' + ({ requested: 'await', approved: 'appr', issued: 'po', rejected: 'rej', '': 'all' })[x[0]] + '" data-mf="' + x[0] + '" aria-pressed="' + (RMV.mst === x[0]) + '"><span class="v">' + fmt(cnt[x[0]] || 0) + '</span><span class="l">' + esc(x[1]) + '</span></button>'; }).join('') + '</div>';
+    var list = all.filter(function (m) { return !RMV.mst || m.status === RMV.mst; });
+    var body = list.map(function (m) {
+      var o = rmSr(m.sr), can = o ? rmCan(o) : rmScope() === 'all', act = '';
+      if (can && m.status === 'requested') act = '<input data-mnote="' + m.id + '" placeholder="Note (optional)" style="width:140px"><div style="margin-top:4px;display:flex;gap:4px"><button class="btn xs primary" data-md="' + m.id + '" data-to="approved">Approve</button><button class="btn xs danger" data-md="' + m.id + '" data-to="rejected">Reject</button></div>';
+      else if (can && m.status === 'approved') act = '<button class="btn xs primary" data-md="' + m.id + '" data-to="issued">Mark issued</button>';
+      var items = (m.items || []).map(function (i) { return '<div>• ' + esc(i.name) + ' — <b>' + esc(i.qty || '') + '</b> ' + esc(i.unit || '') + '</div>'; }).join('');
+      return '<tr><td>' + esc(String(m.created_at).slice(0, 10)) + '</td><td><b>' + esc(m.sr) + '</b>' + (o ? '<div class="muted">' + esc(o.grp) + ' · ' + esc(tl(o.tr)) + '</div>' : '<div class="muted">closed / not in tracker</div>') + '</td><td>' + esc(m.sup_name || '') + '</td><td class="wrapc">' + esc(o ? shorten(o.loc2, 70) : '') + '</td><td class="wrapc">' + items + '</td><td class="wrapc">' + esc(m.note || '') + '</td><td>' + rmPhotos(m.photos) + '</td>' +
+        '<td><span class="pill ' + (RM_MCLS[m.status] || 'na') + '">' + esc(m.status) + '</span>' + (m.decision_note ? '<div class="muted">' + esc(m.decision_note) + '</div>' : '') + (m.decided_at ? '<div class="muted">' + esc(String(m.decided_at).slice(0, 10)) + '</div>' : '') + '</td><td>' + act + '</td></tr>';
+    }).join('');
+    return head + flow + '<div class="tw"><table class="t rmt"><thead><tr><th>Date</th><th>SR</th><th>Supervisor</th><th>Location</th><th>Materials</th><th>Note</th><th>Photos</th><th>Status</th><th>Action</th></tr></thead><tbody>' + (body || '<tr><td colspan="9" class="muted">No requests here.</td></tr>') + '</tbody></table></div>';
+  }
+  async function rmDayCsv() {
+    var day = RMV.day || rmDubaiDay(), st = rmDayStats(RM_ACT.rows || []), D = st[day] || { start: {}, done: {} };
+    var cell = function (v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var lines = [['Day', 'Action', 'Time', 'SR No', 'Work Order', 'Supervisor', 'Priority', 'Trade', 'Zone', 'Area', 'Location', 'Summary', 'Note', 'Photos'].join(',')];
+    ['done', 'start'].forEach(function (k) { Object.keys(D[k]).forEach(function (sr) { var a = D[k][sr], o = rmSr(sr) || {}; lines.push([day, k === 'done' ? 'Completed' : 'Started', new Date(a.at).toLocaleTimeString('en-GB', { timeZone: 'Asia/Dubai', hour: '2-digit', minute: '2-digit' }), sr, o.wo, a.sup_name, o.grp, o.tr ? tl(o.tr) : '', o.fz, o.area, o.loc2, o.sum, a.note, (a.photos || []).length].map(cell).join(',')); }); });
+    await saveFile('DM_RM_Daily_' + day + '.csv', '﻿' + lines.join('\r\n'));
   }
 
   /* -- distribution -- */
@@ -2383,8 +2959,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var body = pg.map(function (o) {
       var S = rmState(o), r = RMS[o.id] || {};
       var stSel = rmCan(o) ? '<select data-rmst="' + esc(o.id) + '" aria-label="Status for SR ' + esc(o.id) + '">' + RM_ST.map(function (s) { return opt(s[0], s[0] === 'sub' ? 'Subcontractor work → contractor table' : s[1], S.st); }).join('') + '</select>' + (S.auto ? '<div class="muted" style="font-size:.72rem">from tracker</div>' : '') : rmPill(S.st, S.auto);
-      var note = rmCan(o) ? '<input data-rmnote="' + esc(o.id) + '" value="' + esc(r.note || '') + '" placeholder="Note" aria-label="Note" style="width:170px">' : esc(r.note || '');
-      var upd = r.at ? '<span class="muted" data-by="' + esc(r.by || '') + '">' + esc(rmWho(r.by)) + '<br>' + esc(String(r.at).slice(0, 16).replace('T', ' ')) + '</span>' : '';
+      var note = (rmCan(o) ? '<input data-rmnote="' + esc(o.id) + '" value="' + esc(r.note || '') + '" placeholder="Note" aria-label="Note" style="width:170px">' : esc(r.note || '')) + (CLOUD && rmCan(o) ? ' <button class="btn xs danger" data-emq="' + esc(o.id) + '" title="Flag as emergency and alert the supervisor" aria-label="Flag SR ' + esc(o.id) + ' as emergency">🚨</button>' : '');
+      var upd = (r.need ? '<div class="pill ' + (r.need === 'yes' ? 'bad' : 'good') + '" style="margin-bottom:3px">Supervisor: ' + (r.need === 'yes' ? 'needs contractor' : 'own team') + '</div>' : '') + (r.at ? '<span class="muted" data-by="' + esc(r.by || '') + '">' + esc(rmWho(r.by)) + '<br>' + esc(String(r.at).slice(0, 16).replace('T', ' ')) + '</span>' : '');
       return '<tr><td><b>' + esc(o.id) + '</b></td><td>' + dstr(o.rd) + '</td><td class="n' + (o.od ? ' od' : '') + '">' + fmt(o.age) + '</td><td>' + esc(o.grp) + '</td><td>' + esc(tl(o.tr)) + '</td><td>' + esc(zl(o.fz)) + '</td><td>' + esc(o.area || '') + '</td><td class="wrapc">' + esc(shorten(o.loc2, 70)) + '</td><td class="wrapc">' + esc(o.sum) + '</td><td>' + stSel + '</td><td>' + note + '</td><td>' + upd + '</td></tr>';
     }).join('');
     var pager = '<div class="pager"><button class="btn xs" id="rmPrev"' + (RMV.page ? '' : ' disabled') + '>‹ Prev</button><span>Page ' + (RMV.page + 1) + ' of ' + pages + '</span><button class="btn xs" id="rmNext"' + (RMV.page < pages - 1 ? '' : ' disabled') + '>Next ›</button></div>';
@@ -2412,7 +2988,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       var dec = (k === 'review' || k === 'rej' || k === 'appr' || k === 'po') ? rmQIn(o, 'dd', 'Decision date', 'date', 130) + rmQIn(o, 'dm', 'DM engineer') : (k === 'await' ? '<span class="muted">Awaiting DM</span>' : '<span class="muted">—</span>');
       var po = k === 'po' ? rmQIn(o, 'po', 'PO number') + rmQIn(o, 'pod', 'PO date', 'date', 130) + rmQIn(o, 'ctr', 'Contractor') : k === 'appr' ? '<span class="bad-t">PO not sent yet</span>' + rmQIn(o, 'ctr', 'Contractor') : '<span class="muted">—</span>';
       var note = rmCan(o) ? '<input data-rmnote="' + esc(o.id) + '" value="' + esc(r.note || '') + '" placeholder="Note" aria-label="Note" style="width:150px">' : esc(r.note || '');
-      var upd = r.at ? '<span class="muted" data-by="' + esc(r.by || '') + '">' + esc(rmWho(r.by)) + '<br>' + esc(String(r.at).slice(0, 16).replace('T', ' ')) + '</span>' : (rmState(o).auto ? '<span class="muted">tracker remark</span>' : '');
+      var upd = (r.need ? '<div class="pill ' + (r.need === 'yes' ? 'bad' : 'good') + '" style="margin-bottom:3px">Supervisor: ' + (r.need === 'yes' ? 'needs contractor' : 'own team') + '</div>' : '') + (r.at ? '<span class="muted" data-by="' + esc(r.by || '') + '">' + esc(rmWho(r.by)) + '<br>' + esc(String(r.at).slice(0, 16).replace('T', ' ')) + '</span>' : (rmState(o).auto ? '<span class="muted">tracker remark</span>' : ''));
       return '<tr><td><b>' + esc(o.id) + '</b><div class="muted">' + esc(tl(o.tr)) + ' · ' + esc(zl(o.fz)) + '</div></td><td>' + esc(o.area || '') + '</td><td class="wrapc">' + esc(shorten(o.loc2, 70)) + '</td><td class="wrapc">' + esc(o.sum) + '</td><td>' + esc(rmSup(o)) + '</td><td class="n">' + fmt(o.age) + '</td><td>' + rmStageSel(o) + '</td><td class="rmqc">' + quote + '</td><td class="rmqc">' + dec + '</td><td class="rmqc">' + po + '</td><td>' + note + '</td><td>' + upd + '</td></tr>';
     }).join('');
     var qsups = uniq(subs.map(rmSup)).sort(); if (RMV.qsup && qsups.indexOf(RMV.qsup) < 0) RMV.qsup = '';
@@ -2485,6 +3061,26 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var qt2; on('#rmQq', 'input', function (e) { clearTimeout(qt2); qt2 = setTimeout(function () { RMV.qq = e.value; rmRefresh(true); var i = $('#rmQq'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 300); });
     on('[data-rmnote]', 'change', function (e) { var id = e.getAttribute('data-rmnote'); var p = { note: e.value.slice(0, 300) }; if (!RMS[id] || RMS[id].st == null) p.st = rmState(rmFind(id) || {}).st; rmSave(id, p); });
     on('#rmCsv', 'click', function () { rmCsv(false); });
+    on('#rmDay', 'change', function (e) { if (e.value) { RMV.day = e.value; rmLoadAct(false); rmRefresh(true); } });
+    on('[data-dnav]', 'click', function (e) { var n = +e.getAttribute('data-dnav'); RMV.day = n === 0 ? rmDubaiDay() : rmAddDay(RMV.day || rmDubaiDay(), n); if (RMV.day > rmDubaiDay()) RMV.day = rmDubaiDay(); rmLoadAct(false); rmRefresh(true); });
+    on('#rmDref', 'click', function () { rmLoadAct(true); rmLoadMat(true); rmRefresh(true); });
+    on('#rmDcsv', 'click', function () { rmDayCsv(); });
+    on('#rmMref', 'click', function () { rmLoadMat(true); rmRefresh(true); });
+    on('[data-mf]', 'click', function (e) { RMV.mst = e.getAttribute('data-mf'); rmRefresh(true); });
+    on('[data-md]', 'click', function (e) {
+      var id = +e.getAttribute('data-md'), to = e.getAttribute('data-to'), ni = document.querySelector('[data-mnote="' + id + '"]');
+      e.disabled = true;
+      window.DM_CLOUD.matDecide(id, to, ni ? ni.value.trim() : '').then(function () { toast('Request ' + to); rmLoadMat(true); }, function (x) { e.disabled = false; toast('Not saved: ' + String((x && x.message) || x).replace(/^RM:\s*/, '')); });
+    });
+    var ems = $('#emSr'); if (ems) { var et; ems.oninput = function () { clearTimeout(et); et = setTimeout(function () { RMV_EMG.sr = ems.value.trim(); RMV_EMG.note = ($('#emNote') || {}).value || ''; rmRefresh(true); var i = $('#emSr'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 400); }; }
+    var emn = $('#emNote'); if (emn) emn.oninput = function () { RMV_EMG.note = emn.value; };
+    on('#emGo', 'click', function (e) { e.disabled = true; setSt('stEm', 'Flagging and sending the alert…'); window.DM_CLOUD.emgFlag(RMV_EMG.sr, ($('#emNote') || {}).value || '').then(function () { toast('Emergency flagged — supervisor alerted'); RMV_EMG = { sr: '', note: '' }; rmLoadEmg(true); rmRefresh(true); }, function (x) { e.disabled = false; setSt('stEm', 'Not flagged: ' + String((x && x.message) || x).replace(/^RM:\s*/, ''), 'err'); }); });
+    on('#emRef', 'click', function () { rmLoadEmg(true); rmRefresh(true); });
+    on('[data-empick]', 'click', function (e) { RMV_EMG.sr = e.getAttribute('data-empick'); rmRefresh(true); var n = $('#emNote'); if (n) { n.focus(); window.scrollTo(0, 0); } });
+    on('[data-emclr]', 'click', function (e) { e.disabled = true; window.DM_CLOUD.emgClear(+e.getAttribute('data-emclr')).then(function () { toast('Emergency cleared'); rmLoadEmg(true); }, function (x) { e.disabled = false; toast('Not saved: ' + String((x && x.message) || x).replace(/^RM:\s*/, '')); }); });
+    on('#emCfg', 'click', function () { var a = Math.max(2, Math.min(240, parseInt($('#emAck').value, 10) || 15)), r = Math.max(0, Math.min(5, parseInt($('#emRep').value, 10) || 0)); window.DM_CLOUD.emgSaveCfg({ ackMinutes: a, repeats: r }).then(function () { setSt('stEmCfg', 'Saved', 'ok'); }, function (x) { setSt('stEmCfg', 'Not saved: ' + x.message, 'err'); }); });
+    on('[data-emq]', 'click', function (e) { RMV.view = 'emg'; RMV_EMG.sr = e.getAttribute('data-emq'); render(); });
+    rmFillPhotos();
     on('#rmQcsv', 'click', function () { rmCsv(true); });
     on('#rmSaveMap', 'click', function () {
       var m = {}; ['A', 'B', 'C', 'D', 'H'].forEach(function (z) { m[z] = $('#rmz' + z).value; });
@@ -2886,7 +3482,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       SID = 10; var r10 = chart(C.pTrend, 13.4, 5.6);
       if (R.p.wo) {
         var r10b = chart(C.ppmTrade, 6.6, 3.9), ptl = [['PPM compliance', pctTxt(R.p.comp), fmt(R.p.done) + ' of ' + fmt(R.p.due) + ' due completed', R.p.comp != null && R.p.comp < 0.8], ['Awaiting inspection', fmt(R.p.insp), 'done, waiting for DM inspection'], ['Overdue work orders', fmt(R.p.overdue), 'more than ' + fmt(+CFG.ppmGraceDays || 0) + ' days past target start', R.p.overdue > 0], ['Incl. inspection', pctTxt(R.p.compI), 'completed + awaiting inspection']];
-        var pp = head('PPM compliance', pctTxt(R.p.comp) + ' of the PPM work orders due by ' + we + ' are completed; ' + fmt(R.p.overdue) + ' are overdue');
+        var pp = head('PPM compliance', pctTxt(R.p.comp) + ' of the PPM work orders due by ' + we + ' are completed; ' + fmt(R.p.overdue) + ' are overdue' + (R.hasCost ? ' · AED ' + fmt(Math.round(R.pc.done)) + ' of AED ' + fmt(Math.round(R.pc.due)) + ' due value completed' : ''));
         ptl.forEach(function (t, i) { pp.push(kpi(0.6 + i * 3.4, 1.85, 3.2, 1.3, t[0], t[1], t[2], t[3])); });
         r10 = chart(C.pTrend, 6.6, 3.9);
         add(2, pp.concat([pic('PPM monthly chart', r10, 0.6, 3.4, 6.6, 3.9), pic('PPM by trade chart', r10b, 7.4, 3.4, 6.6, 3.9)]), [r10, r10b]);
@@ -3002,7 +3598,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   window.DMApp = {
     start: function (raw, ctx) { RAW = raw; CFG = initCfg(raw); ROLE = ctx.role; PERMS = ctx.perms; USER = ctx.user; boot(); },
     h: { fmt: fmt, dstr: dstr, iso: iso, esc: esc, panel: panel, section: section, setSt: setSt, toast: toast, readWorkbook: readWorkbook, count: count, pct: pct, fp: fp,
-      tabs: function () { return TABS; }, cm: function () { return CM; }, cut: function () { return CUT; }, raw: function () { return RAW; }, cfg: function () { return CFG; }, render: function () { render(); }, clone: clone }
+      tabs: function () { return TABS; }, supNames: function () { var m = Object.assign({}, RM_CIVIL_DEF, (RMCFG && RMCFG.civil) || {}), n = {}; Object.keys(m).forEach(function (z) { if (m[z]) n[m[z]] = 1; }); CM.forEach(function (o) { if (o.st === 'O' && o.tr !== 'CIVIL' && o.sup) n[o.sup] = 1; }); return Object.keys(n).sort(); }, cm: function () { return CM; }, cut: function () { return CUT; }, raw: function () { return RAW; }, cfg: function () { return CFG; }, render: function () { render(); }, clone: clone }
   };
   if (!CLOUD) { if (typeof Chart === 'undefined') { window.addEventListener('load', boot); } else boot(); }
 })();
