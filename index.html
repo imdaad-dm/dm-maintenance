@@ -777,7 +777,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     return {
       config: cfg, logos: { left: lg.left || dl.left, lw: lg.lw || dl.lw, right: lg.right || dl.right, rw: lg.rw || dl.rw },
       pptTpl: window.DM_PPT_TPL || null, cm: sr, ppm: ppm, snapshots: snaps.map(function (s) { return { c: +s.c, t: s.t, o: s.o }; }),
-      meta: { ppmFile: cfg.ppmFile || '', cmFile: cfg.lastUpload ? cfg.lastUpload.file : 'SR Master Tracker', updated: cfg.lastUpload ? cfg.lastUpload.at : '' }
+      meta: { ppmFile: (cfg.ppmUpload && cfg.ppmUpload.file) || cfg.ppmFile || '', cmFile: cfg.lastUpload ? cfg.lastUpload.file : 'SR Master Tracker', updated: cfg.lastUpload ? cfg.lastUpload.at : '' }
     };
   }
   async function enter() {
@@ -1106,6 +1106,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="adm">' +
       h.panel('A · Daily additions', 'new and changed SRs only', '<p>Upload a file with the SRs added or changed today (same columns as the SR Master Tracker). New SRs are added, existing SRs are updated. Nothing is deleted.</p><div class="drop" id="dropA" tabindex="0">Drop today\'s additions here, or click to choose<input type="file" id="fileA" accept=".xlsx,.xlsm,.xls,.csv" hidden></div><div id="pendA"></div><div class="status" id="stA"></div>') +
       h.panel('B · Full tracker', 'replaces all CM data', '<p>Upload the complete SR Master Tracker. SRs in the file are added or updated, and SRs that are no longer in the file are removed. Use this for the weekly refresh.</p><div class="drop" id="dropB" tabindex="0">Drop the full SR Master Tracker here, or click to choose<input type="file" id="fileB" accept=".xlsx,.xlsm,.xls" hidden></div><div id="pendB"></div><div class="status" id="stB"></div>') +
+      h.panel('C · PPM report', 'Maximo PM work orders (PM-All export)', '<p>Upload the latest Maximo PM work-order export (e.g. PM-All). It replaces the current PPM data. Current: ' + h.fmt(((RAWC && RAWC.ppm) || []).length) + ' work orders' + (RAWC.config.ppmUpload ? ' · ' + esc(RAWC.config.ppmUpload.file) + ' · ' + esc(RAWC.config.ppmUpload.at) : (RAWC.config.ppmFile ? ' · ' + esc(RAWC.config.ppmFile) : '')) + '.</p><div class="drop" id="dropC" tabindex="0">Drop the PPM report here, or click to choose<input type="file" id="fileC" accept=".xlsx,.xlsm,.xls" hidden></div><div id="pendC"></div><div class="status" id="stC"></div>') +
       h.panel('Current data', '', '<dl class="kv"><dt>SRs in the portal</dt><dd>' + h.fmt(h.cm().length) + '</dd><dt>Cut-off date</dt><dd>' + h.dstr(h.cut()) + '</dd><dt>Last upload</dt><dd>' + (L ? esc(L.file) + ' · ' + esc(L.at) + ' (' + (L.kind === 'full' ? 'full tracker' : 'daily additions') + ')' : '—') + '</dd></dl>') +
       '</div>');
   }
@@ -1118,7 +1119,39 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     d.ondragleave = function () { d.classList.remove('over'); };
     d.ondrop = function (e) { e.preventDefault(); d.classList.remove('over'); if (e.dataTransfer.files[0]) fn(e.dataTransfer.files[0]); };
   }
+  function bindPPM() {
+    bindDrop('dropC', 'fileC', async function (file) {
+      var h = H();
+      h.setSt('stC', 'Reading ' + file.name + '…');
+      try {
+        var wb = await h.readWorkbook(file), p = DMParse.parsePPM(XLSX, wb);
+        var stc = {}; if (p.kind === 'wo') p.rows.forEach(function (v) { stc[v.freq] = (stc[v.freq] || 0) + 1; });
+        var val = 0; p.rows.forEach(function (v) { val += +v.cost || 0; });
+        document.getElementById('pendC').innerHTML = '<dl class="kv" style="margin-top:10px"><dt>File</dt><dd>' + esc(file.name) + '</dd><dt>' + (p.kind === 'wo' ? 'PPM work orders' : 'Planned visits') + '</dt><dd>' + h.fmt(p.rows.length) + '</dd>' +
+          (p.kind === 'wo' ? '<dt>Status</dt><dd>' + Object.keys(stc).sort(function (a, b) { return stc[b] - stc[a]; }).map(function (k) { return esc(k) + ' ' + h.fmt(stc[k]); }).join(' · ') + '</dd>' : '') +
+          (val ? '<dt>Total value</dt><dd>AED ' + h.fmt(Math.round(val)) + '</dd>' : '') + '</dl>' +
+          '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn primary" id="goC">Upload PPM report</button><button class="btn" id="noC">Cancel</button></div><div class="bar-p" hidden id="pbC"><span style="width:0%"></span></div>';
+        h.setSt('stC', 'Check the numbers, then upload. This replaces the current PPM data.', 'ok');
+        document.getElementById('noC').onclick = function () { document.getElementById('pendC').innerHTML = ''; h.setSt('stC', ''); };
+        document.getElementById('goC').onclick = async function () {
+          var btn = this; btn.disabled = true; var pb = document.getElementById('pbC'); pb.hidden = false; var bar = pb.firstChild, B = 1000;
+          try {
+            for (var i = 0; i < p.rows.length; i += B) {
+              chk(await sb.rpc('replace_ppm', { rows: p.rows.slice(i, i + B), first_batch: i === 0 }));
+              bar.style.width = Math.round(Math.min(1, (i + B) / p.rows.length) * 95) + '%';
+              h.setSt('stC', 'Uploading… ' + h.fmt(Math.min(i + B, p.rows.length)) + ' of ' + h.fmt(p.rows.length));
+            }
+            var lg = await sb.rpc('ppm_uploaded', { p_file: file.name, p_rows: p.rows.length });
+            if (lg.error && profile.role === 'admin') { var cfg = JSON.parse(JSON.stringify(RAWC.config || {})); cfg.ppmFile = file.name; await sb.from('app_config').update({ config: cfg }).eq('id', 1); }
+            bar.style.width = '100%';
+            await reload('PPM report uploaded: ' + h.fmt(p.rows.length) + (p.kind === 'wo' ? ' work orders' : ' planned visits'));
+          } catch (e) { h.setSt('stC', 'Upload stopped: ' + e.message + '. Upload the same file again to finish.', 'err'); btn.disabled = false; }
+        };
+      } catch (e) { h.setSt('stC', e.message || String(e), 'err'); }
+    });
+  }
   function bindData() {
+    bindPPM();
     ['A', 'B'].forEach(function (mode) {
       bindDrop('drop' + mode, 'file' + mode, async function (file) {
         var h = H(), st = 'st' + mode;
@@ -1169,7 +1202,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     try {
       LOG = chk(await sb.from('upload_log').select('*').order('at', { ascending: false }).limit(300));
       el.innerHTML = '<table class="t"><thead><tr><th>When</th><th>By</th><th>Type</th><th>File</th><th class="n">Rows</th><th class="n">Added</th><th class="n">Updated</th><th class="n">Removed</th><th>Cut-off</th></tr></thead><tbody>' +
-        LOG.map(function (r) { return '<tr><td>' + esc(new Date(r.at).toLocaleString('en-GB', { timeZone: 'Asia/Dubai' })) + '</td><td>' + esc(r.email) + '</td><td>' + (r.kind === 'full' ? 'Full tracker' : r.kind === 'daily' ? 'Daily additions' : esc(r.kind)) + '</td><td>' + esc(r.file) + '</td><td class="n">' + h.fmt(r.rows_in) + '</td><td class="n">' + h.fmt(r.added) + '</td><td class="n">' + h.fmt(r.updated) + '</td><td class="n">' + h.fmt(r.removed) + '</td><td>' + (r.cutoff ? h.dstr(+r.cutoff) : '') + '</td></tr>'; }).join('') + '</tbody></table>';
+        LOG.map(function (r) { return '<tr><td>' + esc(new Date(r.at).toLocaleString('en-GB', { timeZone: 'Asia/Dubai' })) + '</td><td>' + esc(r.email) + '</td><td>' + (r.kind === 'full' ? 'Full tracker' : r.kind === 'daily' ? 'Daily additions' : r.kind === 'ppm' ? 'PPM report' : esc(r.kind)) + '</td><td>' + esc(r.file) + '</td><td class="n">' + h.fmt(r.rows_in) + '</td><td class="n">' + h.fmt(r.added) + '</td><td class="n">' + h.fmt(r.updated) + '</td><td class="n">' + h.fmt(r.removed) + '</td><td>' + (r.cutoff ? h.dstr(+r.cutoff) : '') + '</td></tr>'; }).join('') + '</tbody></table>';
       if (!LOG.length) el.innerHTML = '<div class="notice">No uploads yet.</div>';
     } catch (e) { el.innerHTML = '<div class="notice">Could not load history: ' + esc(e.message) + '</div>'; }
   }
@@ -1416,6 +1449,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     bands: [{ min: 90, label: 'Good', cls: 'good' }, { min: 80, label: 'Average', cls: 'avg' }, { min: 70, label: 'Poor', cls: 'poor' }, { min: 0, label: 'Unacceptable', cls: 'bad' }],
     // Internal Status = what happened on site; Final Status = closure in Maximo
     internalDone: 'CLOSED|DONE|AD-HOC|ARAMCO',
+    mxClosed: 'WINSP|ZEWINSP|COMP|CLOSE|CLOSED',
     internalNA: 'NOT UNDER|NOT OUR|DUPLICATE|UNDER IFM|UNDER RTA|QUOTATION|REJECTED',
     ppmDone: 'CLOSE|COMP', ppmInsp: 'WINSP|ZEWINSP', ppmGraceDays: 7,
     otherChannels: { label: 'Direct contact through other channels', total: 2011, closed: 2011 },
@@ -1448,7 +1482,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var maxRd = 0; cm.forEach(function (o) { if (o.rd > maxRd) maxRd = o.rd; });
     CUT = CFG.cutoff || floorDay(maxRd || Date.now());
     CUT_END = CUT + DAY;
-    var rxDone = safeRx(CFG.internalDone), rxNA = safeRx(CFG.internalNA);
+    var rxDone = safeRx(CFG.internalDone), rxNA = safeRx(CFG.internalNA), mxSet = {}; String(CFG.mxClosed || '').split('|').forEach(function (x) { x = x.trim().toUpperCase(); if (x) mxSet[x] = 1; });
     CM = cm.filter(function (o) { return o.rd < CUT_END; }).map(function (o) {
       var s = CFG.sla[o.pr];
       o.grp = s ? s.grp : 'Not set';
@@ -1468,7 +1502,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       }
       // on-site status from Internal Status; Maximo closure from Final Status
       o.site = !o.ist ? (o.st === 'C' ? 'done' : 'open') : rxNA.test(o.ist) ? 'na' : rxDone.test(o.ist) ? 'done' : 'open';
-      o.mxs = o.st === 'C' ? 'closed' : 'open';
+      o.mxc = !!mxSet[String(o.mx || '').trim().toUpperCase()]; o.mxs = o.mxc ? 'closed' : 'open';
       o.loc2 = o.locd || o.loc || '(no location)';
       if (o.fz === 'K') { o.fz = 'H'; if (o.zn === 'K') o.zn = 'H'; }
       return o;
@@ -1742,10 +1776,10 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     }
     R.s9o = odl.slice(0, 200).map(function (v) { return { wo: v.id, desc: v.desc, zone: zl(v.zone), trade: tl(v.tr), ts: dstr(v.st), days: Math.floor((CUT_END - v.st) / DAY), ws: v.ws }; });
 
-    /* S10 on-site completion (Internal Status) vs Maximo closure (Final Status) */
+    /* S10 on-site completion (Internal Status) vs Maximo closure (Maximo Status, column M) */
     function s10row(label, a, cls) {
-      var site = count(a, function (o) { return o.site === 'done'; }), na = count(a, function (o) { return o.site === 'na'; }), mx = count(a, function (o) { return o.st === 'C'; });
-      var gap = count(a, function (o) { return o.site !== 'open' && o.st === 'O'; }), rev = count(a, function (o) { return o.site === 'open' && o.st === 'C'; });
+      var site = count(a, function (o) { return o.site === 'done'; }), na = count(a, function (o) { return o.site === 'na'; }), mx = count(a, function (o) { return o.mxc; });
+      var gap = count(a, function (o) { return o.site !== 'open' && !o.mxc; }), rev = count(a, function (o) { return o.site === 'open' && o.mxc; });
       return { month: label, rec: a.length, site: site, na: na, mx: mx, gap: gap, rev: rev, siteOpen: count(a, function (o) { return o.site === 'open'; }), gapPct: pct(gap, site + na), _cls: cls };
     }
     R.s10 = months.map(function (m) { return s10row(mkLabel(m), bm[m] || []); });
@@ -1757,8 +1791,12 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       { src: oc.label, total: oc.total, done: oc.closed, open: oc.total - oc.closed, comp: pct(oc.closed, oc.total) },
       { src: 'Grand total', total: cm.length + (+oc.total || 0), done: closed + (+oc.closed || 0), open: open.length + ((+oc.total || 0) - (+oc.closed || 0)), comp: pct(closed + (+oc.closed || 0), cm.length + (+oc.total || 0)), _cls: 'tot' }
     ];
+    var mxg = groupBy(cm, function (o) { return String(o.mx || '').trim().toUpperCase() || '(blank)'; });
+    R.s10m = Object.keys(mxg).sort(function (a, b) { return mxg[b].length - mxg[a].length; }).map(function (k) { var a = mxg[k]; return { mx: k, as: a[0].mxc ? 'Closed in Maximo' : 'Open in Maximo', total: a.length, site: count(a, function (o) { return o.site !== 'open'; }), siteOpen: count(a, function (o) { return o.site === 'open'; }), fsC: count(a, function (o) { return o.st === 'C'; }) }; });
+    R.s10m.push({ mx: 'Total', as: '', total: cm.length, site: count(cm, function (o) { return o.site !== 'open'; }), siteOpen: count(cm, function (o) { return o.site === 'open'; }), fsC: closed, _cls: 'tot' });
+    R.k.mxClosed = t10.mx;
     var ms = groupBy(cm, function (o) { return o.ist || '(blank)'; });
-    R.s10s = Object.keys(ms).sort(function (a, b) { return ms[b].length - ms[a].length; }).map(function (k) { var c = count(ms[k], function (o) { return o.st === 'C'; }); var sv = ms[k][0].site; return { ist: k, site: sv === 'done' ? 'Done on site' : sv === 'na' ? 'Not in scope / cancelled' : 'Open on site', total: ms[k].length, act: c, open: ms[k].length - c }; });
+    R.s10s = Object.keys(ms).sort(function (a, b) { return ms[b].length - ms[a].length; }).map(function (k) { var c = count(ms[k], function (o) { return o.mxc; }); var sv = ms[k][0].site; return { ist: k, site: sv === 'done' ? 'Done on site' : sv === 'na' ? 'Not in scope / cancelled' : 'Open on site', total: ms[k].length, act: c, open: ms[k].length - c }; });
 
     /* S11 top locations */
     var bl = groupBy(cm, function (o) { return o.loc2; });
@@ -1829,7 +1867,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     S.s9s = { title: 'PPM by system (top 15)', ar: 'حسب النظام', cols: pc, rows: R.s9s };
     S.s10 = { title: 'On-site completion vs Maximo closure', ar: 'الإنجاز في الموقع مقابل الإغلاق على ماكسيمو', cols: [{ k: 'month', label: 'Month', t: 'text' }, { k: 'rec', label: 'Received', t: 'int' }, { k: 'site', label: 'Done on site', t: 'int' }, { k: 'na', label: 'Not in scope', t: 'int' }, { k: 'mx', label: 'Closed in Maximo', t: 'int' }, { k: 'gap', label: 'Done, not closed in Maximo', t: 'int' }, { k: 'gapPct', label: 'Gap %', t: 'pct' }, { k: 'rev', label: 'Closed in Maximo, open on site', t: 'int' }], rows: R.s10 };
     S.s10c = { title: 'SR channels', ar: 'قنوات البلاغات', cols: [{ k: 'src', label: 'Source', t: 'text' }, { k: 'total', label: 'Total', t: 'int' }, { k: 'done', label: 'Closed', t: 'int' }, { k: 'open', label: 'Pending', t: 'int' }, { k: 'comp', label: 'Completion %', t: 'pct' }], rows: R.s10c };
-    S.s10s = { title: 'Internal (on-site) status vs Final (Maximo) status', ar: 'الحالة الداخلية مقابل الحالة النهائية', cols: [{ k: 'ist', label: 'Internal status', t: 'text' }, { k: 'site', label: 'Treated as', t: 'text' }, { k: 'total', label: 'SRs', t: 'int' }, { k: 'act', label: 'Final: CLOSED', t: 'int' }, { k: 'open', label: 'Final: OPEN', t: 'int' }], rows: R.s10s };
+    S.s10s = { title: 'Internal (on-site) status vs Maximo status', ar: 'الحالة الداخلية مقابل حالة ماكسيمو', cols: [{ k: 'ist', label: 'Internal status', t: 'text' }, { k: 'site', label: 'Treated as', t: 'text' }, { k: 'total', label: 'SRs', t: 'int' }, { k: 'act', label: 'Closed in Maximo', t: 'int' }, { k: 'open', label: 'Open in Maximo', t: 'int' }], rows: R.s10s };
+    S.s10m = { title: 'SRs by Maximo Status (tracker column M)', ar: 'البلاغات حسب حالة ماكسيمو', cols: [{ k: 'mx', label: 'Maximo Status', t: 'text' }, { k: 'as', label: 'Counted as', t: 'text' }, { k: 'total', label: 'SRs', t: 'int' }, { k: 'site', label: 'Done on site', t: 'int' }, { k: 'siteOpen', label: 'Open on site', t: 'int' }, { k: 'fsC', label: 'Final Status CLOSED', t: 'int' }], rows: R.s10m };
     var lc = [{ k: 'loc', label: 'Location', t: 'wrap' }, { k: 'area', label: 'Area', t: 'text' }, { k: 'zone', label: 'Zone', t: 'text' }, { k: 'total', label: 'Total', t: 'int' }, { k: 'open', label: 'Open', t: 'int' }, { k: 'od', label: 'Overdue', t: 'int' }, { k: 'top', label: 'Top failure', t: 'text' }];
     S.s11a = { title: 'Top locations by total SRs', ar: 'أعلى المواقع من حيث عدد البلاغات', cols: lc, rows: R.s11a };
     S.s11b = { title: 'Top locations by open SRs', ar: 'أعلى المواقع من حيث الطلبات المفتوحة', cols: lc, rows: R.s11b };
@@ -1966,7 +2005,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<p><b>SLA compliance.</b> Closed within the resolution time ÷ (closed within + closed late + open overdue). The tracker holds closing dates without times, so closure is measured in calendar days, rounded up to whole days of the target. Closed SRs with no closing date cannot be measured and are shown separately.</p>' +
       '<p><b>Aging.</b> Whole days between the reported date and the cut-off date, for open SRs.</p>' +
       '<p><b>Weekly backlog.</b> Built from weekly tracker snapshots: Opening = last week\'s closing backlog; New = growth in total SRs; Closed = Opening + New − Closing. Weeks end on the cut-off weekday.</p>' +
-      '<p><b>On-site vs Maximo.</b> <i>Internal Status</i> records the work on site; <i>Final Status</i> records closure in Maximo. Done on site = Internal Status starting with ' + esc(String(CFG.internalDone).split('|').join(' / ')) + '. Not in scope = ' + esc(String(CFG.internalNA).split('|').join(' / ')) + '. Gap = done on site but still OPEN in Maximo.</p>' +
+      '<p><b>On-site vs Maximo.</b> <i>Internal Status</i> records the work on site; <i>Maximo Status</i> (column M) records closure in Maximo: ' + esc(String(CFG.mxClosed).split('|').join(' / ')) + ' = closed in Maximo. <i>Final Status</i> decides open / closed in the rest of the dashboard. Done on site = Internal Status starting with ' + esc(String(CFG.internalDone).split('|').join(' / ')) + '. Not in scope = ' + esc(String(CFG.internalNA).split('|').join(' / ')) + '. Gap = done on site but still OPEN in Maximo.</p>' +
       '<p><b>Repeat failures.</b> SRs at the same location with the same failure type (derived from the SR summary). A repeat is an SR raised within ' + CFG.repeatWindow + ' days of the previous one; locations with ' + CFG.repeatMin + '+ SRs of one type are listed.</p>' +
       (HASWO ? '<p><b>PPM.</b> PPM work orders come from the Maximo PM export. Due = target start on or before the cut-off. Completed = status ' + esc(String(CFG.ppmDone).split('|').join(' / ')) + '. Awaiting inspection = ' + esc(String(CFG.ppmInsp).split('|').join(' / ')) + ' (shown separately, not counted as completed). Overdue = due, not completed or awaiting inspection, and target start more than ' + fmt(+CFG.ppmGraceDays || 0) + ' days before the cut-off. Zone comes from the route code (R-<b>A</b>B93 = Zone A). On-time % needs an Actual Finish column in the export.</p>'
         : '<p><b>PPM.</b> Planned visits come from the 2026 PPM Services Schedule (start date = planned month; end date = due date). Zones are inferred from the site name. Completion, overdue and on-time figures appear once the PPM tracker is loaded.</p>') +
@@ -2017,8 +2056,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       out += section('11', 'Top locations', 'تحليل أعلى المواقع', 'Locations as recorded in the tracker (Location Description).', '<div class="grid">' + panel('Top locations by open SRs', '', chartBox('c_tl', true)) + tablePanel(S.s11a) + '</div><div class="grid" style="margin-top:16px">' + tablePanel(S.s11b) + tablePanel(S.s11c) + '</div><div style="margin-top:16px">' + tablePanel(S.s11d) + '</div>');
       out += section('12', 'Repeat complaints and failures', 'الشكاوى والأعطال المتكررة', fmt(R.k.repeatGroups) + ' location / failure-type pairs have ' + CFG.repeatMin + ' or more SRs. Asset IDs are not in the tracker, so location + failure type (read from the SR summary) stands in for the asset. Large sites recorded as one location, such as labour accommodations, will show more repeats than single buildings.', '<div class="grid">' + panel('Repeat SRs by failure type', '', chartBox('c_rp', true)) + tablePanel(S.s12c) + '</div><div style="margin-top:16px">' + tableHTML(S.s12) + '</div>');
     } else if (tab === 'maximo') {
-      out += section('10', 'On-site completion vs Maximo closure', 'الإنجاز في الموقع مقابل الإغلاق على النظام', fmt(R.k.mxGap) + ' SRs are done on site but still open in Maximo. ' + fmt(R.k.mxRev) + ' SRs are closed in Maximo while the internal status is still open.',
-        '<div class="grid">' + panel('Completion vs closure by month', '', chartBox('c_mx')) + tablePanel(S.s10) + '</div><div class="grid" style="margin-top:16px">' + tablePanel(S.s10c) + tablePanel(S.s10s) + '</div>');
+      out += section('10', 'On-site completion vs Maximo closure', 'الإنجاز في الموقع مقابل الإغلاق على النظام', 'Closed in Maximo = tracker column M "Maximo Status" is ' + esc(String(CFG.mxClosed).split('|').join(' / ')) + '. ' + fmt(R.k.mxClosed) + ' SRs are closed in Maximo. ' + fmt(R.k.mxGap) + ' SRs are done on site but not closed in Maximo. ' + fmt(R.k.mxRev) + ' SRs are closed in Maximo while the internal status is still open.',
+        '<div class="grid">' + panel('Completion vs closure by month', '', chartBox('c_mx')) + tablePanel(S.s10) + '</div><div class="grid" style="margin-top:16px">' + tablePanel(S.s10m) + tablePanel(S.s10s) + '</div><div style="margin-top:16px">' + tablePanel(S.s10c) + '</div>');
     } else if (tab === 'site') {
       SD = siteCompute(cm); out += siteHTML(SD);
     } else if (tab === 'register') {
@@ -2304,7 +2343,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     // 9
     ws = sheet('9 PPM Compliance'); r = header(ws, '9', 'PPM compliance', 'الالتزام بالصيانة الوقائية', HASWO ? 'Maximo PM work orders · cut-off ' + dstr(CUT) : 'Completion fills in when the PPM tracker is loaded'); r = table(ws, S.s9m, r); r = table(ws, S.s9t, r); r = table(ws, S.s9z, r); r = table(ws, S.s9s, r); if (HASWO) { r = table(ws, S.s9w, r); r = table(ws, S.s9o, r); } if (R.hasCost) { r = table(ws, S.c9m, r); r = table(ws, S.c9t, r); r = table(ws, S.c9z, r); r = table(ws, S.c9s, r); } widths(ws, [34, 30, 16, 12, 14, 13, 11, 13, 11]);
     // 10
-    ws = sheet('10 On-site vs Maximo'); r = header(ws, '10', 'On-site completion vs Maximo closure', 'الإنجاز في الموقع مقابل الإغلاق على ماكسيمو'); r = table(ws, S.s10, r); r = table(ws, S.s10c, r); r = table(ws, S.s10s, r); img(ws, C.maximo, 9, 9, 860, 360); widths(ws, [36, 11, 13, 13, 16, 16, 9, 3]);
+    ws = sheet('10 On-site vs Maximo'); r = header(ws, '10', 'On-site completion vs Maximo closure', 'الإنجاز في الموقع مقابل الإغلاق على ماكسيمو'); r = table(ws, S.s10, r); r = table(ws, S.s10m, r); r = table(ws, S.s10c, r); r = table(ws, S.s10s, r); img(ws, C.maximo, 9, 9, 860, 360); widths(ws, [36, 11, 13, 13, 16, 16, 9, 3]);
     // 11
     ws = sheet('11 Top Locations'); r = header(ws, '11', 'Top locations analysis', 'تحليل أعلى المواقع'); r = table(ws, S.s11a, r); r = table(ws, S.s11b, r); r = table(ws, S.s11c, r); r = table(ws, S.s11d, r); widths(ws, [60, 16, 9, 9, 9, 10, 22]);
     // 12
@@ -2451,12 +2490,12 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     h += panel('2 · Previous weekly tracker', 'optional, for backlog history', '<p>Load an older tracker (for example last week\'s) to record its backlog snapshot only. Current data is not replaced.</p><div class="drop" id="dropSN" tabindex="0">Drop an older tracker here<input type="file" id="fileSN" accept=".xlsx,.xlsm,.xls" hidden></div><div id="pendSN"></div><div class="status" id="stSN"></div>' +
       '<h3 style="margin-top:14px">Snapshots</h3><div class="tw"><table class="t"><thead><tr><th>Cut-off</th><th class="n">Total SRs</th><th class="n">Open</th><th></th></tr></thead><tbody>' + snaps.map(function (s) { return '<tr><td>' + dstr(s.c) + '</td><td class="n">' + fmt(s.t) + '</td><td class="n">' + fmt(s.o) + '</td><td><button class="btn danger" data-delsnap="' + s.c + '">Remove</button></td></tr>'; }).join('') + '</tbody></table></div>');
     if (!OPER && !CLOUD) h += panel('Sync from the operator file', 'bring the operator\'s latest data into this admin file', '<p>The CAFM operator keeps the data up to date in his own file. Before you change settings, drop his latest <b>DM_Dashboard_OPERATOR.html</b> here. His SR data and backlog snapshots are copied in; your settings and logos stay as they are.</p><div class="drop" id="dropSY" tabindex="0">Drop DM_Dashboard_OPERATOR.html here<input type="file" id="fileSY" accept=".html,.htm" hidden></div><div id="pendSY"></div><div class="status" id="stSY"></div>');
-    if (!OPER) h += panel('3 · PPM data', 'Maximo PM work orders (PM-All export) or PPM Services Schedule (.xlsx)', '<p>Upload the latest Maximo PM work-order export (e.g. PM-All). It replaces the current PPM data. Current: ' + fmt(PPM.length) + (HASWO ? ' work orders' : ' planned visits') + (RAW.meta && RAW.meta.ppmFile ? ' from ' + esc(RAW.meta.ppmFile) : '') + '.</p><div class="drop" id="dropPPM" tabindex="0">Drop the PPM file here<input type="file" id="filePPM" accept=".xlsx,.xlsm,.xls" hidden></div><div id="pendPPM"></div><div class="status" id="stPPM"></div>');
+    if (!OPER && !CLOUD) h += panel('3 · PPM data', 'Maximo PM work orders (PM-All export) or PPM Services Schedule (.xlsx)', '<p>Upload the latest Maximo PM work-order export (e.g. PM-All). It replaces the current PPM data. Current: ' + fmt(PPM.length) + (HASWO ? ' work orders' : ' planned visits') + (RAW.meta && RAW.meta.ppmFile ? ' from ' + esc(RAW.meta.ppmFile) : '') + '.</p><div class="drop" id="dropPPM" tabindex="0">Drop the PPM file here<input type="file" id="filePPM" accept=".xlsx,.xlsm,.xls" hidden></div><div id="pendPPM"></div><div class="status" id="stPPM"></div>');
     if (!OPER) h += panel('4 · Report settings', '', '<div class="form">' +
       fld('cfgTitle', 'Dashboard title', CFG.title, 'full') + fld('cfgTitleAr', 'Arabic title', CFG.titleAr, 'full') + fld('cfgSub', 'Subtitle', CFG.subtitle, 'full') +
       '<div class="f"><label for="cfgCut">Cut-off date</label><input type="date" id="cfgCut" value="' + iso(CUT) + '"></div>' +
       fld('cfgRepMin', 'Repeat: min SRs', CFG.repeatMin) + fld('cfgRepWin', 'Repeat window (days)', CFG.repeatWindow) + fld('cfgOldN', 'Oldest SRs listed', CFG.oldestN) + fld('cfgTopN', 'Top locations listed', CFG.topN) +
-      fld('cfgAging', 'Aging limits (days)', CFG.aging.join(', ')) + fld('cfgIDone', 'Internal status = done on site (starts with, separate with |)', CFG.internalDone, 'full') + fld('cfgINA', 'Internal status = not in scope / cancelled', CFG.internalNA, 'full') +
+      fld('cfgAging', 'Aging limits (days)', CFG.aging.join(', ')) + fld('cfgIDone', 'Internal status = done on site (starts with, separate with |)', CFG.internalDone, 'full') + fld('cfgINA', 'Internal status = not in scope / cancelled', CFG.internalNA, 'full') + fld('cfgMx', 'Maximo Status = closed in Maximo (exact values, separate with |)', CFG.mxClosed, 'full') +
       fld('cfgOcL', 'Other channel label', CFG.otherChannels.label, 'full') + fld('cfgOcT', 'Other channel total', CFG.otherChannels.total) + fld('cfgOcC', 'Other channel closed', CFG.otherChannels.closed) +
       '</div><h3 style="margin-top:14px">SLA by priority (minutes)</h3><div class="tw"><table class="t"><thead><tr><th>Priority</th><th>Name</th><th>Group</th><th class="n">Response</th><th class="n">Resolution</th></tr></thead><tbody>' +
       [1, 2, 3, 4, 5].map(function (p) { var s = CFG.sla[p]; return '<tr><td>P' + p + '</td><td><input id="sla' + p + 'n" value="' + esc(s.name) + '" style="width:90px"></td><td><select id="sla' + p + 'g">' + ['Emergency', 'Urgent', 'Routine'].map(function (g) { return '<option' + (g === s.grp ? ' selected' : '') + '>' + g + '</option>'; }).join('') + '</select></td><td class="n"><input id="sla' + p + 'r" type="number" value="' + s.resp + '" style="width:80px"></td><td class="n"><input id="sla' + p + 's" type="number" value="' + s.res + '" style="width:80px"></td></tr>'; }).join('') +
@@ -2608,6 +2647,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         var ag = $('#cfgAging').value.split(/[,\s]+/).map(Number).filter(function (x) { return x > 0; }).sort(function (a, b) { return a - b; }); if (ag.length) c.aging = ag;
         c.internalDone = $('#cfgIDone').value.split('|').map(function (s) { return s.trim().toUpperCase(); }).filter(Boolean).join('|');
         c.internalNA = $('#cfgINA').value.split('|').map(function (s) { return s.trim().toUpperCase(); }).filter(Boolean).join('|');
+        var mxv = $('#cfgMx'); if (mxv) c.mxClosed = mxv.value.split('|').map(function (s) { return s.trim().toUpperCase(); }).filter(Boolean).join('|') || c.mxClosed;
         new RegExp(c.internalDone); new RegExp(c.internalNA);
         c.otherChannels = { label: $('#cfgOcL').value.trim(), total: +$('#cfgOcT').value || 0, closed: +$('#cfgOcC').value || 0 };
         c.sla = {}; [1, 2, 3, 4, 5].forEach(function (p) { c.sla[p] = { name: $('#sla' + p + 'n').value.trim(), grp: $('#sla' + p + 'g').value, resp: +$('#sla' + p + 'r').value || 0, res: +$('#sla' + p + 's').value || 0 }; });
