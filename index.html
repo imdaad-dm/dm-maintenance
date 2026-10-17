@@ -2753,13 +2753,16 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function CAN_SAVE() { return CLOUD ? !!(PERMS && PERMS.export) : !!(CAPS.downloads || DEV); }
   function CAN_PRINT() { return CLOUD ? !!(PERMS && PERMS.print) : !!(CAPS.downloads || DEV); }
   var REGF = { wt: '', scope: 'O', ls: '' };
-  function labSup(o) { try { return rmSup(o); } catch (e) { return o.sup || 'Unassigned'; } }
+  // SR register: civil work types go to the civil labour supervisor of the zone (RM works settings); everything else is MEP (tracker "Supervisors")
+  var CIVIL_WT = ['Carpentry & Door Hardware', 'Tiling & Flooring', 'Painting', 'Gypsum & False Ceiling', 'Waterproofing', 'Civil & Masonry', 'Metal & Steel Works', 'Interlock & Paving', 'Sports Surfaces & Tracks', 'Furniture & Fit-out'];
+  function wtDisc(o) { return CIVIL_WT.indexOf(o.wt) >= 0 ? 'Civil' : 'MEP'; }
+  function labSup(o) { if (wtDisc(o) === 'Civil') { var m = {}; try { m = rmCivilMap(); } catch (e) { m = RM_CIVIL_DEF; } return m[o.fz] || 'Unassigned (civil)'; } return o.sup || 'Unassigned (MEP)'; }
   function regScoped(cm) { return REGF.scope === 'O' ? cm.filter(function (o) { return o.st === 'O'; }) : cm; }
   function regBase(cm) { var a = regScoped(cm); return REGF.ls ? a.filter(function (o) { return labSup(o) === REGF.ls; }) : a; }
   // labour supervisors with their works (Civil / MEP) and zones, as in RM works
   function labSupList(cm) {
     var m = {};
-    regScoped(cm).forEach(function (o) { var s = labSup(o), d = rmDisc(o) === 'CIVIL' ? 'Civil' : rmDisc(o) === 'MEP' ? 'MEP' : 'Other'; var r = m[s] = m[s] || { name: s, works: {}, zones: {}, n: 0 }; r.works[d] = 1; if (o.fz && o.fz !== '?') r.zones[o.fz] = 1; r.n++; });
+    regScoped(cm).forEach(function (o) { var s = labSup(o), d = wtDisc(o); var r = m[s] = m[s] || { name: s, works: {}, zones: {}, n: 0 }; r.works[d] = 1; if (o.fz && o.fz !== '?') r.zones[o.fz] = 1; r.n++; });
     var ord = { Civil: 0, MEP: 1, Other: 2 };
     return Object.keys(m).map(function (k) { var r = m[k]; r.w = Object.keys(r.works).sort(function (a, b) { return ord[a] - ord[b]; }).join(' / '); r.z = Object.keys(r.zones).sort().join(', '); return r; })
       .sort(function (a, b) { return (ord[a.w.split(' / ')[0]] - ord[b.w.split(' / ')[0]]) || (/^Unassigned/.test(a.name) - /^Unassigned/.test(b.name)) || (a.name < b.name ? -1 : 1); });
@@ -2780,7 +2783,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="f"><label for="regWt">Work type</label><select id="regWt">' + opt('', 'All work types (' + fmt(base.length) + ')', REGF.wt) + sum.filter(function (r) { return !r._cls; }).map(function (r) { return opt(r.wt, r.wt + ' (' + fmt(r.total) + ')', REGF.wt); }).join('') + '</select></div>' +
       '<div class="f"><label for="regLs">Labour supervisor</label><select id="regLs" style="min-width:340px">' + opt('', 'All labour supervisors', REGF.ls) + labSupList(cm).map(function (r) { return opt(r.name, r.name + '  —  ' + r.w + (r.z ? ' · Zones ' + r.z : '') + ' (' + fmt(r.n) + ')', REGF.ls); }).join('') + '</select></div>' +
       (CAN_SAVE() ? '<div class="f" style="align-self:flex-end"><button class="btn primary" id="regWl" title="Summary sheet plus one work list per work type, with follow-up columns">Work lists (Excel) ⬇</button></div>' : '') + '</div>';
-    return section('', 'Work type analysis', '', 'Every SR is sorted into a work type from its description (summary), e.g. plumbing, carpentry, painting, tiling. Showing ' + scopeTxt + ' for the filters at the top. Click a work type to list its SRs.', ctl + panel('SRs by work type', fmt(base.length) + ' ' + scopeTxt, tbl)) +
+    return section('', 'Work type analysis', '', 'Every SR is sorted into a work type from its description (summary), e.g. plumbing, carpentry, painting, tiling. Showing ' + scopeTxt + ' for the filters at the top. Click a work type to list its SRs. Labour supervisor: civil works (carpentry, tiling, painting, gypsum, waterproofing, civil & masonry, metal, interlock, sports surfaces, furniture) go to the civil supervisor of the zone; all other works are MEP and follow the tracker Supervisors column.', ctl + panel('SRs by work type', fmt(base.length) + ' ' + scopeTxt, tbl)) +
       section('', 'SR register' + (REGF.wt ? ' — ' + REGF.wt : ''), '', fmt(list.length) + ' SRs. Click a column to sort.', '<div class="pager"><span id="regInfo"></span><button class="btn" id="regPrev">Previous</button><button class="btn" id="regNext">Next</button>' + (CAN_SAVE() ? '<button class="btn" id="regXl">Excel ⬇</button><button class="btn" id="regCsv">CSV ⬇</button>' : '') + '</div><div class="tw" id="regTable"></div>');
   }
   // Excel: Summary sheet + one work list per work type (follow-up columns in yellow)
