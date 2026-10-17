@@ -2749,11 +2749,21 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
 
   /* ---------- register ---------- */
   var REG = { page: 0, sort: 'rd', dir: -1 };
-  var REG_COLS = [['id', 'SR No'], ['wo', 'WO'], ['rd', 'Reported'], ['wt', 'Work type'], ['tr', 'Trade'], ['fz', 'Zone'], ['zn', 'Sub-zone'], ['area', 'Area'], ['loc2', 'Location'], ['grp', 'Priority'], ['st', 'Final (Maximo)'], ['age', 'Age (d)'], ['od', 'SLA'], ['ist', 'Internal (on-site)'], ['mx', 'Maximo WO status'], ['sup', 'Supervisor'], ['fc', 'Failure type'], ['tel', 'Contact No'], ['sum', 'Summary']];
+  var REG_COLS = [['id', 'SR No'], ['wo', 'WO'], ['rd', 'Reported'], ['wt', 'Work type'], ['tr', 'Trade'], ['fz', 'Zone'], ['zn', 'Sub-zone'], ['area', 'Area'], ['loc2', 'Location'], ['grp', 'Priority'], ['st', 'Final (Maximo)'], ['age', 'Age (d)'], ['od', 'SLA'], ['ist', 'Internal (on-site)'], ['mx', 'Maximo WO status'], ['sup', 'Supervisor'], ['ls', 'Labour supervisor'], ['fc', 'Failure type'], ['tel', 'Contact No'], ['sum', 'Summary']];
   function CAN_SAVE() { return CLOUD ? !!(PERMS && PERMS.export) : !!(CAPS.downloads || DEV); }
   function CAN_PRINT() { return CLOUD ? !!(PERMS && PERMS.print) : !!(CAPS.downloads || DEV); }
-  var REGF = { wt: '', scope: 'O' };
-  function regBase(cm) { return REGF.scope === 'O' ? cm.filter(function (o) { return o.st === 'O'; }) : cm; }
+  var REGF = { wt: '', scope: 'O', ls: '' };
+  function labSup(o) { try { return rmSup(o); } catch (e) { return o.sup || 'Unassigned'; } }
+  function regScoped(cm) { return REGF.scope === 'O' ? cm.filter(function (o) { return o.st === 'O'; }) : cm; }
+  function regBase(cm) { var a = regScoped(cm); return REGF.ls ? a.filter(function (o) { return labSup(o) === REGF.ls; }) : a; }
+  // labour supervisors with their works (Civil / MEP) and zones, as in RM works
+  function labSupList(cm) {
+    var m = {};
+    regScoped(cm).forEach(function (o) { var s = labSup(o), d = rmDisc(o) === 'CIVIL' ? 'Civil' : rmDisc(o) === 'MEP' ? 'MEP' : 'Other'; var r = m[s] = m[s] || { name: s, works: {}, zones: {}, n: 0 }; r.works[d] = 1; if (o.fz && o.fz !== '?') r.zones[o.fz] = 1; r.n++; });
+    var ord = { Civil: 0, MEP: 1, Other: 2 };
+    return Object.keys(m).map(function (k) { var r = m[k]; r.w = Object.keys(r.works).sort(function (a, b) { return ord[a] - ord[b]; }).join(' / '); r.z = Object.keys(r.zones).sort().join(', '); return r; })
+      .sort(function (a, b) { return (ord[a.w.split(' / ')[0]] - ord[b.w.split(' / ')[0]]) || (/^Unassigned/.test(a.name) - /^Unassigned/.test(b.name)) || (a.name < b.name ? -1 : 1); });
+  }
   function wtSummary(base) {
     var g = groupBy(base, function (o) { return o.wt; });
     var rows = WT_ORDER.filter(function (t) { return g[t]; }).map(function (t) { var a = g[t]; return { wt: t, scope: WT_SCOPE[t] || '', total: a.length, em: count(a, function (o) { return o.grp === 'Emergency'; }), ur: count(a, function (o) { return o.grp === 'Urgent'; }), ro: count(a, function (o) { return o.grp === 'Routine' || o.grp === 'Not set'; }), od: count(a, function (o) { return o.od; }), share: pct(a.length, base.length) }; });
@@ -2762,12 +2772,13 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   }
   function registerHTML(cm) {
     var base = regBase(cm), sum = wtSummary(base), list = REGF.wt ? base.filter(function (o) { return o.wt === REGF.wt; }) : base;
-    var scopeTxt = REGF.scope === 'O' ? 'open SRs' : 'SRs (open and closed)';
+    var scopeTxt = (REGF.scope === 'O' ? 'open SRs' : 'SRs (open and closed)') + (REGF.ls ? ' of ' + REGF.ls : '');
     var tbl = '<div class="tw"><table class="t wt-sum"><thead><tr><th>Trade / Sheet</th><th>Scope</th><th class="n">Total</th><th class="n">Emergency</th><th class="n">Urgent</th><th class="n">Routine</th><th class="n">Overdue</th><th class="n">% of Total</th></tr></thead><tbody>' +
       sum.map(function (r) { var sel = REGF.wt === r.wt; return '<tr class="' + (r._cls || '') + (sel ? ' sel' : '') + '">' + (r._cls ? '<td><b>TOTAL</b></td>' : '<td><a href="#" data-wt="' + esc(r.wt) + '">' + esc(r.wt) + '</a></td>') + '<td class="wrapc">' + esc(r.scope) + '</td><td class="n">' + fmt(r.total) + '</td><td class="n">' + fmt(r.em) + '</td><td class="n">' + fmt(r.ur) + '</td><td class="n">' + fmt(r.ro) + '</td><td class="n">' + fmt(r.od) + '</td><td class="n">' + fp(r.share) + '</td></tr>'; }).join('') + '</tbody></table></div>';
     var ctl = '<div class="filters" style="margin:0 0 12px;padding:0">' +
       '<div class="f"><label for="regScope">SRs</label><select id="regScope">' + opt('O', 'Open SRs only', REGF.scope) + opt('', 'All SRs (open and closed)', REGF.scope) + '</select></div>' +
       '<div class="f"><label for="regWt">Work type</label><select id="regWt">' + opt('', 'All work types (' + fmt(base.length) + ')', REGF.wt) + sum.filter(function (r) { return !r._cls; }).map(function (r) { return opt(r.wt, r.wt + ' (' + fmt(r.total) + ')', REGF.wt); }).join('') + '</select></div>' +
+      '<div class="f"><label for="regLs">Labour supervisor</label><select id="regLs" style="min-width:340px">' + opt('', 'All labour supervisors', REGF.ls) + labSupList(cm).map(function (r) { return opt(r.name, r.name + '  —  ' + r.w + (r.z ? ' · Zones ' + r.z : '') + ' (' + fmt(r.n) + ')', REGF.ls); }).join('') + '</select></div>' +
       (CAN_SAVE() ? '<div class="f" style="align-self:flex-end"><button class="btn primary" id="regWl" title="Summary sheet plus one work list per work type, with follow-up columns">Work lists (Excel) ⬇</button></div>' : '') + '</div>';
     return section('', 'Work type analysis', '', 'Every SR is sorted into a work type from its description (summary), e.g. plumbing, carpentry, painting, tiling. Showing ' + scopeTxt + ' for the filters at the top. Click a work type to list its SRs.', ctl + panel('SRs by work type', fmt(base.length) + ' ' + scopeTxt, tbl)) +
       section('', 'SR register' + (REGF.wt ? ' — ' + REGF.wt : ''), '', fmt(list.length) + ' SRs. Click a column to sort.', '<div class="pager"><span id="regInfo"></span><button class="btn" id="regPrev">Previous</button><button class="btn" id="regNext">Next</button>' + (CAN_SAVE() ? '<button class="btn" id="regXl">Excel ⬇</button><button class="btn" id="regCsv">CSV ⬇</button>' : '') + '</div><div class="tw" id="regTable"></div>');
@@ -2780,7 +2791,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       var wb = new ExcelJS.Workbook(); wb.creator = 'DM Maintenance Portal';
       var NAVY = 'FF1C3B67', GOLD = 'FFC09A52', YEL = 'FFFFF2CC', TOT = 'FFDCE3EE';
       var thin = { style: 'thin', color: { argb: 'FFD6DDE8' } }, box = { top: thin, left: thin, bottom: thin, right: thin };
-      var site = [F.fz ? zl(F.fz) : '', F.zn ? 'Sub-zone ' + F.zn : '', F.area || '', F.tr ? tl(F.tr) : ''].filter(Boolean).join(' · ') || 'All zones';
+      var site = ([F.fz ? zl(F.fz) : '', F.zn ? 'Sub-zone ' + F.zn : '', F.area || '', F.tr ? tl(F.tr) : ''].filter(Boolean).join(' · ') || 'All zones') + (REGF.ls ? '  |  Labour supervisor: ' + REGF.ls : '');
       var sum = wtSummary(base), g = groupBy(base, function (o) { return o.wt; });
       var sheetName = function (t) { return t.replace(/[\\\/\?\*\[\]:]/g, ' ').slice(0, 31); };
       var ws = wb.addWorksheet('Summary', { views: [{ showGridLines: false, state: 'frozen', ySplit: 4 }] });
@@ -2794,7 +2805,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         if (!tot) { var c0 = ws.getCell(rr, 1); c0.value = { text: r.wt, hyperlink: "#'" + sheetName(r.wt) + "'!A1" }; c0.font = { color: { argb: 'FF0563C1' }, underline: true }; }
       });
       [30, 70, 9, 11, 9, 9, 9, 11].forEach(function (w, i) { ws.getColumn(i + 1).width = w; });
-      var cols = [['#', 5], ['SR No', 10], ['Work Order', 11], ['Reported Date', 13], ['Building / Area', 24], ['Work Description', 60], ['Contact No', 13], ['Pending Days', 10], ['Zone', 8], ['Priority', 11], ['Supervisor', 16], ['Assigned To', 16], ['Planned Date', 13], ['Completion Date', 14], ['Status', 12], ['Remarks', 30]], FOLLOW = 11;
+      var cols = [['#', 5], ['SR No', 10], ['Work Order', 11], ['Reported Date', 13], ['Building / Area', 24], ['Work Description', 60], ['Contact No', 13], ['Pending Days', 10], ['Zone', 8], ['Priority', 11], ['Labour Supervisor', 18], ['Assigned To', 16], ['Planned Date', 13], ['Completion Date', 14], ['Status', 12], ['Remarks', 30]], FOLLOW = 11;
       sum.filter(function (r) { return !r._cls; }).forEach(function (r) {
         var a = g[r.wt].slice().sort(function (x, y) { return x.rd - y.rd; });
         var w = wb.addWorksheet(sheetName(r.wt), { views: [{ showGridLines: false, state: 'frozen', ySplit: 5 }] });
@@ -2806,13 +2817,13 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         cols.forEach(function (c, i) { var h = w.getCell(5, i + 1); h.value = c[0]; h.font = { bold: true, color: { argb: 'FFFFFFFF' } }; h.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i >= FOLLOW ? GOLD : NAVY } }; h.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; h.border = box; w.getColumn(i + 1).width = c[1]; });
         w.getRow(5).height = 30;
         a.forEach(function (o, k) {
-          var vals = [k + 1, o.id, o.wo, dstr(o.rd), o.area || community(o.locd) || o.loc2, o.sum, o.tel, o.st === 'O' ? o.age : '', o.fz, o.grp + (o.pr ? ' (P' + o.pr + ')' : ''), o.sup, '', '', '', o.st === 'O' ? '' : 'Closed', ''];
+          var vals = [k + 1, o.id, o.wo, dstr(o.rd), o.area || community(o.locd) || o.loc2, o.sum, o.tel, o.st === 'O' ? o.age : '', o.fz, o.grp + (o.pr ? ' (P' + o.pr + ')' : ''), labSup(o), '', '', '', o.st === 'O' ? '' : 'Closed', ''];
           vals.forEach(function (v, i) { var c = w.getCell(6 + k, i + 1); c.value = v === undefined ? '' : v; c.border = box; c.alignment = { vertical: 'top', wrapText: i === 5 || i === 4 }; if (i >= FOLLOW) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: YEL } }; });
         });
         w.autoFilter = { from: { row: 5, column: 1 }, to: { row: 5 + a.length, column: cols.length } };
       });
       var buf = await wb.xlsx.writeBuffer();
-      await saveFile('DM_Work_Lists_' + (REGF.scope === 'O' ? 'Open_' : 'All_') + iso(CUT) + '.xlsx', new Blob([buf]));
+      await saveFile('DM_Work_Lists_' + (REGF.scope === 'O' ? 'Open_' : 'All_') + (REGF.ls ? REGF.ls.replace(/[^A-Za-z0-9]+/g, '_') + '_' : '') + iso(CUT) + '.xlsx', new Blob([buf]));
     } catch (e) { toast('Work lists failed: ' + (e.message || e)); }
     if (btn) { btn.disabled = false; btn.textContent = old; }
   }
@@ -2820,6 +2831,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var base = regBase(cm), rows = REGF.wt ? base.filter(function (o) { return o.wt === REGF.wt; }) : base.slice();
     var sc = $('#regScope'); if (sc) sc.onchange = function () { REGF.scope = sc.value; REG.page = 0; render(); };
     var wsel = $('#regWt'); if (wsel) wsel.onchange = function () { REGF.wt = wsel.value; REG.page = 0; render(); };
+    var lsel = $('#regLs'); if (lsel) lsel.onchange = function () { REGF.ls = lsel.value; REG.page = 0; render(); };
     Array.prototype.forEach.call(document.querySelectorAll('#view [data-wt]'), function (l) { l.onclick = function (e) { e.preventDefault(); var t = l.getAttribute('data-wt'); REGF.wt = REGF.wt === t ? '' : t; REG.page = 0; render(); setTimeout(function () { var el = $('#regTable'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50); }; });
     var wl = $('#regWl'); if (wl) wl.onclick = function () { workListsXlsx(base, wl); };
     function draw() {
@@ -2829,7 +2841,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       var sl = rows.slice(REG.page * per, REG.page * per + per);
       var h = '<table class="t"><thead><tr>' + REG_COLS.map(function (c) { return '<th class="sort' + (c[0] === 'age' ? ' n' : '') + '" data-k="' + c[0] + '">' + esc(c[1]) + (REG.sort === c[0] ? (REG.dir > 0 ? ' ▲' : ' ▼') : '') + '</th>'; }).join('') + '</tr></thead><tbody>';
       sl.forEach(function (o) {
-        h += '<tr><td>' + esc(o.id) + '</td><td>' + esc(o.wo) + '</td><td>' + dstr(o.rd) + '</td><td>' + esc(o.wt) + '</td><td>' + esc(tl(o.tr)) + '</td><td>' + esc(o.fz) + '</td><td>' + esc(o.zn) + '</td><td>' + esc(o.area) + '</td><td class="wrapc">' + esc(o.loc2) + '</td><td>' + esc(o.grp) + (o.pr ? ' P' + o.pr : '') + '</td><td>' + (o.st === 'O' ? '<span class="pill avg">Open</span>' : '<span class="pill good">Closed</span>') + '</td><td class="n">' + (o.st === 'O' ? o.age : '') + '</td><td>' + (o.od ? '<span class="pill bad">Overdue</span>' : o.sla === 'met' ? 'Met' : o.sla === 'breach' ? '<span class="bad-t">Late</span>' : '') + '</td><td>' + esc(o.ist) + '</td><td>' + esc(o.mx) + '</td><td>' + esc(o.sup) + '</td><td>' + esc(o.fc) + '</td><td>' + esc(o.tel) + '</td><td class="wrapc">' + esc(o.sum) + '</td></tr>';
+        h += '<tr><td>' + esc(o.id) + '</td><td>' + esc(o.wo) + '</td><td>' + dstr(o.rd) + '</td><td>' + esc(o.wt) + '</td><td>' + esc(tl(o.tr)) + '</td><td>' + esc(o.fz) + '</td><td>' + esc(o.zn) + '</td><td>' + esc(o.area) + '</td><td class="wrapc">' + esc(o.loc2) + '</td><td>' + esc(o.grp) + (o.pr ? ' P' + o.pr : '') + '</td><td>' + (o.st === 'O' ? '<span class="pill avg">Open</span>' : '<span class="pill good">Closed</span>') + '</td><td class="n">' + (o.st === 'O' ? o.age : '') + '</td><td>' + (o.od ? '<span class="pill bad">Overdue</span>' : o.sla === 'met' ? 'Met' : o.sla === 'breach' ? '<span class="bad-t">Late</span>' : '') + '</td><td>' + esc(o.ist) + '</td><td>' + esc(o.mx) + '</td><td>' + esc(o.sup) + '</td><td>' + esc(labSup(o)) + '</td><td>' + esc(o.fc) + '</td><td>' + esc(o.tel) + '</td><td class="wrapc">' + esc(o.sum) + '</td></tr>';
       });
       $('#regTable').innerHTML = h + '</tbody></table>';
       $('#regInfo').textContent = 'Page ' + (REG.page + 1) + ' of ' + pages;
@@ -2839,12 +2851,12 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     $('#regNext').onclick = function () { REG.page++; draw(); };
     var xlB = $('#regXl'); if (xlB) xlB.onclick = function () {
       var sp = { title: 'SR register', ar: 'سجل البلاغات', cols: REG_COLS.map(function (c) { return { k: c[0], label: c[1], t: c[0] === 'age' ? 'int' : (c[0] === 'sum' || c[0] === 'loc2') ? 'wrap' : 'text' }; }),
-        rows: rows.map(function (o) { var r = {}; REG_COLS.forEach(function (c) { var k = c[0]; r[k] = k === 'rd' ? dstr(o.rd) : k === 'tr' ? tl(o.tr) : k === 'od' ? (o.od ? 'Overdue' : o.sla === 'met' ? 'Met' : o.sla === 'breach' ? 'Late' : '') : k === 'st' ? (o.st === 'O' ? 'Open' : 'Closed') : k === 'age' ? (o.st === 'O' ? o.age : null) : o[k]; }); return r; }) };
+        rows: rows.map(function (o) { var r = {}; REG_COLS.forEach(function (c) { var k = c[0]; r[k] = k === 'rd' ? dstr(o.rd) : k === 'tr' ? tl(o.tr) : k === 'od' ? (o.od ? 'Overdue' : o.sla === 'met' ? 'Met' : o.sla === 'breach' ? 'Late' : '') : k === 'st' ? (o.st === 'O' ? 'Open' : 'Closed') : k === 'age' ? (o.st === 'O' ? o.age : null) : k === 'ls' ? labSup(o) : o[k]; }); return r; }) };
       exportTable(sp, xlB);
     };
     var csvB = $('#regCsv'); if (csvB) csvB.onclick = function () {
       var lines = [REG_COLS.map(function (c) { return c[1]; }).join(',')];
-      rows.forEach(function (o) { lines.push(REG_COLS.map(function (c) { var v = c[0] === 'rd' ? dstr(o.rd) : c[0] === 'tr' ? tl(o.tr) : c[0] === 'od' ? (o.od ? 'Overdue' : o.sla) : c[0] === 'st' ? (o.st === 'O' ? 'Open' : 'Closed') : o[c[0]]; v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',')); });
+      rows.forEach(function (o) { lines.push(REG_COLS.map(function (c) { var v = c[0] === 'rd' ? dstr(o.rd) : c[0] === 'tr' ? tl(o.tr) : c[0] === 'od' ? (o.od ? 'Overdue' : o.sla) : c[0] === 'st' ? (o.st === 'O' ? 'Open' : 'Closed') : c[0] === 'ls' ? labSup(o) : o[c[0]]; v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',')); });
       saveFile('DM_SR_Register_' + iso(CUT) + '.csv', '﻿' + lines.join('\n'));
     };
     draw();
