@@ -825,8 +825,25 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var rows = unpack(p), list = rows;
     if (since && !p.full) {
       var m = {}; c.rows.forEach(function (o) { m[o.id] = o; }); rows.forEach(function (o) { m[o.id] = o; });
-      var keep = {}, nk = 0; String(p.ids || '').split(',').forEach(function (id) { if (id) { keep[id] = 1; nk++; } });
-      list = Object.keys(m).filter(function (id) { return !nk || keep[id]; }).map(function (id) { return m[id]; });
+      list = Object.keys(m).map(function (id) { return m[id]; });
+      if (p.total != null && list.length !== p.total) {   // some SRs were removed from the tracker: keep only the current ones
+        var pi = await edgeGet('sr', '&ids=1'); if (!pi) return null;
+        var keep = {}; String(pi.ids || '').split(',').forEach(function (id) { if (id) keep[id] = 1; });
+        list = list.filter(function (o) { return keep[o.id]; });
+      }
+    }
+    idbSet(key, { max: p.max || since, rows: list, at: Date.now() });
+    return list;
+  }
+  async function reportsViaEdge() {
+    var key = 'repv2|' + (profile && profile.id), c = await idbGet(key);
+    var since = c && c.max && Array.isArray(c.rows) && c.rows.length ? c.max : '';
+    var p = await edgeGet('reports', since ? '&since=' + encodeURIComponent(since) : ''); if (!p) return null;
+    var rows = unpack(p), list = rows;
+    if (since && !p.full) {
+      var m = {}; c.rows.forEach(function (o) { m[o.sr] = o; }); rows.forEach(function (o) { m[o.sr] = o; });
+      list = Object.keys(m).map(function (k) { return m[k]; });
+      if (p.total != null && list.length !== p.total) { var pf = await edgeGet('reports', ''); if (!pf) return null; list = unpack(pf); p.max = pf.max; }
     }
     idbSet(key, { max: p.max || since, rows: list, at: Date.now() });
     return list;
@@ -853,7 +870,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   async function loadReports() {
     if (!profile || REP_ROLES.indexOf(profile.role) < 0) return { list: null, keys: [] };
     try {
-      var pe = await edgeGet('reports', ''), list = pe ? unpack(pe) : await fetchAll('sr_reports', 'sr,src,at,added_at', 'sr');
+      var list = (await reportsViaEdge()) || await fetchAll('sr_reports', 'sr,src,at,added_at', 'sr');
       var keys = []; try { keys = chk(await sb.from('sync_keys').select('id,label,created_at,last_used,last_count,last_new').eq('kind', 'outlook').order('id')); } catch (e) { try { keys = chk(await sb.from('sync_keys').select('id,label,created_at,last_used,last_count,last_new').order('id')); } catch (e2) { } }
       return { list: list, keys: keys };
     } catch (e) { return { list: null, keys: [] }; }
