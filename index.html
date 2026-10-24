@@ -783,7 +783,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   /* ---------- data ---------- */
   // the API gives max 1000 rows per call: read the pages 6 at a time instead of one after another
   async function fetchAll(table, cols, order, onPage) {
-    var step = 1000, par = 6, out = [], from = 0;
+    var step = 1000, par = 3, out = [], from = 0;
     for (;;) {
       var jobs = []; for (var k = 0; k < par; k++) jobs.push(sb.from(table).select(cols).order(order).range(from + k * step, from + (k + 1) * step - 1));
       var res = await Promise.all(jobs), short = false;
@@ -797,6 +797,46 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function idb() { return new Promise(function (res) { try { var r = indexedDB.open('dm-portal', 1); r.onupgradeneeded = function () { r.result.createObjectStore('kv'); }; r.onsuccess = function () { res(r.result); }; r.onerror = function () { res(null); }; } catch (e) { res(null); } }); }
   async function idbGet(k) { var d = await idb(); if (!d) return null; return new Promise(function (res) { try { var q = d.transaction('kv').objectStore('kv').get(k); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; } catch (e) { res(null); } }); }
   async function idbSet(k, v) { var d = await idb(); if (!d) return; try { d.transaction('kv', 'readwrite').objectStore('kv').put(v, k); } catch (e) { } }
+  // compressed download through the "data" function (12x smaller; only the SRs changed since the last visit)
+  var DATA_FN = null;
+  function dataFn() { return String(CONF.url || '').replace(/\/$/, '') + '/functions/v1/data'; }
+  async function edgeGet(t, q, onBytes) {
+    if (window.__DM_FAKE_SB_NOEDGE || (window.__DM_FAKE_SB && !window.__DM_FAKE_EDGE) || !CONF.url || DATA_FN === false || typeof DecompressionStream === 'undefined') return null;
+    var s = await sb.auth.getSession(), tok = s && s.data && s.data.session && s.data.session.access_token;
+    if (!tok && !window.__DM_FAKE_EDGE) return null;
+    var r;
+    try { r = await fetch(dataFn() + '?t=' + t + (q || ''), { headers: { Authorization: 'Bearer ' + tok, apikey: CONF.key }, cache: 'no-store' }); }
+    catch (e) { DATA_FN = false; return null; }
+    if (r.status === 404) { DATA_FN = false; return null; }
+    if (!r.ok) return null;
+    try {
+      var rd = r.body.getReader(), chunks = [], n = 0;
+      for (;;) { var x = await rd.read(); if (x.done) break; chunks.push(x.value); n += x.value.length; if (onBytes) onBytes(n); }
+      var blob = new Blob(chunks), head = new Uint8Array(await blob.slice(0, 2).arrayBuffer());
+      var txt = head[0] === 0x1f && head[1] === 0x8b ? await new Response(blob.stream().pipeThrough(new DecompressionStream('gzip'))).text() : await blob.text();
+      DATA_FN = true; return JSON.parse(txt);
+    } catch (e) { return null; }
+  }
+  function unpack(p) { var c = p.cols || []; return (p.rows || []).map(function (a) { var o = {}; for (var i = 0; i < c.length; i++) o[c[i]] = a[i]; return o; }); }
+  async function srViaEdge(onBytes) {
+    var key = 'srv2|' + (profile && profile.id), c = await idbGet(key);
+    var since = c && c.max && Array.isArray(c.rows) && c.rows.length ? c.max : '';
+    var p = await edgeGet('sr', since ? '&since=' + encodeURIComponent(since) : '', onBytes); if (!p) return null;
+    var rows = unpack(p), list = rows;
+    if (since && !p.full) {
+      var m = {}; c.rows.forEach(function (o) { m[o.id] = o; }); rows.forEach(function (o) { m[o.id] = o; });
+      var keep = {}, nk = 0; String(p.ids || '').split(',').forEach(function (id) { if (id) { keep[id] = 1; nk++; } });
+      list = Object.keys(m).filter(function (id) { return !nk || keep[id]; }).map(function (id) { return m[id]; });
+    }
+    idbSet(key, { max: p.max || since, rows: list, at: Date.now() });
+    return list;
+  }
+  async function ppmViaEdge(stamp) {
+    var key = 'ppmv2|' + (profile && profile.id), c = await idbGet(key);
+    if (c && c.stamp === stamp && Array.isArray(c.rows)) return c.rows;
+    var p = await edgeGet('ppm', ''); if (!p) return null;
+    var rows = unpack(p); idbSet(key, { stamp: stamp, rows: rows, at: Date.now() }); return rows;
+  }
   // rows of a table, from the local copy when the server says nothing changed (same row count and same last update)
   async function cachedTable(name, table, cols, order, stampCol, onPage, extra) {
     var key = name + '|' + (profile && profile.id) + '|' + cols, stamp = null;
@@ -813,7 +853,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   async function loadReports() {
     if (!profile || REP_ROLES.indexOf(profile.role) < 0) return { list: null, keys: [] };
     try {
-      var list = await fetchAll('sr_reports', 'sr,src,at,added_at', 'sr');
+      var pe = await edgeGet('reports', ''), list = pe ? unpack(pe) : await fetchAll('sr_reports', 'sr,src,at,added_at', 'sr');
       var keys = []; try { keys = chk(await sb.from('sync_keys').select('id,label,created_at,last_used,last_count,last_new').eq('kind', 'outlook').order('id')); } catch (e) { try { keys = chk(await sb.from('sync_keys').select('id,label,created_at,last_used,last_count,last_new').order('id')); } catch (e2) { } }
       return { list: list, keys: keys };
     } catch (e) { return { list: null, keys: [] }; }
@@ -845,8 +885,10 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     progress(0.08, 'Loading service requests…');
     var srp = function (n) { progress(Math.min(0.85, 0.08 + n / 15000), 'Loading service requests… ' + n.toLocaleString('en-US')); };
     // everything at the same time (SRs, service reports, PPM, snapshots)
-    var pSr = cachedTable('sr', 'sr', SR_COLS + ',closed_seen', 'id', 'updated_at', srp).catch(function (e) { if (!/closed_seen/.test(e.message || '')) throw e; return fetchAll('sr', SR_COLS, 'id', srp); });
-    var pc0 = (cfgRow.config || {}), pPpm = cachedTable('ppm', 'ppm', PPM_COLS + ',cost', 'id', null, null, JSON.stringify(pc0.ppmUpload || pc0.ppmFile || '') + (cfgRow.updated_at || '')).catch(function () { return fetchAll('ppm', PPM_COLS, 'id'); });
+    var kb = function (n) { progress(Math.min(0.85, 0.1 + n / 700000), 'Downloading service requests… ' + Math.round(n / 1024).toLocaleString('en-US') + ' KB'); };
+    var pSr = srViaEdge(kb).then(function (rows) { return rows || cachedTable('sr', 'sr', SR_COLS + ',closed_seen', 'id', 'updated_at', srp).catch(function (e) { if (!/closed_seen/.test(e.message || '')) throw e; return fetchAll('sr', SR_COLS, 'id', srp); }); });
+    var pc0 = (cfgRow.config || {}), pStamp = JSON.stringify(pc0.ppmUpload || pc0.ppmFile || '') + (cfgRow.updated_at || '');
+    var pPpm = ppmViaEdge(pStamp).then(function (rows) { return rows || cachedTable('ppm', 'ppm', PPM_COLS + ',cost', 'id', null, null, pStamp).catch(function () { return fetchAll('ppm', PPM_COLS, 'id'); }); });
     var pSn = (async function () { var sq = await sb.from('snapshots').select('c,t,o,d').order('c'); if (sq.error && /\bd\b|column/i.test(sq.error.message || '')) sq = await sb.from('snapshots').select('c,t,o').order('c'); return chk(sq); })();
     var all = await Promise.all([pSr, loadReports(), pPpm, pSn]);
     var sr = all[0], reps = all[1], ppm = all[2], snaps = all[3];
