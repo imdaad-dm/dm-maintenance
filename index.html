@@ -3065,12 +3065,15 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function srKind(o) { var t = String(o.tr || '').toUpperCase(); return t === 'CIVIL' || t === 'CARP' ? 'CIVIL' : t === 'AD-HOC' || t === 'ADHOC' ? 'ADHOC' : 'MEP'; }
   function labSup(o) { var k = srKind(o); if (k === 'CIVIL') { var m = {}; try { m = rmCivilMap(); } catch (e) { m = RM_CIVIL_DEF; } return m[o.fz] || 'Unassigned (civil)'; } if (k === 'ADHOC') return 'AD-HOC'; return o.sup || 'Unassigned (MEP)'; }
   function regScoped(cm) { return REGF.scope === 'O' ? cm.filter(function (o) { return o.st === 'O'; }) : cm; }
-  function regBase(cm) { var a = regScoped(cm); return REGF.ls ? a.filter(function (o) { return labSup(o) === REGF.ls; }) : a; }
+  // same split as RM works: open works marked for a contractor (quotation) are counted under "Contractor works", not under the team
+  var REG_SUB = 'Contractor works (quotation)';
+  function regLs(o) { return o.st === 'O' && typeof rmState === 'function' && rmState(o).st === 'sub' ? REG_SUB : labSup(o); }
+  function regBase(cm) { var a = regScoped(cm); return REGF.ls ? a.filter(function (o) { return regLs(o) === REGF.ls; }) : a; }
   // labour supervisors with their works (Civil / MEP) and zones, as in RM works
   function labSupList(cm) {
     var m = {};
-    regScoped(cm).forEach(function (o) { var s = labSup(o), d = ({ CIVIL: 'Civil', MEP: 'MEP', ADHOC: 'AD-HOC' })[srKind(o)]; var r = m[s] = m[s] || { name: s, works: {}, zones: {}, n: 0 }; r.works[d] = 1; if (o.fz && o.fz !== '?') r.zones[o.fz] = 1; r.n++; });
-    var ord = { Civil: 0, MEP: 1, Other: 2 };
+    regScoped(cm).forEach(function (o) { var s = regLs(o), d = s === REG_SUB ? 'Contractor' : ({ CIVIL: 'Civil', MEP: 'MEP', ADHOC: 'AD-HOC' })[srKind(o)]; var r = m[s] = m[s] || { name: s, works: {}, zones: {}, n: 0 }; r.works[d] = 1; if (o.fz && o.fz !== '?') r.zones[o.fz] = 1; r.n++; });
+    var ord = { Civil: 0, MEP: 1, 'AD-HOC': 2, Contractor: 3, Other: 4 };
     return Object.keys(m).map(function (k) { var r = m[k]; r.w = Object.keys(r.works).sort(function (a, b) { return ord[a] - ord[b]; }).join(' / '); r.z = Object.keys(r.zones).sort().join(', '); return r; })
       .sort(function (a, b) { return (ord[a.w.split(' / ')[0]] - ord[b.w.split(' / ')[0]]) || (/^Unassigned/.test(a.name) - /^Unassigned/.test(b.name)) || (a.name < b.name ? -1 : 1); });
   }
