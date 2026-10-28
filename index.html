@@ -506,6 +506,8 @@ a.sv-b{text-decoration:none;justify-content:center}
 .svc-sel{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;font:inherit;font-size:.95rem;background:var(--surface);color:var(--ink)}
 .svc-mtag{background:#fdf3e1;color:#9a6110;border-radius:6px;padding:0 5px;font-weight:700}
 .svc-u{font-size:.78rem;color:var(--ink-2);margin-left:2px}
+.svc-minfo{display:block;font-size:.74rem;color:#0a5aa8;margin-top:3px}.svc-minfo i{font-style:normal;color:var(--ink-2);font-weight:700}
+.svc-share{width:100%;min-height:48px;flex-direction:row;margin:10px 0 0}
 </style></head><body><div id="app"></div><script>
 /* ==== PORTAL CONNECTION — fill in from Supabase: Project Settings > API ==== */
 window.DM_CLOUD_CONFIG = {
@@ -2245,13 +2247,15 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   // step 3: materials from the BOQ list
   async function svcCatalog() {
     if (SVC.cat) return SVC.cat;
-    var c = await svcKv('cat'); if (c && c.rows && c.rows.length && Date.now() - c.at < 7 * 864e5) return (SVC.cat = c.rows);
+    var c = await svcKv('cat2'); if (c && c.rows && c.rows.length && Date.now() - c.at < 7 * 864e5) return (SVC.cat = c.rows);
     try {
       var rows = [];
-      for (var f = 0; ; f += 1000) { var r = await sb.from('mat_catalog').select('line,item,descr,cat').order('line').range(f, f + 999); if (r.error) throw r.error; rows = rows.concat(r.data || []); if ((r.data || []).length < 1000) break; }
-      rows.forEach(function (x) { x.u = String(x.descr || '').toUpperCase(); }); svcKv('cat', { at: Date.now(), rows: rows }); return (SVC.cat = rows);
+      var cols = 'line,item,descr,cat,btype,cost';
+      for (var f = 0; ; f += 1000) { var r = await sb.from('mat_catalog').select(cols).order('line').range(f, f + 999); if (r.error && cols.indexOf('cost') > 0) { cols = 'line,item,descr,cat,btype'; f -= 1000; continue; } if (r.error) throw r.error; rows = rows.concat(r.data || []); if ((r.data || []).length < 1000) break; }
+      rows.forEach(function (x) { x.u = String(x.descr || '').toUpperCase(); }); svcKv('cat2', { at: Date.now(), rows: rows }); return (SVC.cat = rows);
     } catch (e) { if (c && c.rows) return (SVC.cat = c.rows); throw e; }
   }
+  function svcMatInfo(bt, c) { return (bt || c != null) ? '<span class="svc-minfo">' + (bt ? '<i>B.Type</i> ' + esc(bt) : '') + (c != null && c !== '' ? (bt ? ' · ' : '') + '<i>Unit cost</i> AED ' + (+c).toFixed(2) : '') + '</span>' : ''; }
   function svcS3(F) {
     var m = F.data.mats || (F.data.mats = []), man = F.matMode === 'man';
     var units = '<option value="">unit</option>' + SV_UNITS.map(function (u) { return '<option>' + esc(u) + '</option>'; }).join('');
@@ -2261,7 +2265,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         : '<div class="svc-search">🔍 <input id="svcMQ" type="search" placeholder="Type to search the BOQ list (e.g. LED, valve, compressor)" autocomplete="off"></div><div id="svcMR" class="svc-res"><div class="sv-hint">Loading materials list…</div></div>' +
           '<button class="sv-link" id="svcToMan">Not in the list? ✍ Write it manually</button>') + '</section>' +
       '<section class="svc-card"><h4>Selected (' + m.length + (m.length >= SVC_MAXMAT ? ' – maximum' : '') + ')</h4>' + (m.length ? m.map(function (x, i) {
-        return '<div class="svc-mrow"><span class="svc-n">' + (i + 1) + '</span><span class="svc-md">' + esc(x.d) + (x.line ? '<small> · BOQ line ' + x.line + '</small>' : '<small> · <span class="svc-mtag">manual</span></small>') + '</span><span class="svc-qty"><button data-mm="' + i + '" aria-label="Less">−</button><input data-mq="' + i + '" type="number" inputmode="decimal" min="0" step="any" value="' + esc(x.q) + '" aria-label="Quantity"><button data-mp="' + i + '" aria-label="More">+</button>' + (x.u ? '<span class="svc-u">' + esc(x.u) + '</span>' : '') + '</span><button class="svc-x2" data-mx2="' + i + '" aria-label="Remove">✕</button></div>';
+        return '<div class="svc-mrow"><span class="svc-n">' + (i + 1) + '</span><span class="svc-md">' + esc(x.d) + (x.line ? '<small> · BOQ line ' + x.line + '</small>' + svcMatInfo(x.bt, x.c) : '<small> · <span class="svc-mtag">manual</span></small>') + '</span><span class="svc-qty"><button data-mm="' + i + '" aria-label="Less">−</button><input data-mq="' + i + '" type="number" inputmode="decimal" min="0" step="any" value="' + esc(x.q) + '" aria-label="Quantity"><button data-mp="' + i + '" aria-label="More">+</button>' + (x.u ? '<span class="svc-u">' + esc(x.u) + '</span>' : '') + '</span><button class="svc-x2" data-mx2="' + i + '" aria-label="Remove">✕</button></div>';
       }).join('') : '<p class="sv-hint">No material yet. If no material was used, leave this empty.</p>') + '</section>';
   }
   function svcB3(F) {
@@ -2277,7 +2281,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     };
     if (!q) { bindSel(); return; }
     svcKv('matuse').then(function (u) { use = u || {}; });
-    function add(line, d) { svcRead(); if (m.length >= SVC_MAXMAT) return svToast('Maximum ' + SVC_MAXMAT + ' materials per report.', true); var ex = m.filter(function (x) { return line ? x.line === line : x.d === d; })[0]; if (ex) ex.q = (+ex.q || 0) + 1; else m.push({ line: line || null, d: d, q: 1 }); svcForm(); var nq = $('#svcMQ'); if (nq) nq.focus(); }
+    function add(line, d, x0) { svcRead(); if (m.length >= SVC_MAXMAT) return svToast('Maximum ' + SVC_MAXMAT + ' materials per report.', true); var ex = m.filter(function (x) { return line ? x.line === line : x.d === d; })[0]; if (ex) ex.q = (+ex.q || 0) + 1; else m.push(Object.assign({ line: line || null, d: d, q: 1 }, x0 ? { bt: x0.btype || '', c: x0.cost != null ? +x0.cost : null } : {})); svcForm(); var nq = $('#svcMQ'); if (nq) nq.focus(); }
     function show() {
       if (!cat) return;
       var t = q.value.trim().toUpperCase().split(/\s+/).filter(Boolean), list;
@@ -2287,8 +2291,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       res.innerHTML = list.length ? list.slice(0, 30).map(row).join('') + (list.length > 30 ? '<div class="sv-hint">' + list.length + ' matches — type more words.</div>' : '') : '<div class="sv-hint">Nothing found in the BOQ list. Tap "Write it manually" below.</div>';
       bindRes();
     }
-    function row(x) { var w = q.value.trim().split(/\s+/).filter(Boolean), t = esc(x.descr); w.forEach(function (k) { if (k.length > 1) t = t.replace(new RegExp('(' + esc(k).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>'); }); return '<button class="svc-ri" data-ml="' + x.line + '"><span>' + t + '<small> · ' + esc(SVC_MCAT[x.cat] || x.cat || '') + ' · line ' + x.line + '</small></span><b>+</b></button>'; }
-    function bindRes() { Array.prototype.forEach.call(res.querySelectorAll('[data-ml]'), function (b) { b.onclick = function () { var l = +b.getAttribute('data-ml'), x = cat.filter(function (y) { return y.line === l; })[0]; if (x) add(x.line, x.descr); }; }); }
+    function row(x) { var w = q.value.trim().split(/\s+/).filter(Boolean), t = esc(x.descr); w.forEach(function (k) { if (k.length > 1) t = t.replace(new RegExp('(' + esc(k).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>'); }); return '<button class="svc-ri" data-ml="' + x.line + '"><span>' + t + '<small> · ' + esc(SVC_MCAT[x.cat] || x.cat || '') + ' · line ' + x.line + '</small>' + svcMatInfo(x.btype, x.cost) + '</span><b>+</b></button>'; }
+    function bindRes() { Array.prototype.forEach.call(res.querySelectorAll('[data-ml]'), function (b) { b.onclick = function () { var l = +b.getAttribute('data-ml'), x = cat.filter(function (y) { return y.line === l; })[0]; if (x) add(x.line, x.descr, x); }; }); }
     var qt; q.oninput = function () { clearTimeout(qt); qt = setTimeout(show, 150); };
     svcCatalog().then(function (c) { cat = c; show(); }).catch(function (e) { res.innerHTML = '<div class="sv-hint">BOQ list not available (' + esc(e.message || e) + '). Use "Write it manually".</div>'; });
     bindSel();
@@ -2451,10 +2455,11 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         '<section class="svc-card"><h4>Reports</h4>' + list.map(function (sr) { var d = (SVC.list[sr] || {}).data || {}; return '<div class="svc-mrow"><span class="svc-md"><b>SR ' + esc(sr) + '</b> · ' + esc(d.loc || '') + '</span></div>'; }).join('') + '</section>' +
         '<section class="svc-card"><h4>Customer contact <span class="svc-auto">SAVED</span></h4><div class="svc-grid">' + svcIn('slNm', 'Name', svcV('slNm') || c.name, { half: 1 }) + svcIn('slPh', 'WhatsApp', svcV('slPh') != null ? svcV('slPh') : c.phone, { half: 1, type: 'tel', mode: 'tel' }) + svcIn('slEm', 'Email', em, {}) + '</div></section>' +
         (links ? '<section class="svc-card"><h4>Message</h4><pre class="svc-msg">' + esc(m) + '</pre></section>' +
-          '<div class="svc-foot svc-foot3"><a class="sv-b svc-good" id="slWa" target="_blank" rel="noopener" href="https://wa.me/' + wa + '?text=' + encodeURIComponent(m) + '">WhatsApp</a><a class="sv-b svc-pri" id="slEmA" href="mailto:' + encodeURIComponent(em) + '?subject=' + encodeURIComponent('Imdaad service report' + (list.length > 1 ? 's' : '') + ' – SR ' + list.join(', ')) + '&body=' + encodeURIComponent(m) + '">Email</a><button class="sv-b" id="slCp">Copy</button></div><div class="sv-hint">A new link replaces any link sent before for the same SR.</div>'
+          (navigator.share ? '<button class="sv-b svc-good svc-share" id="slSh">📤 Send with… (WhatsApp, WhatsApp Business, other apps)</button>' : '') + '<div class="svc-foot svc-foot3"><a class="sv-b svc-good" id="slWa" target="_blank" rel="noopener" href="https://wa.me/' + wa + '?text=' + encodeURIComponent(m) + '">WhatsApp' + (wa ? ' to number' : '') + '</a><a class="sv-b svc-pri" id="slEmA" href="mailto:' + encodeURIComponent(em) + '?subject=' + encodeURIComponent('Imdaad service report' + (list.length > 1 ? 's' : '') + ' – SR ' + list.join(', ')) + '&body=' + encodeURIComponent(m) + '">Email</a><button class="sv-b" id="slCp">Copy</button></div><div class="sv-hint"><b>Send with…</b> opens the share menu of the phone: choose WhatsApp or WhatsApp Business, then the customer chat. <b>WhatsApp to number</b> opens the chat of the number above directly. A new link replaces any link sent before for the same SR.</div>'
           : '<div class="svc-foot"><button class="sv-b svc-pri svc-wide" id="slMk">Create link' + (list.length > 1 ? 's' : '') + '</button></div>'));
       $('#svX').onclick = function () { svClose(); svRepList(); };
       var mk = $('#slMk'); if (mk) mk.onclick = make;
+      var sh = $('#slSh'); if (sh) sh.onclick = async function () { try { await navigator.share({ title: 'Imdaad service report' + (list.length > 1 ? 's' : ''), text: msg() }); } catch (e) { if (e && e.name !== 'AbortError') svToast('Could not open the share menu: ' + (e.message || e), true); } };
       var cp = $('#slCp'); if (cp) cp.onclick = async function () { var ok = false; try { await navigator.clipboard.writeText(msg()); ok = true; } catch (e) { } svToast(ok ? 'Message copied' : 'Select the message and copy it', !ok); };
       ['slNm', 'slPh', 'slEm'].forEach(function (id) { var e = document.getElementById(id); if (e) e.onchange = function () { saveContact(); draw(); }; });
     }
@@ -2585,7 +2590,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<tr><td><b>Quality</b> &nbsp; الجودة</td>' + rate('quality') + '</tr><tr><td><b>Response</b> &nbsp; الاستجابة</td>' + rate('response') + '</tr>' +
       '<tr><td colspan="5" style="height:34px"><b>Customer Comments:</b> &nbsp; تعليقات العميل: <span class="svp-v">' + esc(c.comments || '') + '</span></td></tr></table>' +
       '<table class="svp"><tr><td style="width:50%">Completed By Team:</td><td>Confirmed by Customer:</td></tr><tr><td class="svp-sg">Name: <span class="svp-v">' + esc(d.team || '') + '</span><br>Signature: ' + img(svcSupSig(r), 46) + '</td>' +
-      '<td class="svp-sg">Name: <span class="svp-v">' + esc(c.name || '') + '</span>' + (c.designation ? ' &nbsp; Designation: <span class="svp-v">' + esc(c.designation) + '</span>' : '') + '<br>Signature: ' + img(c.sig, 46) + (r.signed_at ? '<div class="svp-sm">Signed ' + esc(String(r.signed_at).slice(0, 16).replace('T', ' ')) + ' UTC · ' + (c.method === 'link' ? 'via private link' : 'on site') + '</div>' : '') + '</td></tr>' +
+      '<td class="svp-sg">Name: <span class="svp-v">' + esc(c.name || '') + '</span>' + (c.designation ? ' &nbsp; Designation: <span class="svp-v">' + esc(c.designation) + '</span>' : '') + '<br>Signature: ' + img(c.sig, 46) + '' + '</td></tr>' +
       '<tr><td colspan="2"><b>If you have any feedback or comments, please call our 24/7 Customer Response Centre @ 8008200</b></td></tr><tr><td colspan="2"><b>For Imdaad’s Official Use Only</b></td></tr>' +
       '<tr><td><b>Engineer Details</b></td><td><b>Supervisor Details</b></td></tr><tr><td>Name &amp; Signature:</td><td>Name &amp; Signature:</td></tr></table></div>';
     var ex = (p.extra || []).filter(function (x) { return I[x]; }), p2 = '';
