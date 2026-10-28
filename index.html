@@ -433,6 +433,79 @@ pre.code{background:#0f1b2d;color:#e6edf6;padding:10px 12px;border-radius:8px;ov
 .sv-repb.on{background:#ffe9d6;box-shadow:0 0 0 2px var(--warn) inset}
 .sv-repb.ok{border-color:var(--line);border-left-color:var(--good);background:var(--surface)}
 .sv-card.s-rep{border-left:4px solid var(--warn)}
+/* ===== service reports on the phone (update 17) ===== */
+.svc-tabs{display:flex;gap:6px;align-items:center;margin:0 0 10px;overflow-x:auto}
+.svc-tab{flex:none;padding:8px 12px;border-radius:18px;border:1px solid var(--line);background:var(--surface);font:inherit;font-size:.82rem;font-weight:600;color:var(--ink-2);cursor:pointer}
+.svc-tab[aria-selected="true"]{background:#1c3b67;border-color:#1c3b67;color:#fff}
+.svc-tab i{font-style:normal;background:#c09a52;color:#fff;border-radius:10px;padding:0 6px;margin-left:3px;font-size:.72rem}
+.svc-gear{margin-left:auto;flex:none;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:1.1rem;cursor:pointer;color:var(--ink)}
+.svc-pend{background:#fff7e6;border:1px solid #f0d9a8;border-radius:10px;padding:9px 10px;font-size:.82rem;margin-bottom:8px}
+.svc-pill{display:inline-block;font-size:.7rem;font-weight:700;border-radius:10px;padding:2px 7px}
+.svc-p-acc{background:#e8f1fb;color:#0a66c2}.svc-p-warn{background:#fdf3e1;color:#9a6110}.svc-p-good{background:#e4f4ea;color:#1f7a4d}
+.sv-card.svc-c-draft{border-left-color:#0a66c2}.sv-card.svc-c-ready,.sv-card.svc-c-sent{border-left-color:#c09a52}.sv-card.svc-c-signed{border-left-color:#1f7a4d}
+.svc-ck{width:22px;height:22px}
+.svc-miss{margin-top:6px;font-size:.8rem;color:#9a3412;background:#fff1e8;border-radius:6px;padding:6px 8px}
+.svc-btn3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+.svc-ctop{display:grid;gap:8px;margin-bottom:10px}
+.sv-b.svc-pri{background:#1c3b67;border-color:#1c3b67;color:#fff}.sv-b.svc-good{background:#1f7a4d;border-color:#1f7a4d;color:#fff}.sv-b.svc-gold{background:#c09a52;border-color:#c09a52;color:#fff}
+.sv-b:disabled{opacity:.55}
+a.sv-b{text-decoration:none;justify-content:center}
+.svc-form{display:flex;flex-direction:column;max-height:calc(92vh - 44px)}
+.svc-fh{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.svc-prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:8px 0 4px}.svc-prog i{display:block;height:100%;background:#c09a52}
+.svc-body{overflow:auto;flex:1;padding:2px 0 6px;-webkit-overflow-scrolling:touch}
+.svc-foot{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--line);background:var(--surface)}
+.svc-foot .sv-b{flex:1;min-height:48px;flex-direction:row}.svc-foot .svc-wide{flex:2}
+.svc-foot3 .sv-b{flex:1}
+.svc-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;background:var(--surface)}
+.svc-card h4{margin:0 0 8px;font-size:.88rem;color:#1c3b67;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.svc-auto{font-size:.62rem;font-weight:700;color:#6b4fbb;background:#efeafb;border-radius:8px;padding:2px 6px}
+.svc-opt{font-size:.72rem;font-weight:400;color:var(--ink-2)}
+.svc-grid{display:flex;flex-wrap:wrap;gap:0 8px}
+.svc-f{flex:1 1 100%;margin-top:8px}.svc-f.half{flex:1 1 calc(50% - 8px);min-width:130px}
+.svc-f label{display:block;font-size:.72rem;color:var(--ink-2);margin-bottom:3px}
+.svc-f input,.svc-f textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;font:inherit;font-size:.95rem;background:var(--surface);color:var(--ink)}
+.svc-lbl{font-size:.74rem;color:var(--ink-2);margin:10px 0 4px}
+.svc-chips{display:flex;flex-wrap:wrap;gap:6px}
+.svc-chip{padding:7px 11px;border-radius:16px;border:1px solid var(--line);background:var(--surface);font:inherit;font-size:.8rem;font-weight:600;color:var(--ink);cursor:pointer}
+.svc-chip.on{background:#1c3b67;border-color:#1c3b67;color:#fff}
+.svc-line{display:flex;gap:6px;align-items:flex-start;margin-top:6px}.svc-line textarea{flex:1;border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:.92rem;min-width:0}
+.svc-n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:.74rem;font-weight:700;margin-top:4px}
+.svc-done{flex:none;font-size:.68rem;font-weight:700;color:#1f7a4d;background:#e4f4ea;border-radius:10px;padding:3px 7px;margin-top:6px}
+.svc-x2{flex:none;width:28px;height:28px;border-radius:50%;border:0;background:#fde8e8;color:#b42318;cursor:pointer}
+.svc-ph1{display:flex;gap:10px;align-items:flex-start}
+.svc-thumb{position:relative;flex:none;width:118px;height:118px;border-radius:10px;overflow:hidden;background:#e9edf2;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--ink-2)}
+.svc-thumb img{width:100%;height:100%;object-fit:cover}
+.svc-x{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;cursor:pointer}
+.svc-phb{display:flex;flex-wrap:wrap;gap:6px;flex:1}.svc-phb .sv-b{flex:1 1 45%;min-height:40px;flex-direction:row;font-size:.8rem}
+.svc-search{display:flex;align-items:center;gap:6px;border:2px solid #0a66c2;border-radius:10px;padding:4px 8px}.svc-search input{flex:1;border:0;outline:0;font:inherit;font-size:1rem;padding:6px 0;background:transparent;color:var(--ink)}
+.svc-res{margin-top:6px;max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.svc-ri{display:flex;width:100%;justify-content:space-between;align-items:center;gap:8px;padding:9px 10px;border:0;border-bottom:1px solid var(--line);background:var(--surface);font:inherit;font-size:.84rem;text-align:left;color:var(--ink);cursor:pointer}
+.svc-ri small{color:var(--ink-2)}.svc-ri b{flex:none;width:28px;height:28px;border-radius:7px;background:#0a66c2;color:#fff;display:flex;align-items:center;justify-content:center}
+.svc-res .sv-hint{padding:8px 10px;margin:0}
+.svc-man{display:flex;gap:6px;margin-top:8px}.svc-man input{flex:1;border:1px solid var(--line);border-radius:8px;padding:9px;font:inherit;min-width:0}.svc-man .sv-b{min-height:40px;flex-direction:row}
+.svc-mrow{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:7px;margin-top:6px}
+.svc-md{flex:1;font-size:.84rem;min-width:0;word-break:break-word}.svc-md small{color:var(--ink-2)}
+.svc-qty{display:flex;align-items:center;gap:4px;flex:none}.svc-qty button{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:var(--surface-2);font-size:1rem;cursor:pointer;color:var(--ink)}
+.svc-qty input{width:52px;text-align:center;border:1px solid var(--line);border-radius:7px;padding:5px;font:inherit}
+.svc-sigv{border:1px dashed var(--line);border-radius:8px;background:#fff;height:90px;display:flex;align-items:center;justify-content:center}.svc-sigv img{max-height:84px;max-width:100%}
+.svc-padw{height:150px;border:1px dashed #9aa6b5;border-radius:10px;overflow:hidden;background:#fff}.svc-padw canvas{width:100%;height:100%;display:block}
+.svc-banner{background:#fff7e6;border:1px solid #f0d9a8;border-radius:10px;padding:9px 10px;font-size:.84rem;margin-top:10px}
+.svc-ba{display:grid;grid-template-columns:1fr 1fr;gap:8px}.svc-ba figure{margin:0}.svc-ba img{width:100%;height:130px;object-fit:cover;border-radius:8px;background:#e9edf2}.svc-ba figcaption{font-size:.74rem;color:var(--ink-2);text-align:center}
+.svc-rate{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.svc-rate button{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:8px 2px;font:inherit;font-size:.7rem;font-weight:700;color:var(--ink);cursor:pointer;min-height:50px}
+.svc-rate button span{font-weight:400}.svc-rate button.on{background:#1f7a4d;border-color:#1f7a4d;color:#fff}
+.svc-msg{white-space:pre-wrap;font:inherit;font-size:.8rem;background:var(--surface-2);border-radius:8px;padding:10px;margin:0;max-height:220px;overflow:auto}
+.svc-ov2{z-index:30}
+.svc-mxg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}.svc-mxi{border:0;padding:0;background:none;cursor:pointer}.svc-mxi img{width:100%;height:96px;object-fit:cover;border-radius:8px;background:#e9edf2}
+.svc-edc{display:flex;justify-content:center;margin:8px 0;background:#111;border-radius:8px;padding:6px}
+.sv-sh > .svc-foot{position:sticky;bottom:-28px;margin:10px -16px -28px;padding:10px 16px 18px;z-index:3;box-shadow:0 -4px 12px rgba(0,0,0,.06)}
+.svc-seg{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.svc-seg button{border:0;padding:10px 6px;font:inherit;font-size:.84rem;font-weight:700;background:var(--surface);color:var(--ink-2);cursor:pointer}
+.svc-seg button[aria-selected="true"]{background:#1c3b67;color:#fff}
+.svc-sel{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:9px;font:inherit;font-size:.95rem;background:var(--surface);color:var(--ink)}
+.svc-mtag{background:#fdf3e1;color:#9a6110;border-radius:6px;padding:0 5px;font-weight:700}
+.svc-u{font-size:.78rem;color:var(--ink-2);margin-left:2px}
 </style></head><body><div id="app"></div><script>
 /* ==== PORTAL CONNECTION — fill in from Supabase: Project Settings > API ==== */
 window.DM_CLOUD_CONFIG = {
@@ -870,6 +943,19 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (stamp) idbSet(key, { stamp: stamp, rows: rows, at: Date.now() });
     return rows;
   }
+  // electricity and water meters (DEWA); null when the update is not installed
+  async function loadUtil() {
+    if (!profile || profile.role === 'supervisor') return null;
+    try { var r = await sb.from('utility_meters').select('*').eq('active', true).order('ord'); if (r.error) return null; return (r.data || []).map(function (m) { m.cons_base = m.cons_base == null ? null : +m.cons_base; m.bill_base = m.bill_base == null ? null : +m.bill_base; m.readings = m.readings || {}; return m; }); }
+    catch (e) { return null; }
+  }
+  async function utilSave(rows, full) {
+    var out = { rows: 0, added: 0, updated: 0, removed: 0 };
+    for (var i = 0; i < rows.length; i += 500) { var r = chk(await sb.rpc('utility_save', { p_rows: rows.slice(i, i + 500), p_full: !!full && i + 500 >= rows.length && rows.length <= 500 })); ['rows', 'added', 'updated', 'removed'].forEach(function (k) { out[k] += +r[k] || 0; }); }
+    return out;
+  }
+  async function utilZoneSet(ids, z) { return chk(await sb.rpc('utility_zone', { p_ids: ids, p_zone: z })); }
+  async function utilDropMonth(m) { return chk(await sb.rpc('utility_drop_month', { p_month: m })); }
   // service report numbers (DM - Reports group / Excel list); null when the feature is not installed or not allowed
   async function loadReports() {
     if (!profile || REP_ROLES.indexOf(profile.role) < 0) return { list: null, keys: [] };
@@ -912,14 +998,14 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var pPpm = ppmViaEdge(pStamp).then(function (rows) { return rows || cachedTable('ppm', 'ppm', PPM_COLS + ',cost', 'id', null, null, pStamp).catch(function () { return fetchAll('ppm', PPM_COLS, 'id'); }); });
     var pSn = (async function () { var sq = await sb.from('snapshots').select('c,t,o,d').order('c'); if (sq.error && /\bd\b|column/i.test(sq.error.message || '')) sq = await sb.from('snapshots').select('c,t,o').order('c'); return chk(sq); })();
     var all = await Promise.all([pSr, loadReports(), pPpm, pSn]);
-    var sr = all[0], reps = all[1], ppm = all[2], snaps = all[3];
+    var sr = all[0], reps = all[1], ppm = all[2], snaps = all[3], util = all[4];
     progress(1, 'Opening dashboard…');
     sr.forEach(function (o) { o.rd = +o.rd; o.cd = o.cd == null ? null : +o.cd; o.closed_seen = o.closed_seen == null ? null : +o.closed_seen; o.pr = o.pr || 0; ['wo', 'sum', 'wt', 'svc', 'tr', 'rbn', 'dept', 'mx', 'loc', 'locd', 'zn', 'fz', 'area', 'sup', 'ist', 'st', 'cnote', 'rem', 'park'].forEach(function (k) { if (o[k] == null) o[k] = ''; }); });
     ppm.forEach(function (v) { v.st = +v.st; v.en = +v.en; v.cost = v.cost == null ? 0 : +v.cost; ['sheet', 'item', 'desc', 'sys', 'site', 'route', 'sc', 'freq', 'tr'].forEach(function (k) { if (v[k] == null) v[k] = ''; }); });
     var cfg = cfgRow.config || {}, lg = cfgRow.logos || {}, dl = logos();
     return {
       config: cfg, logos: { left: lg.left || dl.left, lw: lg.lw || dl.lw, right: lg.right || dl.right, rw: lg.rw || dl.rw },
-      pptTpl: window.DM_PPT_TPL || null, cm: sr, ppm: ppm, snapshots: snaps.map(function (s) { return { c: +s.c, t: s.t, o: s.o, d: s.d || null }; }), reports: reps.list, syncKeys: reps.keys,
+      pptTpl: window.DM_PPT_TPL || null, cm: sr, ppm: ppm, util: util, snapshots: snaps.map(function (s) { return { c: +s.c, t: s.t, o: s.o, d: s.d || null }; }), reports: reps.list, syncKeys: reps.keys,
       meta: { ppmFile: (cfg.ppmUpload && cfg.ppmUpload.file) || cfg.ppmFile || '', cmFile: cfg.lastUpload ? cfg.lastUpload.file : 'SR Master Tracker', updated: cfg.lastUpload ? cfg.lastUpload.at : '' }
     };
   }
@@ -1007,6 +1093,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       SV.emg = res[3].error ? [] : (res[3].data || []);
       SV.reps = res[6]; if (SV.reps) SV.reps.forEach(function (x) { x.rd = +x.rd; }); SV.emgSeen = SV.emgSeen || {}; SV.emg.forEach(function (e) { SV.emgSeen[e.id] = 1; });
       SV.push = await pushState(); if (SV.push === 'on') pushResync();
+      await svcLoad();
       var qp = new URLSearchParams(location.search); if (qp.get('sr') && !SV.deep) { SV.deep = qp.get('sr'); SV.f = 'emg'; } svPoll();
     } catch (e) { screen('<div class="auth-f"><p class="status err">Could not load your works: ' + esc(e.message) + '</p><button class="btn" id="rtBtn">Try again</button> <button class="btn" id="soBtn">Sign out</button></div>'); $('#rtBtn').onclick = supervisorApp; $('#soBtn').onclick = signOut; return; }
     SV.rows.forEach(function (r) { r.rd = +r.rd; r.pr = +r.pr || 0; });
@@ -1118,6 +1205,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   }
   // completed works still open in Maximo with no service report (the report is needed to close them)
   function svRepList() {
+    if (svcOn()) { $('#svList').innerHTML = svcListHTML(); svcBindList(); return; }
     var q = SV.q.trim().toLowerCase();
     var list = (SV.reps || []).filter(function (r) {
       if (SV.area && svArea(r) !== SV.area) return false;
@@ -1450,6 +1538,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<h3 style="margin-top:16px">Invite by email</h3><p>The person receives an email link. After clicking it they choose their own password, then sign in with email and password every time.</p><form id="invU" class="form"><div class="f"><label for="ivN">Full name</label><input id="ivN" required></div><div class="f"><label for="ivE">Email</label><input id="ivE" type="email" required></div><div class="f"><label for="ivR">Role</label><select id="ivR">' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (r[0] === 'dm_engineer' ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></div><div class="f full"><button class="btn primary" type="submit">Send invitation</button></div></form>' +
       '<details style="margin-top:10px"><summary>Or create the account with a temporary password</summary><p>Give the person the temporary password yourself. At first sign-in they must replace it with their own.</p><form id="addU" class="form"><div class="f"><label for="auN">Full name</label><input id="auN" required></div><div class="f"><label for="auE">Email</label><input id="auE" type="email" required></div><div class="f"><label for="auP">Temporary password</label><input id="auP" type="text" minlength="8" required></div><div class="f"><label for="auR">Role</label><select id="auR">' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (r[0] === 'dm_engineer' ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></div><div class="f full"><button class="btn" type="submit">Create account</button></div></form></details>' +
       '<div class="status" id="stU"></div>', 'wide') +
+      h.panel('Storage used', 'free limits of the database and photo storage', '<p>How much of the free space is used. Figures are read live when you open this page or press <b>Refresh</b>.</p><div id="stoT"><div class="notice">Loading…</div></div><div style="margin-top:10px"><button class="btn" id="stoR">Refresh</button> <a class="btn" href="https://supabase.com/dashboard/project/' + esc(String(CONF.url || '').replace(/^https:\/\//, '').split('.')[0]) + '/settings/billing/usage" target="_blank" rel="noopener">Supabase usage page (data transfer)</a></div><div class="status" id="stSto"></div>', 'wide') +
       h.panel('Work photo clean-up', 'keeps photo storage under the free 1 GB', '<p>Once a day, photos <b>older than the number of days below</b> are deleted automatically, but only when their SR is <b>no longer open</b> (closed in Maximo or removed from the tracker). Photos of open SRs are never deleted. The records (who, when, what) are kept; only the image files are removed.</p>' +
         '<div class="form"><div class="f"><label for="pkDays">Keep photos for (days)</label><input id="pkDays" type="number" min="7" max="3650" value="' + keepDays() + '"></div><div class="f full"><button class="btn" id="pkSave">Save</button> <button class="btn" id="pkRun">Run clean-up now</button></div></div>' +
         '<p class="muted">Last run: ' + esc((cfg.photoPurge && cfg.photoPurge.day) || 'not yet') + (cfg.photoPurge ? ' · removed ' + cfg.photoPurge.removed + ' · total removed ' + cfg.photoPurge.total : '') + '</p><div class="status" id="stPk"></div>', 'wide') +
@@ -1486,6 +1575,35 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       } catch (e) { el.innerHTML = '<div class="notice">Could not load users: ' + esc(e.message) + '</div>'; }
     }
     drawUsers();
+    async function drawStorage() {
+      var el = $('#stoT'); if (!el) return;
+      el.innerHTML = '<div class="notice">Reading sizes…</div>';
+      var MB = 1048576, GB = 1073741824;
+      var sz = function (b) { b = +b || 0; return b >= GB ? (b / GB).toFixed(2) + ' GB' : b >= MB ? (b / MB).toFixed(1) + ' MB' : Math.max(0, Math.round(b / 1024)) + ' KB'; };
+      var bar = function (used, lim) { var p = Math.min(100, 100 * used / lim), c = p >= 85 ? 'var(--bad, #c0392b)' : p >= 65 ? 'var(--warn, #d68910)' : 'var(--good, #1e8449)'; return '<div style="height:10px;background:var(--line,#e3e8ef);border-radius:5px;overflow:hidden;min-width:140px"><div style="height:100%;width:' + p.toFixed(1) + '%;background:' + c + '"></div></div><div class="muted" style="font-size:.75rem">' + p.toFixed(1) + '% used</div>'; };
+      var rows = [], notes = [], dbFree = null, b2Free = null;
+      try {
+        var r = await sb.rpc('admin_storage_usage'); if (r.error) throw r.error; var u = r.data || {};
+        var db = +u.db_bytes || 0, DBL = 500 * MB; dbFree = DBL - db;
+        rows.push(['Database (Supabase)', sz(db), '500 MB', bar(db, DBL), sz(DBL - db)]);
+        var st = (u.storage || []).reduce(function (a, x) { return { b: a.b + (+x.bytes || 0), f: a.f + (+x.files || 0) }; }, { b: 0, f: 0 }), STL = GB;
+        rows.push(['Photo storage (Supabase) — supervisor photos', sz(st.b) + ' · ' + st.f.toLocaleString() + ' files', '1 GB', bar(st.b, STL), sz(STL - st.b)]);
+        var tb = (u.tables || []).slice().sort(function (x, y) { return y.bytes - x.bytes; });
+        notes.push('<details style="margin-top:8px"><summary>Largest database tables</summary><div class="tw"><table class="t"><thead><tr><th>Table</th><th>Size</th><th>Rows (approx.)</th></tr></thead><tbody>' + tb.map(function (t) { return '<tr><td>' + esc(t.name) + '</td><td>' + sz(t.bytes) + '</td><td>' + (+t.rows || 0).toLocaleString() + '</td></tr>'; }).join('') + '</tbody></table></div></details>');
+      } catch (e) { rows.push(['Database (Supabase)', '—', '500 MB', /admin_storage_usage|function/i.test(e.message || '') ? '<span class="muted">Run the update 16_SQL_storage_usage.sql in Supabase first.</span>' : esc(e.message), '—']); }
+      try {
+        var b = await phPost('a=usage', '{}'), B2L = 10 * GB; b2Free = B2L - (+b.bytes || 0);
+        rows.push(['Maximo photos (Backblaze B2)', sz(b.bytes) + ' · ' + (+b.files || 0).toLocaleString() + ' files', '10 GB', bar(b.bytes, B2L), sz(B2L - b.bytes)]);
+      } catch (e) { rows.push(['Maximo photos (Backblaze B2)', '—', '10 GB', /Unknown action/i.test(e.message || '') ? '<span class="muted">Upload the new photos server (function photos) first.</span>' : esc(e.message), '—']); }
+      var est = '';
+      if (dbFree != null || b2Free != null) {
+        var n1 = dbFree != null ? Math.floor(Math.max(0, dbFree - 50 * MB) / (10 * 1024)) : null, n2 = b2Free != null ? Math.floor(Math.max(0, b2Free) / (0.6 * MB)) : null;
+        est = '<p style="margin-top:8px"><b>Room for new service reports (estimate):</b> ' + (n2 != null ? 'photos ≈ <b>' + n2.toLocaleString() + '</b> reports in the B2 space left (about 0.6 MB each)' : '') + (n1 != null ? (n2 != null ? '; ' : '') + 'report text ≈ ' + n1.toLocaleString() + ' reports in the database' : '') + '. At about 1,500 reports a month' + (n2 != null ? ' this is roughly <b>' + Math.floor(n2 / 1500) + ' months</b>' : '') + '.</p>';
+      }
+      el.innerHTML = '<div class="tw"><table class="t"><thead><tr><th>Storage</th><th>Used</th><th>Free limit</th><th>Usage</th><th>Left</th></tr></thead><tbody>' + rows.map(function (x) { return '<tr><td>' + x[0] + '</td><td>' + x[1] + '</td><td>' + x[2] + '</td><td>' + x[3] + '</td><td>' + x[4] + '</td></tr>'; }).join('') + '</tbody></table></div>' + est + notes.join('') + '<p class="muted" style="font-size:.75rem">Read at ' + new Date().toLocaleString('en-GB') + '.</p>';
+    }
+    drawStorage();
+    if ($('#stoR')) $('#stoR').onclick = drawStorage;
     function tmpClient() { return (window.__DM_FAKE_SB) || supabase.createClient(CONF.url, CONF.key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'dm-portal-invite' } }); }
     function portalUrl() { if (location.protocol === 'file:') throw new Error('Invitations need the portal to be opened from its web address (for example https://dm-maintenance.pages.dev), so the email link can bring the person back to it.'); return location.origin + location.pathname; }
     async function prepareInvite(email, name, role) {
@@ -1780,7 +1898,761 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   async function emgPushStatus() { var r = await sb.rpc('push_status'); if (r.error) throw r.error; return r.data || []; }
   async function emgSaveCfg(o) { var cfg = JSON.parse(JSON.stringify(RAWC.config || {})); cfg.emg = o; var r = await sb.from('app_config').update({ config: cfg, updated_at: new Date().toISOString() }).eq('id', 1); if (r.error) throw r.error; RAWC.config = cfg; }
 
-  window.DM_CLOUD = { reportsAdd: reportsAdd, reportsRemove: reportsRemove, reportsReload: reportsReload, syncKeyNew: syncKeyNew, syncKeyRevoke: syncKeyRevoke, syncScript: syncScript, syncCmd: syncCmd, emgList: emgList, emgFlag: emgFlag, emgClear: emgClear, emgPushStatus: emgPushStatus, emgSaveCfg: emgSaveCfg, purgePhotos: purgePhotos, rmActivity: rmActivity, materials: materials, matDecide: matDecide, photoUrls: photoUrls, photoCounts: photoCounts, photoCount: photoCount, loadFlags: loadFlags, flagOf: flagOf, flagLabel: flagLabel, flagPill: flagPill, flagCanSet: flagCanSet, flagFormHTML: flagFormHTML, flagFormBind: flagFormBind, FLAGS: FLAGS, srPhotos: srPhotos, photoStrip: photoStrip, gallery: gallery, mxAllowed: mxAllowed, mxKeyNew: mxKeyNew, mxStatus: mxStatus, mxScript: mxScript, rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
+  /* ===================== Service reports on the supervisor phone (update 17) =====================
+     The supervisor prepares the FM Service Report of each completed SR on the phone, saves drafts (kept on the
+     phone too, so it works with a weak signal), then the customer signs on the phone or through a private link.
+     Injected into cloud.js at build time (same scope: sb, profile, SV, svSheet, phPost …). */
+  var SVC = { list: null, local: {}, cat: null, set: null, tab: 'todo', sel: {}, info: {}, busy: false };
+  var SVC_Q = ['Extremely Satisfied', 'Good', 'Satisfied', 'Poor'];
+  var SVC_QA = { 'Extremely Satisfied': 'راضٍ جداً', Good: 'جيد', Satisfied: 'راضٍ', Poor: 'سيء' };
+  var SVC_CATS = ['AC', 'CIVIL', 'PLUMB', 'COM', 'CARP', 'ELEC', 'PAINT', 'OTHER'], SVC_PRI = ['High', 'Medium', 'Low', 'Normal', 'Mild'];
+  var SVC_MCAT = { EL: 'Electrical', ME: 'Mechanical', PL: 'Plumbing', CP: 'Carpentry', PT: 'Painting', CO: 'Civil' };
+  var SVC_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var SVC_MAXMAT = 8, SVC_MAXEXTRA = 8, SVC_MAXLINES = 3;
+
+  // ---------- small helpers
+  function svcPad2(n) { return (n < 10 ? '0' : '') + n; }
+  function svcDT(d) { var x = new Date(d.getTime() + 4 * 3600e3); return x.getUTCFullYear() + '-' + svcPad2(x.getUTCMonth() + 1) + '-' + svcPad2(x.getUTCDate()) + 'T' + svcPad2(x.getUTCHours()) + ':' + svcPad2(x.getUTCMinutes()); }   // Dubai time, for <input type=datetime-local>
+  function svcDate(ms) { if (!ms) return ''; var d = new Date(+ms); return svcPad2(d.getUTCDate()) + '-' + SVC_MON[d.getUTCMonth()] + '-' + d.getUTCFullYear(); }
+  function svcTimeOf(ms) { if (!ms) return ''; var d = new Date(+ms + 4 * 3600e3), h = d.getUTCHours(), m = d.getUTCMinutes(); if (!h && !m) return ''; return svcPad2(((h + 11) % 12) + 1) + ':' + svcPad2(m) + (h < 12 ? ' AM' : ' PM'); }
+  function svcFmtDT(s) { if (!s) return ''; var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s); if (!m) return s; var h = +m[4]; return m[3] + '-' + SVC_MON[+m[2] - 1] + '-' + m[1] + ' ' + svcPad2(((h + 11) % 12) + 1) + ':' + m[5] + (h < 12 ? ' AM' : ' PM'); }
+  function svcPriOf(p) { p = +p || 0; return p === 1 ? 'High' : p === 2 ? 'Medium' : 'Normal'; }
+  function svcCatOf(i) {
+    var t = (String(i.wt || '') + ' ' + String(i.svc || '')).toUpperCase();
+    if (/HVAC|A\/C|\bAC\b|CHILL|COOL|FAHU|AIR ?COND/.test(t)) return 'AC';
+    if (/PAINT/.test(t)) return 'PAINT';
+    if (/CARP|DOOR|WOOD|JOIN/.test(t)) return 'CARP';
+    if (/PLUMB|WATER|DRAIN|SANIT/.test(t)) return 'PLUMB';
+    if (/ELEC|LIGHT|POWER/.test(t)) return 'ELEC';
+    if (/CIVIL|MASON|TILE|CEIL/.test(t)) return 'CIVIL';
+    if (/COMM|ELV|CCTV|PHONE|NETWORK/.test(t)) return 'COM';
+    return { CIVIL: 'CIVIL', CARP: 'CARP', ELEC: 'ELEC', MECH: 'AC', PLM: 'PLUMB' }[i.tr] || 'OTHER';
+  }
+  function svcLocTxt(i) { var p = String(i.locd || '').split(/_| - /).map(function (x) { return x.trim(); }).filter(function (x) { return x && !/^DMRM-/i.test(x); }); return (p.length > 1 ? p.slice(1).join(' - ') : p.join('')) || String(i.loc || ''); }
+  function svcCustTxt(c) { c = c || {}; return [c.name, c.designation].filter(Boolean).join(' · '); }
+  function svcAll(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+  function svcSetBusy(on) { SVC.busy = on; svcAll('.svc-foot button').forEach(function (b) { b.disabled = on; }); }
+
+  // ---------- phone storage (IndexedDB): drafts with their photos, materials list, settings
+  var SVC_DB = null;
+  function svcDb() { return SVC_DB || (SVC_DB = new Promise(function (res, rej) { if (!window.indexedDB) return rej(new Error('No storage')); var r = indexedDB.open('dm-svc', 1); r.onupgradeneeded = function () { r.result.createObjectStore('d', { keyPath: 'sr' }); r.result.createObjectStore('kv'); }; r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; })); }
+  async function svcIdb(store, mode, fn) { var db = await svcDb(); return new Promise(function (res, rej) { var tx = db.transaction(store, mode), q = fn(tx.objectStore(store)), out; if (q) q.onsuccess = function () { out = q.result; }; tx.oncomplete = function () { res(out); }; tx.onerror = function () { rej(tx.error); }; tx.onabort = function () { rej(tx.error); }; }); }
+  function svcLocalAll() { return svcIdb('d', 'readonly', function (s) { return s.getAll(); }).catch(function () { return []; }); }
+  function svcLocalPut(o) { return svcIdb('d', 'readwrite', function (s) { return s.put(o); }); }
+  function svcLocalDel(sr) { return svcIdb('d', 'readwrite', function (s) { return s.delete(sr); }).catch(function () { }); }
+  function svcKv(k, v) { return v === undefined ? svcIdb('kv', 'readonly', function (s) { return s.get(k); }).catch(function () { return null; }) : svcIdb('kv', 'readwrite', function (s) { return s.put(v, k); }).catch(function () { }); }
+
+  // ---------- load (called by the supervisor app)
+  async function svcLoad() {
+    try {
+      var r = await sb.from('svc_reports').select('sr,status,data,photos,updated_at,sent_at,signed_at,cust').order('updated_at', { ascending: false }).range(0, 999);
+      if (r.error) throw r.error;
+      SVC.list = {}; (r.data || []).forEach(function (x) { SVC.list[x.sr] = x; });
+      var s = await sb.from('svc_settings').select('*').eq('uid', profile.id).maybeSingle();
+      SVC.set = (s && s.data) || null;
+      if (!SVC.set) { var ks = await svcKv('set'); SVC.set = ks || { techs: [], sig_path: null, sig_name: profile.full_name || '' }; }
+    } catch (e) {
+      if (SVC.list == null) { var c = await svcKv('cache'); if (c && navigator.onLine === false) { SVC.list = c.list; SVC.set = c.set; } else { SVC.list = null; return; } }
+    }
+    svcKv('cache', { list: SVC.list, set: SVC.set });
+    var loc = await svcLocalAll(); SVC.local = {}; loc.forEach(function (x) { SVC.local[x.sr] = x; });
+    if (!svcLoad.on) { svcLoad.on = 1; window.addEventListener('online', function () { svcSyncAll(true); }); }
+    svcSyncAll(false);
+  }
+  function svcOn() { return SVC.list != null; }
+  // status of an SR's report: local (not uploaded yet) wins over the server copy
+  function svcOf(sr) {
+    var l = SVC.local[sr], s = SVC.list && SVC.list[sr];
+    if (s && s.status === 'signed') return { st: 'signed', srv: s, loc: null };
+    if (l) return { st: l.status, srv: s, loc: l, pend: !!l.dirty };
+    if (s) return { st: s.status, srv: s, loc: null };
+    return { st: 'todo' };
+  }
+  function svcData(sr) { var o = svcOf(sr); return (o.loc && o.loc.data) || (o.srv && o.srv.data) || null; }
+
+  // ---------- upload: photos first (replace blobs by their stored path), then the report
+  async function svcUploadItem(sr, kind, it) {
+    if (!it || it.path || !it.blob) return it;
+    var up = await phPost('a=svcup&sr=' + encodeURIComponent(sr) + '&kind=' + kind, it.blob, 'image/jpeg');
+    return { path: up.path };
+  }
+  function svcPhotosOut(ph) { return { before: ph.before && ph.before.path || null, after: ph.after && ph.after.path || null, extra: (ph.extra || []).map(function (x) { return x.path; }).filter(Boolean) }; }
+  function svcPhIn(p) { p = p || {}; return { before: p.before ? { path: p.before } : null, after: p.after ? { path: p.after } : null, extra: (p.extra || []).map(function (x) { return { path: x }; }) }; }
+  async function svcSync(sr) {
+    var l = SVC.local[sr]; if (!l || !l.dirty) return true;
+    if (!(await phB2())) throw new Error('Photo storage is not set up (photos server).');
+    var ph = l.ph;
+    ph.before = await svcUploadItem(sr, 'before', ph.before);
+    ph.after = await svcUploadItem(sr, 'after', ph.after);
+    for (var i = 0; i < (ph.extra || []).length; i++) ph.extra[i] = await svcUploadItem(sr, 'extra', ph.extra[i]);
+    await svcLocalPut(l);   // keep the paths even if the next step fails
+    var r = await sb.rpc('svc_save', { p_sr: sr, p_data: l.data, p_photos: svcPhotosOut(ph), p_status: l.status });
+    if (r.error) throw r.error;
+    var c = l.data.cust || {}, ic = (l.info && l.info.cust) || {};
+    if (l.data.lockey && c.name && (c.name !== ic.name || (c.designation || '') !== (ic.designation || '') || (c.phone || '') !== (ic.phone || '') || (c.email || '') !== (ic.email || ''))) {
+      var cr = await sb.rpc('svc_customer_set', { p_loc: l.data.lockey, p_name: c.name, p_desig: c.designation || '', p_phone: c.phone || '', p_email: c.email || '' });
+      if (!cr.error && l.info) l.info.cust = { name: c.name, designation: c.designation, phone: c.phone, email: c.email };
+    }
+    SVC.list[sr] = Object.assign({}, SVC.list[sr] || {}, { sr: sr, status: l.status, data: l.data, photos: svcPhotosOut(ph), updated_at: new Date().toISOString() });
+    if (l.info) SVC.info[sr] = l.info;
+    delete SVC.local[sr]; await svcLocalDel(sr);
+    return true;
+  }
+  async function svcSyncAll(loud) {
+    var ks = Object.keys(SVC.local).filter(function (k) { return SVC.local[k].dirty; }); if (!ks.length || navigator.onLine === false) return;
+    var ok = 0, bad = 0;
+    for (var i = 0; i < ks.length; i++) { try { await svcSync(ks[i]); ok++; } catch (e) { bad++; } }
+    if (ok && loud) svToast(ok + ' report' + (ok > 1 ? 's' : '') + ' uploaded');
+    if (ok && SV.f === 'rep') svRepList();
+  }
+
+  // ---------- the list inside "service reports" on the phone
+  function svcRows(tab) {
+    var q = SV.q.trim().toLowerCase(), out = [];
+    var hit = function (sr, txt) { return !q || (sr + ' ' + txt).toLowerCase().indexOf(q) >= 0; };
+    if (tab === 'todo') {
+      (SV.reps || []).forEach(function (r) { if (svcOf(r.id).st !== 'todo') return; if (SV.area && svArea(r) !== SV.area) return; if (!hit(r.id, (r.wo || '') + ' ' + (r.summary || '') + ' ' + (r.locd || ''))) return; out.push({ sr: r.id, r: r }); });
+      return out.sort(function (a, b) { return a.r.rd - b.r.rd; });
+    }
+    var want = { draft: ['draft'], cust: ['ready', 'sent'], sent: ['signed'] }[tab];
+    var srs = {}; Object.keys(SVC.local).forEach(function (k) { srs[k] = 1; }); Object.keys(SVC.list || {}).forEach(function (k) { srs[k] = 1; });
+    Object.keys(srs).forEach(function (sr) { var o = svcOf(sr), d = svcData(sr) || {}; if (want.indexOf(o.st) < 0) return; if (!hit(sr, (d.loc || '') + ' ' + ((d.lines || [])[0] || {}).d)) return; out.push({ sr: sr, o: o, d: d }); });
+    return out.sort(function (a, b) { var x = (a.o.srv && (a.o.srv.signed_at || a.o.srv.updated_at)) || (a.o.loc && a.o.loc.at) || '', y = (b.o.srv && (b.o.srv.signed_at || b.o.srv.updated_at)) || (b.o.loc && b.o.loc.at) || ''; return x < y ? 1 : -1; });
+  }
+  function svcMissing(d, ph) {
+    var m = []; d = d || {}; ph = ph || {};
+    if (!(d.lines || []).some(function (x) { return String(x.d || '').trim(); })) m.push('job description');
+    if (!ph.after) m.push('after photo');
+    if (!(d.techs || []).length) m.push('technician');
+    if (!(d.cust && String(d.cust.name || '').trim())) m.push('customer name');
+    if (!(SVC.set && SVC.set.sig_path)) m.push('your signature (⚙ Settings)');
+    return m;
+  }
+  function svcListHTML() {
+    var tabs = [['todo', 'To do'], ['draft', 'Drafts'], ['cust', 'Customer'], ['sent', 'Sent']];
+    var n = {}; tabs.forEach(function (t) { n[t[0]] = svcRows(t[0]).length; });
+    var rows = svcRows(SVC.tab), pend = Object.keys(SVC.local).filter(function (k) { return SVC.local[k].dirty; }).length;
+    var h = '<div class="svc-tabs" role="tablist">' + tabs.map(function (t) { return '<button role="tab" class="svc-tab" data-svt="' + t[0] + '" aria-selected="' + (SVC.tab === t[0]) + '">' + t[1] + (t[0] !== 'sent' && n[t[0]] ? ' <i>' + n[t[0]] + '</i>' : '') + '</button>'; }).join('') + '<button class="svc-gear" id="svcSet" aria-label="Report settings">⚙</button></div>';
+    if (pend) h += '<div class="svc-pend">⬆ ' + pend + ' report' + (pend > 1 ? 's' : '') + ' saved on this phone, waiting for network. <button class="sv-link" id="svcUp" style="padding:0">Upload now</button></div>';
+    if (!(SVC.set && SVC.set.sig_path) || !(SVC.set.techs || []).length) h += '<div class="svc-pend">First time: open <b>⚙ Settings</b> to add your technicians and your signature. They are used in every report.</div>';
+    if (SVC.tab === 'todo') h += '<div class="sv-hint" style="margin:0 0 8px">Completed works still <b>open in Maximo</b> with no service report. Tap <b>Create report</b>.</div>';
+    if (SVC.tab === 'cust') {
+      var sel = rows.filter(function (x) { return SVC.sel[x.sr]; }).length;
+      h += rows.length ? '<div class="svc-ctop"><button class="sv-b svc-good" id="svcSignAll">✍ Customer is here – sign now (' + (sel || rows.length) + ')</button><button class="sv-b" id="svcLinkAll">🔗 Customer not here – send link (' + (sel || rows.length) + ')</button><div class="sv-hint">Tick reports to choose some only. Each report has its own feedback and signature.</div></div>' : '';
+    }
+    h += rows.slice(0, 200).map(function (x) { return svcCardHTML(x); }).join('');
+    if (!rows.length) h += '<p class="sv-empty">' + ({ todo: 'No completed work is waiting for a report. ✓', draft: 'No drafts.', cust: 'No report is waiting for the customer.', sent: 'No signed reports yet.' }[SVC.tab]) + '</p>';
+    else if (rows.length > 200) h += '<p class="sv-empty">Showing 200 of ' + rows.length + '. Use search.</p>';
+    return h;
+  }
+  function svcCardHTML(x) {
+    var sr = x.sr, h = '';
+    if (SVC.tab === 'todo') {
+      var r = x.r;
+      return '<article class="sv-card s-rep" data-id="' + esc(sr) + '"><div class="sv-row"><b class="sv-sr">SR ' + esc(sr) + '</b><span class="pill poor">To do</span><span class="sv-days">' + svDays(r.rd) + ' d</span></div>' +
+        '<div class="sv-meta">' + esc(SV_TR[r.tr] || r.tr || '') + ' · Zone ' + esc(r.fz || '?') + ' · ' + esc(svArea(r)) + (r.wo ? ' · WO ' + esc(r.wo) : '') + '</div>' +
+        '<div class="sv-loc">' + esc(String(r.locd || '').replace(/_/g, ' · ')) + '</div><div class="sv-sum2">' + esc(r.summary || '') + '</div>' +
+        '<button class="sv-b svc-pri" data-sva="open" style="width:100%;margin-top:8px">📝 Create report</button></article>';
+    }
+    var d = x.d || {}, o = x.o, line = ((d.lines || [])[0] || {}).d || '', ph = o.loc ? o.loc.ph : svcPhIn(o.srv && o.srv.photos);
+    var pill = { draft: ['Draft', 'svc-p-acc'], ready: ['Ready', 'svc-p-acc'], sent: ['Link sent', 'svc-p-warn'], signed: ['Signed', 'svc-p-good'] }[o.st];
+    h = '<article class="sv-card svc-c-' + o.st + '" data-id="' + esc(sr) + '"><div class="sv-row">' + (SVC.tab === 'cust' ? '<input type="checkbox" class="svc-ck" data-svs="' + esc(sr) + '"' + (SVC.sel[sr] ? ' checked' : '') + ' aria-label="Select SR ' + esc(sr) + '">' : '') +
+      '<b class="sv-sr">SR ' + esc(sr) + '</b><span class="svc-pill ' + pill[1] + '">' + pill[0] + '</span>' + (x.o.pend ? '<span class="svc-pill svc-p-warn">⬆ not uploaded</span>' : '') + '</div>' +
+      '<div class="sv-loc">' + esc(d.loc || '') + '</div><div class="sv-sum2">' + esc(line) + '</div>';
+    if (o.st === 'draft') { var mi = svcMissing(d, ph); h += (mi.length ? '<div class="svc-miss">Missing: ' + esc(mi.join(', ')) + '</div>' : '<div class="sv-meta">Complete — open it and press Ready for customer.</div>') + '<button class="sv-b" data-sva="open" style="width:100%;margin-top:8px">Continue</button>'; }
+    else if (o.st === 'ready' || o.st === 'sent') {
+      if (o.st === 'sent') h += '<div class="sv-meta">🔗 Link sent ' + esc(String((o.srv && o.srv.sent_at) || '').slice(0, 16).replace('T', ' ')) + ' to ' + esc(svcCustTxt(d.cust)) + ' — waiting for signature.</div>';
+      h += '<div class="svc-btn3"><button class="sv-b svc-good" data-sva="sign">✍ Sign now</button><button class="sv-b" data-sva="link">🔗 ' + (o.st === 'sent' ? 'Resend' : 'Send link') + '</button><button class="sv-b" data-sva="open">✎ Edit</button></div>';
+    } else if (o.st === 'signed') {
+      var c = (o.srv && o.srv.cust) || {};
+      h += '<div class="sv-donel">✓ Signed by ' + esc(c.name || '') + ' · ' + esc(String((o.srv && o.srv.signed_at) || '').slice(0, 16).replace('T', ' ')) + (c.method === 'link' ? ' · by link' : ' · on site') + '</div><div class="sv-meta">Quality: ' + esc(c.quality || '') + ' · Response: ' + esc(c.response || '') + '</div>';
+    }
+    return h + '</article>';
+  }
+  function svcBindList() {
+    svcAll('[data-svt]').forEach(function (b) { b.onclick = function () { SVC.tab = b.getAttribute('data-svt'); SVC.sel = {}; svRepList(); }; });
+    var g = $('#svcSet'); if (g) g.onclick = svcSettings;
+    var up = $('#svcUp'); if (up) up.onclick = function () { svcSyncAll(true); };
+    svcAll('[data-svs]').forEach(function (c) { c.onchange = function () { var k = c.getAttribute('data-svs'); if (c.checked) SVC.sel[k] = 1; else delete SVC.sel[k]; svRepList(); }; });
+    svcAll('#svList [data-sva]').forEach(function (b) {
+      b.onclick = function () {
+        var sr = b.closest('.sv-card').getAttribute('data-id'), a = b.getAttribute('data-sva');
+        if (a === 'open') svcOpen(sr); else if (a === 'sign') svcSignSession([sr]); else if (a === 'link') svcLinkSheet([sr]);
+      };
+    });
+    var pick = function () { var rows = svcRows('cust').map(function (x) { return x.sr; }), s = rows.filter(function (k) { return SVC.sel[k]; }); return s.length ? s : rows; };
+    var sa = $('#svcSignAll'); if (sa) sa.onclick = function () { svcSignSession(pick()); };
+    var la = $('#svcLinkAll'); if (la) la.onclick = function () { svcLinkSheet(pick()); };
+  }
+  // ---------- open a report (new = pre-filled from the tracker)
+  async function svcInfo(sr) { var r = await sb.rpc('svc_sr_info', { p_sr: sr }); if (r.error) throw r.error; SVC.info[sr] = r.data; return r.data; }
+  function svcClone(o) { return JSON.parse(JSON.stringify(o || {})); }
+  function svcNew(info) {
+    var now = new Date(), c = info.cust || {};
+    return { v: 1, wo: info.wo || '', facility: 'DM / FMC', zone: info.fz || info.zn || '', loc: svcLocTxt(info), lockey: info.lockey || '',
+      rdate: svcDate(info.rd), rtime: svcTimeOf(info.rd), cat: svcCatOf(info), pri: svcPriOf(info.pr), rby: info.rbn || '', phone: c.phone || '',
+      from: svcDT(new Date(now.getTime() - 3 * 3600e3)), to: svcDT(now), lines: [{ d: info.sum || '' }], mats: [], techs: [],
+      team: (SVC.set && SVC.set.sig_name) || profile.full_name || '',
+      cust: { name: c.name || info.rbn || '', designation: c.designation || '', phone: c.phone || '', email: c.email || '' } };
+  }
+  async function svcOpen(sr) {
+    var o = svcOf(sr), F;
+    try {
+      if (o.loc) F = { sr: sr, info: o.loc.info || {}, data: svcClone(o.loc.data), ph: o.loc.ph || { extra: [] }, status: o.loc.status };
+      else if (o.srv) { var inf = SVC.info[sr]; if (!inf) { try { inf = await svcInfo(sr); } catch (e) { inf = { mxphotos: [], lockey: (o.srv.data || {}).lockey, cust: (o.srv.data || {}).cust }; } } F = { sr: sr, info: inf, data: svcClone(o.srv.data), ph: svcPhIn(o.srv.photos), status: o.srv.status === 'draft' ? 'draft' : 'ready' }; }
+      else { var info = await svcInfo(sr); F = { sr: sr, info: info, data: svcNew(info), ph: { before: null, after: null, extra: [] }, status: 'draft', fresh: true }; }
+    } catch (e) { svToast('Could not open SR ' + sr + ': ' + (e.message || e) + (navigator.onLine === false ? ' — a new report needs network once.' : ''), true); return; }
+    F.ph.extra = F.ph.extra || []; F.step = 1; SVC.F = F; svcForm();
+    if (F.fresh && (F.info.mxphotos || []).length && !F.ph.before) svcPickMx(F.info.mxphotos[0], true);
+  }
+
+  // ---------- the form
+  function svcForm() {
+    var F = SVC.F, names = ['Details', 'Work & photos', 'Materials', 'Team'];
+    var foot = F.step < 4 ? (F.step > 1 ? '<button class="sv-b" id="svcBack">‹ Back</button>' : '<button class="sv-b" id="svcDraft">Save draft</button>') + '<button class="sv-b svc-pri" id="svcNext">Next ›</button>'
+      : '<button class="sv-b" id="svcBack">‹ Back</button><button class="sv-b" id="svcDraft">Save draft</button><button class="sv-b svc-gold svc-wide" id="svcReady">Ready for customer ›</button>';
+    svSheet('<div class="svc-form"><div class="svc-fh"><div><b>SR ' + esc(F.sr) + ' · Service report</b><div class="sv-meta">Step ' + F.step + ' of 4 · ' + names[F.step - 1] + '</div></div><button class="sv-x" id="svcX" aria-label="Close and keep as draft">✕</button></div>' +
+      '<div class="svc-prog"><i style="width:' + (F.step * 25) + '%"></i></div><div class="svc-body" id="svcBody">' + [svcS1, svcS2, svcS3, svcS4][F.step - 1](F) + '</div><div class="svc-foot">' + foot + '</div></div>');
+    $('#svOv').onclick = null;   // do not close by tapping outside (avoid losing work)
+    $('#svcX').onclick = async function () { svcRead(); await svcSaveLocal(F.status === 'ready' ? 'ready' : 'draft', true); svClose(); svRepList(); };
+    var nx = $('#svcNext'); if (nx) nx.onclick = function () { svcRead(); F.step++; svcSaveLocal(F.status, false); svcForm(); var b = $('#svcBody'); if (b) b.scrollTop = 0; };
+    var bk = $('#svcBack'); if (bk) bk.onclick = function () { svcRead(); F.step--; svcForm(); };
+    var dr = $('#svcDraft'); if (dr) dr.onclick = function () { svcFinish('draft'); };
+    var rd = $('#svcReady'); if (rd) rd.onclick = function () { svcFinish('ready'); };
+    [svcB1, svcB2, svcB3, svcB4][F.step - 1](F);
+  }
+  function svcIn(id, label, val, o) { o = o || {}; return '<div class="svc-f' + (o.half ? ' half' : '') + '"><label for="' + id + '">' + label + (o.auto ? ' <span class="svc-auto">AUTO</span>' : '') + '</label>' + (o.area ? '<textarea id="' + id + '" rows="' + (o.rows || 2) + '">' + esc(val || '') + '</textarea>' : '<input id="' + id + '" type="' + (o.type || 'text') + '" value="' + esc(val || '') + '"' + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') + (o.mode ? ' inputmode="' + o.mode + '"' : '') + '>') + '</div>'; }
+  function svcChips(group, opts, cur) { return '<div class="svc-chips" data-chg="' + group + '">' + opts.map(function (x) { return '<button type="button" class="svc-chip' + (x === cur ? ' on' : '') + '" data-ch="' + esc(x) + '" aria-pressed="' + (x === cur) + '">' + esc(x) + '</button>'; }).join('') + '</div>'; }
+  function svcS1(F) {
+    var d = F.data, c = d.cust || {};
+    return '<section class="svc-card"><h4>Job details <span class="svc-auto">FROM TRACKER</span></h4><div class="svc-grid">' +
+      svcIn('sv1fac', 'Facility', d.facility, { half: 1 }) + svcIn('sv1zn', 'Zone', d.zone, { half: 1, auto: 1 }) +
+      svcIn('sv1loc', 'Equipment No. / Location', d.loc, { area: 1, auto: 1 }) +
+      svcIn('sv1rd', 'Reported date', d.rdate, { half: 1, auto: 1 }) + svcIn('sv1rt', 'Reported time', d.rtime, { half: 1 }) +
+      svcIn('sv1wo', 'Imdaad SR No. / WO No.', F.sr + (d.wo && d.wo !== F.sr ? ' / ' + d.wo : ''), {}) + '</div>' +
+      '<div class="svc-lbl">Category</div>' + svcChips('cat', SVC_CATS, d.cat) +
+      '<div class="svc-lbl">Priority</div>' + svcChips('pri', SVC_PRI, d.pri) + '<div class="svc-grid">' +
+      svcIn('sv1rby', 'Service call reported by', d.rby, { half: 1, auto: 1 }) + svcIn('sv1ph', 'Phone No.', d.phone, { half: 1, type: 'tel', mode: 'tel' }) +
+      svcIn('sv1from', 'Attended from', d.from, { half: 1, type: 'datetime-local' }) + svcIn('sv1to', 'Attended to', d.to, { half: 1, type: 'datetime-local' }) + '</div>' +
+      '<div class="sv-hint">"To" = when you prepare the report, "From" = 3 hours before. Change them if needed.</div></section>' +
+      '<section class="svc-card"><h4>Customer of this location ' + (F.info.cust ? '<span class="svc-auto">SAVED</span>' : '') + '</h4><div class="svc-grid">' +
+      svcIn('sv1cn', 'Customer name', c.name, { half: 1 }) + svcIn('sv1cd', 'Designation', c.designation, { half: 1 }) +
+      svcIn('sv1cp', 'WhatsApp / mobile', c.phone, { half: 1, type: 'tel', mode: 'tel', ph: '05x xxx xxxx' }) + svcIn('sv1ce', 'Email', c.email, { half: 1, type: 'email' }) + '</div>' +
+      '<div class="sv-hint">Saved for <b>' + esc(d.loc || '') + '</b>. If you change it, the new customer is used for the next reports of this location.</div></section>';
+  }
+  function svcB1(F) {
+    svcAll('[data-chg]').forEach(function (g) { var k = g.getAttribute('data-chg'); svcAll('[data-chg="' + k + '"] .svc-chip').forEach(function (b) { b.onclick = function () { F.data[k] = b.getAttribute('data-ch'); svcAll('[data-chg="' + k + '"] .svc-chip').forEach(function (x) { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); }); }; }); });
+  }
+  function svcV(id) { var e = document.getElementById(id); return e ? e.value.trim() : null; }
+  function svcRead() {
+    var F = SVC.F; if (!F) return; var d = F.data, v;
+    if (F.step === 1) {
+      d.facility = svcV('sv1fac'); d.zone = svcV('sv1zn'); d.loc = svcV('sv1loc'); d.rdate = svcV('sv1rd'); d.rtime = svcV('sv1rt');
+      v = svcV('sv1wo'); d.wo = v ? v.replace(new RegExp('^' + F.sr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*/?\\s*'), '') || d.wo : d.wo;
+      d.rby = svcV('sv1rby'); d.phone = svcV('sv1ph'); d.from = svcV('sv1from'); d.to = svcV('sv1to');
+      d.cust = { name: svcV('sv1cn'), designation: svcV('sv1cd'), phone: svcV('sv1cp'), email: svcV('sv1ce') };
+    } else if (F.step === 2) {
+      d.lines = svcAll('[data-ln]').map(function (t) { return { d: t.value.trim() }; }).filter(function (x, i) { return x.d || i === 0; });
+    } else if (F.step === 3) {
+      svcAll('[data-mq]').forEach(function (inp) { var i = +inp.getAttribute('data-mq'); if (d.mats[i]) d.mats[i].q = Math.max(0, +inp.value || 0); });
+    } else if (F.step === 4) { d.team = svcV('sv4team') || d.team; }
+  }
+
+  // step 2: description + photos
+  function svcPhBox(kind, title, it, opt) {
+    return '<section class="svc-card"><h4>' + title + (opt ? ' <span class="svc-opt">' + opt + '</span>' : '') + '</h4><div class="svc-ph1">' +
+      (it ? '<div class="svc-thumb"><img data-phk="' + kind + '" alt="' + esc(title) + '"><button class="svc-x" data-phx="' + kind + '" aria-label="Remove photo">✕</button></div>' : '<div class="svc-thumb empty">No photo</div>') +
+      '<div class="svc-phb">' + (kind === 'before' && (SVC.F.info.mxphotos || []).length ? '<button class="sv-b" data-mx="1">🗂 From Maximo (' + SVC.F.info.mxphotos.length + ')</button>' : '') +
+      '<label class="sv-b">📷 Camera<input type="file" accept="image/*" capture="environment" data-phf="' + kind + '" hidden></label>' +
+      '<label class="sv-b">🖼 Gallery<input type="file" accept="image/*" data-phf="' + kind + '" hidden></label>' +
+      (it ? '<button class="sv-b" data-phe="' + kind + '">✎ Rotate / crop</button>' : '') + '</div></div></section>';
+  }
+  function svcS2(F) {
+    var d = F.data, lines = (d.lines && d.lines.length ? d.lines : [{ d: '' }]);
+    var h = '<section class="svc-card"><h4>Description of service <span class="svc-auto">AUTO</span></h4>' + lines.map(function (x, i) {
+      return '<div class="svc-line"><span class="svc-n">' + (i + 1) + '</span><textarea data-ln="' + i + '" rows="2" aria-label="Description line ' + (i + 1) + '">' + esc(x.d || '') + '</textarea><span class="svc-done">Completed ✓</span>' + (i ? '<button class="svc-x2" data-lnx="' + i + '" aria-label="Remove line">✕</button>' : '') + '</div>';
+    }).join('') + (lines.length < SVC_MAXLINES ? '<button class="sv-link" id="svcAddLn">+ Add line</button>' : '') + '</section>';
+    h += svcPhBox('before', 'Before picture', F.ph.before) + svcPhBox('after', 'After picture', F.ph.after);
+    h += '<section class="svc-card"><h4>Additional photos <span class="svc-opt">optional · up to ' + SVC_MAXEXTRA + '</span></h4><div class="sv-th">' + F.ph.extra.map(function (x, i) { return '<span class="sv-tm"><img data-phk="extra" data-phi="' + i + '" alt="Extra photo ' + (i + 1) + '"><button data-exx="' + i + '" aria-label="Remove photo">✕</button></span>'; }).join('') + '</div>' +
+      (F.ph.extra.length < SVC_MAXEXTRA ? '<div class="svc-phb" style="margin-top:8px"><label class="sv-b">📷 Camera<input type="file" accept="image/*" capture="environment" data-phf="extra" multiple hidden></label><label class="sv-b">🖼 Gallery<input type="file" accept="image/*" data-phf="extra" multiple hidden></label></div>' : '') + '</section>';
+    return h;
+  }
+  async function svcImgSrc(it) { if (!it) return ''; if (it.blob) return it._u || (it._u = URL.createObjectURL(it.blob)); if (it.path) { var u = await photoUrls([it.path]); return u[it.path] || ''; } return ''; }
+  function svcB2(F) {
+    svcAll('img[data-phk]').forEach(async function (img) { var k = img.getAttribute('data-phk'), it = k === 'extra' ? F.ph.extra[+img.getAttribute('data-phi')] : F.ph[k]; img.src = await svcImgSrc(it); });
+    var keep = function () { svcRead(); };
+    var al = $('#svcAddLn'); if (al) al.onclick = function () { keep(); F.data.lines.push({ d: '' }); svcForm(); };
+    svcAll('[data-lnx]').forEach(function (b) { b.onclick = function () { keep(); F.data.lines.splice(+b.getAttribute('data-lnx'), 1); svcForm(); }; });
+    svcAll('[data-phf]').forEach(function (inp) {
+      inp.onchange = async function () {
+        var k = inp.getAttribute('data-phf'), files = Array.prototype.slice.call(inp.files || []); inp.value = ''; keep();
+        for (var i = 0; i < files.length; i++) {
+          try { var b = await svShrink(files[i]); if (k === 'extra') { if (F.ph.extra.length < SVC_MAXEXTRA) F.ph.extra.push({ blob: b }); } else F.ph[k] = { blob: b }; } catch (e) { svToast(e.message, true); }
+        }
+        svcForm();
+      };
+    });
+    svcAll('[data-phx]').forEach(function (b) { b.onclick = function () { keep(); F.ph[b.getAttribute('data-phx')] = null; svcForm(); }; });
+    svcAll('[data-exx]').forEach(function (b) { b.onclick = function () { keep(); F.ph.extra.splice(+b.getAttribute('data-exx'), 1); svcForm(); }; });
+    svcAll('[data-phe]').forEach(function (b) { b.onclick = function () { keep(); var k = b.getAttribute('data-phe'); svcEditor(F.ph[k], function (blob) { F.ph[k] = { blob: blob }; svcForm(); }); }; });
+    var mx = document.querySelector('[data-mx]'); if (mx) mx.onclick = function () { keep(); svcMxChooser(); };
+  }
+  async function svcFetchBlob(path) { var u = (await photoUrls([path]))[path]; if (!u) throw new Error('Photo link not available'); var r = await fetch(u); if (!r.ok) throw new Error('Photo not found (' + r.status + ')'); return await r.blob(); }
+  async function svcPickMx(path, silent) {
+    var F = SVC.F;
+    try { var b = await svShrink(await svcFetchBlob(path)); if (SVC.F !== F) return; F.ph.before = { blob: b, mx: path }; if (F.step === 2) { svcRead(); svcForm(); } }
+    catch (e) { if (!silent) svToast('Could not load the Maximo photo: ' + e.message, true); }
+  }
+  function svcOverlay(html) { var ov = document.createElement('div'); ov.className = 'sv-ov svc-ov2'; ov.innerHTML = '<div class="sv-sh" role="dialog" aria-modal="true">' + html + '</div>'; document.body.appendChild(ov); return ov; }
+  async function svcMxChooser() {
+    var F = SVC.F, ps = F.info.mxphotos || [];
+    var ov = svcOverlay('<div class="sv-shh"><b>Maximo photos · SR ' + esc(F.sr) + '</b><button class="sv-x" data-close="1" aria-label="Close">✕</button></div><div class="sv-hint">Tap the photo to use as the before picture.</div><div class="svc-mxg">' + ps.map(function (p, i) { return '<button class="svc-mxi" data-mxp="' + i + '"><img alt="Maximo photo ' + (i + 1) + '"></button>'; }).join('') + '</div>');
+    ov.querySelector('[data-close]').onclick = function () { ov.remove(); };
+    var urls = await photoUrls(ps);
+    Array.prototype.forEach.call(ov.querySelectorAll('[data-mxp]'), function (b) { var p = ps[+b.getAttribute('data-mxp')]; b.querySelector('img').src = urls[p] || ''; b.onclick = function () { ov.remove(); svcPickMx(p, false); }; });
+  }
+  // photo editor: rotate 90° and crop by dragging
+  async function svcEditor(it, done) {
+    var ov = svcOverlay('<div class="sv-shh"><b>Edit photo</b><button class="sv-x" data-close="1" aria-label="Cancel">✕</button></div><div class="svc-edc"><canvas id="svcEdC" style="touch-action:none"></canvas></div><div class="sv-hint">Drag on the photo to choose the part to keep. ⟲ turns it 90°.</div>' +
+      '<div class="svc-btn3"><button class="sv-b" id="svcEdR">⟲ Rotate</button><button class="sv-b" id="svcEdZ">Reset</button><button class="sv-b svc-pri" id="svcEdOk">Use this photo</button></div>');
+    ov.querySelector('[data-close]').onclick = function () { ov.remove(); };
+    var img = new Image(), rot = 0, crop = null, cv = ov.querySelector('#svcEdC'), ctx = cv.getContext('2d'), sc = 1;
+    try { var blob = it.blob || await svcFetchBlob(it.path); img.src = URL.createObjectURL(blob); await new Promise(function (r, j) { img.onload = r; img.onerror = function () { j(new Error('Could not open the photo')); }; }); }
+    catch (e) { svToast(e.message, true); ov.remove(); return; }
+    function dims() { return rot % 2 ? [img.naturalHeight, img.naturalWidth] : [img.naturalWidth, img.naturalHeight]; }
+    function paint(c2, k) { var d = dims(); c2.save(); c2.scale(k, k); c2.translate(d[0] / 2, d[1] / 2); c2.rotate(rot * Math.PI / 2); c2.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2); c2.restore(); }
+    function draw() {
+      var d = dims(), wmax = Math.min(ov.querySelector('.svc-edc').clientWidth || 320, 680), hmax = window.innerHeight * 0.55; sc = Math.min(wmax / d[0], hmax / d[1]);
+      cv.width = Math.round(d[0] * sc); cv.height = Math.round(d[1] * sc); paint(ctx, sc);
+      if (crop) { ctx.fillStyle = 'rgba(0,0,0,.5)'; var c = crop; ctx.beginPath(); ctx.rect(0, 0, cv.width, cv.height); ctx.rect(c.x * sc, c.y * sc, c.w * sc, c.h * sc); ctx.fill('evenodd'); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(c.x * sc, c.y * sc, c.w * sc, c.h * sc); }
+    }
+    var st = null;
+    function pt(e) { var r = cv.getBoundingClientRect(); return { x: Math.max(0, Math.min(cv.width, e.clientX - r.left)) / sc, y: Math.max(0, Math.min(cv.height, e.clientY - r.top)) / sc }; }
+    cv.onpointerdown = function (e) { cv.setPointerCapture(e.pointerId); st = pt(e); crop = null; e.preventDefault(); };
+    cv.onpointermove = function (e) { if (!st) return; var p = pt(e); crop = { x: Math.min(st.x, p.x), y: Math.min(st.y, p.y), w: Math.abs(p.x - st.x), h: Math.abs(p.y - st.y) }; draw(); };
+    cv.onpointerup = function () { st = null; if (crop && (crop.w < 20 || crop.h < 20)) { crop = null; draw(); } };
+    ov.querySelector('#svcEdR').onclick = function () { rot = (rot + 1) % 4; crop = null; draw(); };
+    ov.querySelector('#svcEdZ').onclick = function () { rot = 0; crop = null; draw(); };
+    ov.querySelector('#svcEdOk').onclick = function () {
+      var d = dims(), full = document.createElement('canvas'); full.width = d[0]; full.height = d[1]; paint(full.getContext('2d'), 1);
+      var c = crop || { x: 0, y: 0, w: d[0], h: d[1] }, k = Math.min(1, 1280 / Math.max(c.w, c.h)), out = document.createElement('canvas');
+      out.width = Math.round(c.w * k); out.height = Math.round(c.h * k); out.getContext('2d').drawImage(full, c.x, c.y, c.w, c.h, 0, 0, out.width, out.height);
+      out.toBlob(function (b) { ov.remove(); if (b) done(b); }, 'image/jpeg', 0.8);
+    };
+    draw();
+  }
+
+  // step 3: materials from the BOQ list
+  async function svcCatalog() {
+    if (SVC.cat) return SVC.cat;
+    var c = await svcKv('cat'); if (c && c.rows && c.rows.length && Date.now() - c.at < 7 * 864e5) return (SVC.cat = c.rows);
+    try {
+      var rows = [];
+      for (var f = 0; ; f += 1000) { var r = await sb.from('mat_catalog').select('line,item,descr,cat').order('line').range(f, f + 999); if (r.error) throw r.error; rows = rows.concat(r.data || []); if ((r.data || []).length < 1000) break; }
+      rows.forEach(function (x) { x.u = String(x.descr || '').toUpperCase(); }); svcKv('cat', { at: Date.now(), rows: rows }); return (SVC.cat = rows);
+    } catch (e) { if (c && c.rows) return (SVC.cat = c.rows); throw e; }
+  }
+  function svcS3(F) {
+    var m = F.data.mats || (F.data.mats = []), man = F.matMode === 'man';
+    var units = '<option value="">unit</option>' + SV_UNITS.map(function (u) { return '<option>' + esc(u) + '</option>'; }).join('');
+    return '<section class="svc-card"><h4>Material used</h4><div class="svc-seg" role="tablist"><button type="button" role="tab" data-mmode="boq" aria-selected="' + !man + '">🔍 From BOQ list</button><button type="button" role="tab" data-mmode="man" aria-selected="' + man + '">✍ Write manually</button></div>' +
+      (man ? '<div class="svc-grid">' + svcIn('svcMMn', 'Material description', F.matDraft || '', {}) + svcIn('svcMMq', 'Quantity', '1', { half: 1, type: 'number', mode: 'decimal' }) +
+          '<div class="svc-f half"><label for="svcMMu">Unit</label><select id="svcMMu" class="svc-sel">' + units + '</select></div></div><button class="sv-b svc-pri" id="svcMMAdd" style="width:100%;margin-top:10px;flex-direction:row">+ Add material</button><div class="sv-hint">Use this for materials that are not in the BOQ list.</div>'
+        : '<div class="svc-search">🔍 <input id="svcMQ" type="search" placeholder="Type to search the BOQ list (e.g. LED, valve, compressor)" autocomplete="off"></div><div id="svcMR" class="svc-res"><div class="sv-hint">Loading materials list…</div></div>' +
+          '<button class="sv-link" id="svcToMan">Not in the list? ✍ Write it manually</button>') + '</section>' +
+      '<section class="svc-card"><h4>Selected (' + m.length + (m.length >= SVC_MAXMAT ? ' – maximum' : '') + ')</h4>' + (m.length ? m.map(function (x, i) {
+        return '<div class="svc-mrow"><span class="svc-n">' + (i + 1) + '</span><span class="svc-md">' + esc(x.d) + (x.line ? '<small> · BOQ line ' + x.line + '</small>' : '<small> · <span class="svc-mtag">manual</span></small>') + '</span><span class="svc-qty"><button data-mm="' + i + '" aria-label="Less">−</button><input data-mq="' + i + '" type="number" inputmode="decimal" min="0" step="any" value="' + esc(x.q) + '" aria-label="Quantity"><button data-mp="' + i + '" aria-label="More">+</button>' + (x.u ? '<span class="svc-u">' + esc(x.u) + '</span>' : '') + '</span><button class="svc-x2" data-mx2="' + i + '" aria-label="Remove">✕</button></div>';
+      }).join('') : '<p class="sv-hint">No material yet. If no material was used, leave this empty.</p>') + '</section>';
+  }
+  function svcB3(F) {
+    var m = F.data.mats, q = $('#svcMQ'), res = $('#svcMR'), cat = null, use = {};
+    svcAll('[data-mmode]').forEach(function (b) { b.onclick = function () { svcRead(); F.matMode = b.getAttribute('data-mmode'); svcForm(); }; });
+    var tm = $('#svcToMan'); if (tm) tm.onclick = function () { svcRead(); F.matDraft = q ? q.value.trim() : ''; F.matMode = 'man'; svcForm(); var e = $('#svcMMn'); if (e) e.focus(); };
+    var ma = $('#svcMMAdd'); if (ma) ma.onclick = function () {
+      var d = svcV('svcMMn'), qq = +svcV('svcMMq') || 0, u = ($('#svcMMu') || {}).value || '';
+      if (!d) return svToast('Write the material description.', true);
+      if (qq <= 0) return svToast('Enter the quantity.', true);
+      svcRead(); if (m.length >= SVC_MAXMAT) return svToast('Maximum ' + SVC_MAXMAT + ' materials per report.', true);
+      m.push({ line: null, d: d.slice(0, 120), q: qq, u: u }); F.matDraft = ''; svcForm(); var e = $('#svcMMn'); if (e) e.focus();
+    };
+    if (!q) { bindSel(); return; }
+    svcKv('matuse').then(function (u) { use = u || {}; });
+    function add(line, d) { svcRead(); if (m.length >= SVC_MAXMAT) return svToast('Maximum ' + SVC_MAXMAT + ' materials per report.', true); var ex = m.filter(function (x) { return line ? x.line === line : x.d === d; })[0]; if (ex) ex.q = (+ex.q || 0) + 1; else m.push({ line: line || null, d: d, q: 1 }); svcForm(); var nq = $('#svcMQ'); if (nq) nq.focus(); }
+    function show() {
+      if (!cat) return;
+      var t = q.value.trim().toUpperCase().split(/\s+/).filter(Boolean), list;
+      if (!t.length) { list = cat.filter(function (x) { return use[x.line]; }).sort(function (a, b) { return use[b.line] - use[a.line]; }).slice(0, 12); res.innerHTML = list.length ? '<div class="sv-hint">Your most used:</div>' + list.map(row).join('') : '<div class="sv-hint">Type at least one word.</div>'; bindRes(); return; }
+      list = cat.filter(function (x) { return t.every(function (w) { return x.u.indexOf(w) >= 0 || String(x.line) === w; }); });
+      list.sort(function (a, b) { var sa = a.u.indexOf(t[0]) === 0 ? 0 : 1, sb2 = b.u.indexOf(t[0]) === 0 ? 0 : 1; return sa - sb2 || (use[b.line] || 0) - (use[a.line] || 0) || a.u.length - b.u.length; });
+      res.innerHTML = list.length ? list.slice(0, 30).map(row).join('') + (list.length > 30 ? '<div class="sv-hint">' + list.length + ' matches — type more words.</div>' : '') : '<div class="sv-hint">Nothing found in the BOQ list. Tap "Write it manually" below.</div>';
+      bindRes();
+    }
+    function row(x) { var w = q.value.trim().split(/\s+/).filter(Boolean), t = esc(x.descr); w.forEach(function (k) { if (k.length > 1) t = t.replace(new RegExp('(' + esc(k).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>'); }); return '<button class="svc-ri" data-ml="' + x.line + '"><span>' + t + '<small> · ' + esc(SVC_MCAT[x.cat] || x.cat || '') + ' · line ' + x.line + '</small></span><b>+</b></button>'; }
+    function bindRes() { Array.prototype.forEach.call(res.querySelectorAll('[data-ml]'), function (b) { b.onclick = function () { var l = +b.getAttribute('data-ml'), x = cat.filter(function (y) { return y.line === l; })[0]; if (x) add(x.line, x.descr); }; }); }
+    var qt; q.oninput = function () { clearTimeout(qt); qt = setTimeout(show, 150); };
+    svcCatalog().then(function (c) { cat = c; show(); }).catch(function (e) { res.innerHTML = '<div class="sv-hint">BOQ list not available (' + esc(e.message || e) + '). Use "Write it manually".</div>'; });
+    bindSel();
+    function bindSel() {
+    svcAll('[data-mm]').forEach(function (b) { b.onclick = function () { svcRead(); var i = +b.getAttribute('data-mm'); m[i].q = Math.max(0, (+m[i].q || 0) - 1); svcForm(); }; });
+    svcAll('[data-mp]').forEach(function (b) { b.onclick = function () { svcRead(); var i = +b.getAttribute('data-mp'); m[i].q = (+m[i].q || 0) + 1; svcForm(); }; });
+    svcAll('[data-mx2]').forEach(function (b) { b.onclick = function () { svcRead(); m.splice(+b.getAttribute('data-mx2'), 1); svcForm(); }; });
+    }
+  }
+
+  // step 4: technicians, supervisor, checks
+  function svcS4(F) {
+    var d = F.data, T = (SVC.set && SVC.set.techs) || [], mi = svcMissing(d, F.ph);
+    return '<section class="svc-card"><h4>Technician ID <span class="svc-opt">choose 1 or 2</span></h4>' + (T.length ? '<div class="svc-chips">' + T.map(function (t) { var on = (d.techs || []).indexOf(t.id) >= 0; return '<button type="button" class="svc-chip' + (on ? ' on' : '') + '" data-tc="' + esc(t.id) + '" aria-pressed="' + on + '">' + esc(t.id) + (t.name ? ' · ' + esc(t.name) : '') + '</button>'; }).join('') + '</div>' : '<p class="sv-hint">No technicians saved yet.</p>') +
+      '<button class="sv-link" id="svcToSet">⚙ Add / change technicians</button></section>' +
+      '<section class="svc-card"><h4>Completed by team <span class="svc-auto">AUTO</span></h4><div class="svc-grid">' + svcIn('sv4team', 'Name on the report', d.team, {}) + '</div>' +
+      '<div class="svc-lbl">Your signature (saved)</div>' + (SVC.set && SVC.set.sig_path ? '<div class="svc-sigv"><img id="svcMySig" alt="Your signature"></div>' : '<div class="svc-miss">No signature saved. <button class="sv-link" id="svcToSet2" style="padding:0">Open ⚙ Settings</button></div>') + '</section>' +
+      '<section class="svc-card"><h4>Check</h4>' + (mi.length ? '<div class="svc-miss">Missing: ' + esc(mi.join(', ')) + '</div>' : '<div class="sv-donel">✓ Everything is filled. Press <b>Ready for customer</b>.</div>') + (F.ph.before ? '' : '<div class="svc-miss" style="background:#fff7e6;color:#8a5a00">No before picture (recommended). Add it in step 2 from Maximo, the camera or the gallery.</div>') + '</section>';
+  }
+  function svcB4(F) {
+    var d = F.data; d.techs = d.techs || [];
+    svcAll('[data-tc]').forEach(function (b) { b.onclick = function () { var id = b.getAttribute('data-tc'), i = d.techs.indexOf(id); if (i >= 0) d.techs.splice(i, 1); else { if (d.techs.length >= 2) return svToast('Choose up to 2 technicians.', true); d.techs.push(id); } svcRead(); svcForm(); }; });
+    var go = async function () { svcRead(); await svcSaveLocal(F.status, false); svcSettings(true); };
+    var a = $('#svcToSet'); if (a) a.onclick = go; var a2 = $('#svcToSet2'); if (a2) a2.onclick = go;
+    var im = $('#svcMySig'); if (im) photoUrls([SVC.set.sig_path]).then(function (u) { im.src = u[SVC.set.sig_path] || ''; });
+  }
+
+  // ---------- save
+  function svcPhStore(ph) { var c = function (x) { return x ? (x.path ? { path: x.path } : { blob: x.blob }) : null; }; return { before: c(ph.before), after: c(ph.after), extra: (ph.extra || []).map(c).filter(Boolean) }; }
+  async function svcSaveLocal(status, quiet) {
+    var F = SVC.F; F.status = status;
+    var rec = { sr: F.sr, info: F.info, data: F.data, ph: svcPhStore(F.ph), status: status, dirty: true, at: new Date().toISOString() };
+    SVC.local[F.sr] = rec;
+    try { await svcLocalPut(rec); } catch (e) { if (!quiet) svToast('Could not save on this phone: ' + (e.message || e), true); }
+  }
+  async function svcFinish(status) {
+    var F = SVC.F; if (SVC.busy) return; svcRead();
+    if (status === 'ready') { var mi = svcMissing(F.data, F.ph); if (mi.length) { if (F.step !== 4) { F.step = 4; svcForm(); } return svToast('Missing: ' + mi.join(', '), true); } }
+    if (status === 'ready' && !F.ph.before && !confirm('There is no BEFORE picture. Mark the report ready without it?')) { if (F.step !== 2) { F.step = 2; svcForm(); } return; }
+    svcSetBusy(true);
+    await svcSaveLocal(status, false);
+    if (status === 'ready') { var u = (await svcKv('matuse')) || {}; (F.data.mats || []).forEach(function (m) { if (m.line) u[m.line] = (u[m.line] || 0) + 1; }); svcKv('matuse', u); }
+    var msg;
+    try { await svcSync(F.sr); msg = status === 'ready' ? 'Ready — the report is in the Customer tab.' : 'Draft saved.'; }
+    catch (e) { msg = 'Saved on this phone. It will upload when the network is back' + (navigator.onLine === false ? '' : ' (' + (e.message || e) + ')') + '.'; }
+    svcSetBusy(false); SVC.F = null; svClose();
+    SVC.tab = status === 'ready' ? 'cust' : 'draft'; svRepList(); svToast(msg);
+  }
+  // ---------- signature pad
+  function svcPad(cv) {
+    var ctx = cv.getContext('2d'), drawn = false, last = null;
+    function reset() { var r = cv.getBoundingClientRect(), k = Math.min(3, window.devicePixelRatio || 1); cv.width = Math.max(10, r.width * k); cv.height = Math.max(10, r.height * k); ctx.setTransform(k, 0, 0, k, 0, 0); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, r.width, r.height); ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#14223a'; drawn = false; }
+    function pt(e) { var r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    cv.style.touchAction = 'none';
+    cv.onpointerdown = function (e) { cv.setPointerCapture(e.pointerId); last = pt(e); drawn = true; ctx.beginPath(); ctx.arc(last.x, last.y, 1.1, 0, 7); ctx.fillStyle = '#14223a'; ctx.fill(); e.preventDefault(); };
+    cv.onpointermove = function (e) { if (!last) return; var p = pt(e); ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; };
+    cv.onpointerup = cv.onpointercancel = function () { last = null; };
+    reset();
+    return { clear: reset, empty: function () { return !drawn; }, blob: function () { return new Promise(function (res) { cv.toBlob(res, 'image/jpeg', 0.85); }); } };
+  }
+
+  // ---------- settings: technicians + signature (once)
+  function svcSettings(back) {
+    var S = svcClone(SVC.set || {}); S.techs = S.techs || []; var pad = null, newSig = false;
+    function draw() {
+      svSheet('<div class="sv-shh"><div><b>Report settings</b><div class="sv-meta">Saved once · used in every report</div></div><button class="sv-x" id="svX" aria-label="Close">✕</button></div>' +
+        '<section class="svc-card"><h4>My technicians</h4>' + (S.techs.length ? S.techs.map(function (t, i) { return '<div class="svc-mrow"><span class="svc-n">' + (i + 1) + '</span><span class="svc-md">' + esc(t.id) + (t.name ? ' · ' + esc(t.name) : '') + '</span><button class="svc-x2" data-trm="' + i + '" aria-label="Remove">✕</button></div>'; }).join('') : '<p class="sv-hint">None yet.</p>') +
+        '<div class="svc-grid" style="margin-top:8px">' + svcIn('svtId', 'Technician ID No.', '', { half: 1, mode: 'numeric' }) + svcIn('svtNm', 'Name', '', { half: 1 }) + '</div><button class="sv-b" id="svtAdd" style="width:100%">+ Add technician</button></section>' +
+        '<section class="svc-card"><h4>My signature</h4>' + (S.sig_path && !newSig ? '<div class="svc-sigv"><img id="svtSigI" alt="Saved signature"></div><button class="sv-link" id="svtRe">Redraw signature</button>' : '<div class="svc-padw"><canvas id="svtPad"></canvas></div><button class="sv-link" id="svtClr">Clear</button>') +
+        '<div class="svc-grid">' + svcIn('svtName', 'Name on reports', S.sig_name || profile.full_name || '', {}) + '</div></section>' +
+        '<div class="svc-foot"><button class="sv-b svc-pri svc-wide" id="svtSave">Save</button></div><div class="status" id="svtSt"></div>');
+      $('#svX').onclick = close;
+      var ti = $('#svtSigI'); if (ti) photoUrls([S.sig_path]).then(function (u) { ti.src = u[S.sig_path] || ''; });
+      var cv = $('#svtPad'); pad = cv ? svcPad(cv) : null;
+      var cl = $('#svtClr'); if (cl) cl.onclick = function () { pad && pad.clear(); };
+      var re = $('#svtRe'); if (re) re.onclick = function () { S.sig_name = svcV('svtName'); newSig = true; draw(); };
+      $('#svtAdd').onclick = function () { var id = svcV('svtId').replace(/\s+/g, ''), nm = svcV('svtNm'); if (!id) return svToast('Enter the technician ID No.', true); if (S.techs.some(function (t) { return t.id === id; })) return svToast('Already in the list.', true); S.sig_name = svcV('svtName'); S.techs.push({ id: id.slice(0, 20), name: nm.slice(0, 60) }); draw(); };
+      svcAll('[data-trm]').forEach(function (b) { b.onclick = function () { S.sig_name = svcV('svtName'); S.techs.splice(+b.getAttribute('data-trm'), 1); draw(); }; });
+      $('#svtSave').onclick = save;
+    }
+    function close() { svClose(); if (back && SVC.F) svcForm(); else svRepList(); }
+    async function save() {
+      var b = $('#svtSave'); b.disabled = true; S.sig_name = svcV('svtName');
+      try {
+        if (pad && !pad.empty()) { var up = await phPost('a=svcup&kind=sig', await pad.blob(), 'image/jpeg'); S.sig_path = up.path; }
+        else if (pad && !S.sig_path) throw new Error('Please sign in the box.');
+        var row = { uid: profile.id, techs: S.techs, sig_path: S.sig_path || null, sig_name: S.sig_name || '', updated_at: new Date().toISOString() };
+        var r = await sb.from('svc_settings').upsert(row, { onConflict: 'uid' }); if (r.error) throw r.error;
+        SVC.set = row; svcKv('set', row); svToast('Settings saved');
+        if (SVC.F && back) { if (!SVC.F.data.team) SVC.F.data.team = row.sig_name; }
+        close();
+      } catch (e) { setMsg('svtSt', (navigator.onLine === false ? 'No network. ' : '') + (e.message || e), 'err'); b.disabled = false; }
+    }
+    draw();
+  }
+
+  // ---------- customer signs on the supervisor phone (one report after the other)
+  async function svcReadyList(srs) {
+    if (navigator.onLine === false) { svToast('This needs network.', true); return null; }
+    for (var i = 0; i < srs.length; i++) { if (SVC.local[srs[i]] && SVC.local[srs[i]].dirty) { try { await svcSync(srs[i]); } catch (e) { svToast('SR ' + srs[i] + ' could not be uploaded: ' + (e.message || e), true); return null; } } }
+    var list = srs.filter(function (sr) { var s = svcOf(sr).st; return s === 'ready' || s === 'sent'; });
+    if (!list.length) { svToast('Mark the report "Ready for customer" first.', true); return null; }
+    return list;
+  }
+  function svcRateHTML(key, label, ar) { return '<div class="svc-lbl">' + label + ' · ' + ar + '</div><div class="svc-rate" data-rate="' + key + '">' + SVC_Q.map(function (q) { return '<button type="button" data-rv="' + esc(q) + '" aria-pressed="false">' + esc(q) + '<br><span>' + SVC_QA[q] + '</span></button>'; }).join('') + '</div>'; }
+  async function svcSignSession(srs) {
+    var list = await svcReadyList(srs); if (!list) return;
+    var i = 0, done = 0;
+    async function show() {
+      var sr = list[i], s = SVC.list[sr] || {}, d = s.data || {}, p = s.photos || {}, c = d.cust || {}, A = {};
+      svSheet('<div class="sv-shh"><div><b>Report ' + (i + 1) + ' of ' + list.length + ' · SR ' + esc(sr) + '</b><div class="sv-meta">' + esc(d.loc || '') + '</div></div><button class="sv-x" id="svX" aria-label="Stop">✕</button></div>' +
+        '<div class="svc-banner">Customer feedback for <b>SR ' + esc(sr) + '</b> only · هذا التقييم خاص بالبلاغ ' + esc(sr) + ' فقط</div>' +
+        '<section class="svc-card"><div class="svc-ba"><figure><img id="sgB" alt="Before"><figcaption>Before · قبل</figcaption></figure><figure><img id="sgA" alt="After"><figcaption>After · بعد</figcaption></figure></div>' +
+        '<div class="sv-sum2">' + (d.lines || []).map(function (x) { return esc(x.d) + ' — <b>Completed</b>'; }).join('<br>') + '</div><div class="sv-meta">' + esc(svcFmtDT(d.from)) + ' → ' + esc(svcFmtDT(d.to)) + '</div></section>' +
+        '<section class="svc-card"><h4>Customer feedback · ملاحظات العميل</h4>' + svcRateHTML('quality', 'Quality', 'الجودة') + svcRateHTML('response', 'Response', 'الاستجابة') +
+        '<div class="svc-grid">' + svcIn('sgCm', 'Comments · تعليقات العميل', '', { area: 1 }) + svcIn('sgNm', 'Customer name · الاسم', c.name, { half: 1 }) + svcIn('sgDs', 'Designation · الوظيفة', c.designation, { half: 1 }) + '</div>' +
+        '<div class="svc-lbl">Signature · التوقيع</div><div class="svc-padw"><canvas id="sgPad"></canvas></div><button class="sv-link" id="sgClr">Clear · مسح</button></section>' +
+        '<div class="svc-foot"><button class="sv-b" id="sgSkip">Skip</button><button class="sv-b svc-good svc-wide" id="sgGo">✍ Sign ' + (i + 1 < list.length ? '& next ›' : '& finish') + '</button></div>');
+      $('#svOv').onclick = null; $('#svX').onclick = finish;
+      photoUrls([p.before, p.after].filter(Boolean)).then(function (u) { if ($('#sgB')) $('#sgB').src = u[p.before] || ''; if ($('#sgA')) $('#sgA').src = u[p.after] || ''; });
+      var pad = svcPad($('#sgPad')); $('#sgClr').onclick = pad.clear;
+      svcAll('[data-rate]').forEach(function (g) { var k = g.getAttribute('data-rate'); Array.prototype.forEach.call(g.querySelectorAll('[data-rv]'), function (b) { b.onclick = function () { A[k] = b.getAttribute('data-rv'); Array.prototype.forEach.call(g.querySelectorAll('[data-rv]'), function (x) { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); }); }; }); });
+      $('#sgSkip').onclick = next;
+      $('#sgGo').onclick = async function () {
+        var nm = svcV('sgNm'), ds = svcV('sgDs');
+        if (!A.quality || !A.response) return svToast('Please rate Quality and Response.', true);
+        if (!nm) return svToast('Please write the customer name.', true);
+        if (pad.empty()) return svToast('Please sign in the box.', true);
+        var b = $('#sgGo'); b.disabled = true; b.textContent = 'Saving…';
+        try {
+          var up = await phPost('a=svcup&sr=' + encodeURIComponent(sr) + '&kind=csig', await pad.blob(), 'image/jpeg');
+          var cu = { name: nm, designation: ds, quality: A.quality, response: A.response, comments: svcV('sgCm'), sig: up.path };
+          var r = await sb.rpc('svc_sign', { p_sr: sr, p_cust: cu }); if (r.error) throw r.error;
+          SVC.list[sr] = Object.assign({}, s, { status: 'signed', signed_at: new Date().toISOString(), cust: Object.assign({ method: 'onsite' }, cu) });
+          if (d.lockey && (nm !== (c.name || '') || ds !== (c.designation || ''))) sb.rpc('svc_customer_set', { p_loc: d.lockey, p_name: nm, p_desig: ds, p_phone: c.phone || '', p_email: c.email || '' });
+          SV.reps = (SV.reps || []).filter(function (x) { return x.id !== sr; });
+          done++; next();
+        } catch (e) { svToast('Not signed: ' + (e.message || e), true); b.disabled = false; b.textContent = '✍ Sign'; }
+      };
+    }
+    function next() { i++; if (i < list.length) show(); else finish(); }
+    function finish() { svClose(); SVC.sel = {}; if (done) { SVC.tab = 'sent'; svToast(done + ' report' + (done > 1 ? 's' : '') + ' signed and sent to the office ✓'); } svDraw(); }
+    show();
+  }
+
+  // ---------- customer not here: private link per report, by WhatsApp or email
+  function svcWa(num) { var d = String(num || '').replace(/\D/g, ''); if (/^00/.test(d)) d = d.slice(2); if (/^05\d{8}$/.test(d)) d = '971' + d.slice(1); else if (/^5\d{8}$/.test(d)) d = '971' + d; return d; }
+  async function svcLinkSheet(srs) {
+    var list = await svcReadyList(srs); if (!list) return;
+    var d0 = (SVC.list[list[0]] || {}).data || {}, c = d0.cust || {}, links = null;
+    function msg() {
+      var nm = svcV('slNm') || c.name || '';
+      return 'Dear ' + nm + ',\nImdaad has completed the service request' + (list.length > 1 ? 's' : '') + ' below. Please open the link, check the before / after photos, rate our service and sign. Each link is for one SR only.\n\n' +
+        list.map(function (sr) { var d = (SVC.list[sr] || {}).data || {}; return 'SR ' + sr + ' – ' + (d.loc || '') + '\n' + (links ? links[sr] : '[link]'); }).join('\n\n') +
+        '\n\nعزيزي ' + nm + '،\nأنجزت إمداد ' + (list.length > 1 ? 'البلاغات التالية' : 'البلاغ التالي') + '. يرجى فتح الرابط ومراجعة صور قبل وبعد وتقييم الخدمة والتوقيع. كل رابط خاص ببلاغ واحد فقط.\n\nLinks valid for 7 days · Imdaad FM 800 8200';
+    }
+    function draw() {
+      var m = msg(), wa = svcWa(svcV('slPh') != null ? svcV('slPh') : c.phone), em = svcV('slEm') != null ? svcV('slEm') : (c.email || '');
+      svSheet('<div class="sv-shh"><div><b>Send to customer</b><div class="sv-meta">' + list.length + ' report' + (list.length > 1 ? 's' : '') + ' · one private link each</div></div><button class="sv-x" id="svX" aria-label="Close">✕</button></div>' +
+        '<section class="svc-card"><h4>Reports</h4>' + list.map(function (sr) { var d = (SVC.list[sr] || {}).data || {}; return '<div class="svc-mrow"><span class="svc-md"><b>SR ' + esc(sr) + '</b> · ' + esc(d.loc || '') + '</span></div>'; }).join('') + '</section>' +
+        '<section class="svc-card"><h4>Customer contact <span class="svc-auto">SAVED</span></h4><div class="svc-grid">' + svcIn('slNm', 'Name', svcV('slNm') || c.name, { half: 1 }) + svcIn('slPh', 'WhatsApp', svcV('slPh') != null ? svcV('slPh') : c.phone, { half: 1, type: 'tel', mode: 'tel' }) + svcIn('slEm', 'Email', em, {}) + '</div></section>' +
+        (links ? '<section class="svc-card"><h4>Message</h4><pre class="svc-msg">' + esc(m) + '</pre></section>' +
+          '<div class="svc-foot svc-foot3"><a class="sv-b svc-good" id="slWa" target="_blank" rel="noopener" href="https://wa.me/' + wa + '?text=' + encodeURIComponent(m) + '">WhatsApp</a><a class="sv-b svc-pri" id="slEmA" href="mailto:' + encodeURIComponent(em) + '?subject=' + encodeURIComponent('Imdaad service report' + (list.length > 1 ? 's' : '') + ' – SR ' + list.join(', ')) + '&body=' + encodeURIComponent(m) + '">Email</a><button class="sv-b" id="slCp">Copy</button></div><div class="sv-hint">A new link replaces any link sent before for the same SR.</div>'
+          : '<div class="svc-foot"><button class="sv-b svc-pri svc-wide" id="slMk">Create link' + (list.length > 1 ? 's' : '') + '</button></div>'));
+      $('#svX').onclick = function () { svClose(); svRepList(); };
+      var mk = $('#slMk'); if (mk) mk.onclick = make;
+      var cp = $('#slCp'); if (cp) cp.onclick = async function () { var ok = false; try { await navigator.clipboard.writeText(msg()); ok = true; } catch (e) { } svToast(ok ? 'Message copied' : 'Select the message and copy it', !ok); };
+      ['slNm', 'slPh', 'slEm'].forEach(function (id) { var e = document.getElementById(id); if (e) e.onchange = function () { saveContact(); draw(); }; });
+    }
+    function saveContact() {
+      var nm = svcV('slNm'), ph = svcV('slPh'), em = svcV('slEm');
+      if (d0.lockey && nm && (nm !== (c.name || '') || ph !== (c.phone || '') || em !== (c.email || ''))) { sb.rpc('svc_customer_set', { p_loc: d0.lockey, p_name: nm, p_desig: c.designation || '', p_phone: ph || '', p_email: em || '' }); c = { name: nm, designation: c.designation, phone: ph, email: em }; }
+    }
+    async function make() {
+      var b = $('#slMk'); b.disabled = true; b.textContent = 'Creating…'; saveContact();
+      try {
+        var base = location.origin + location.pathname.replace(/[^\/]*$/, '') + 'sign.html#t=', L = {};
+        for (var i = 0; i < list.length; i++) { var r = await sb.rpc('svc_link', { p_sr: list[i] }); if (r.error) throw r.error; L[list[i]] = base + r.data; SVC.list[list[i]] = Object.assign({}, SVC.list[list[i]], { status: 'sent', sent_at: new Date().toISOString() }); }
+        links = L; draw();
+      } catch (e) { svToast('Link not created: ' + (e.message || e), true); b.disabled = false; b.textContent = 'Create link'; }
+    }
+    draw();
+  }
+  /* ===================== office: reports received from the phones ===================== */
+  var SVO = { rows: null, f: { st: 'signed', own: '', mx: '', q: '' }, sel: {}, el: null };
+  var SVC_LIBS = window.DM_LOCAL_LIBS ? { h2c: 'lib-html2canvas.js', pdf: 'lib-jspdf.js', zip: 'lib-jszip.js', xl: 'lib-exceljs.js', tpl: 'svc-tpl.js' }
+    : { h2c: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', pdf: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', zip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js', xl: 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js', tpl: 'svc-tpl.js' };
+  function svcLib(k, ok) { if (ok()) return Promise.resolve(); return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = SVC_LIBS[k]; s.onload = function () { ok() ? res() : rej(new Error('Library ' + k + ' did not load')); }; s.onerror = function () { rej(new Error('Could not load ' + SVC_LIBS[k])); }; document.head.appendChild(s); }); }
+  function svcDubaiDay(t) { return new Date((t ? Date.parse(t) : Date.now()) + 4 * 3600e3).toISOString().slice(0, 10); }
+  async function svcOffice(el) {
+    if (!el) return; SVO.el = el;
+    el.innerHTML = '<div class="notice">Loading reports from the phones…</div>';
+    try {
+      var rows = [];
+      for (var f = 0; ; f += 1000) { var r = await sb.from('svc_reports').select('sr,uid,owner,status,data,photos,sup_sig,cust,sent_at,created_at,updated_at,signed_at,mx_at').order('updated_at', { ascending: false }).range(f, f + 999); if (r.error) throw r.error; rows = rows.concat(r.data || []); if ((r.data || []).length < 1000) break; }
+      SVO.rows = rows;
+      try { var sg = await sb.from('svc_settings').select('uid,sig_path'); SVO.sig = {}; (sg.data || []).forEach(function (x) { if (x.sig_path) SVO.sig[x.uid] = x.sig_path; }); } catch (e) { SVO.sig = {}; }
+    } catch (e) { el.innerHTML = '<div class="notice">' + (/svc_reports|schema cache|does not exist/i.test(e.message || '') ? 'Phone service reports are not set up yet: run the update <b>16_SQL_storage_and_service_reports.sql</b> in Supabase.' : 'Could not load: ' + esc(e.message || e)) + '</div>'; return; }
+    svoDraw();
+  }
+  function svoList() {
+    var f = SVO.f, q = f.q.trim().toLowerCase();
+    return SVO.rows.filter(function (r) {
+      if (f.st && (f.st === 'wait' ? ['ready', 'sent'].indexOf(r.status) < 0 : r.status !== f.st)) return false;
+      if (f.own && r.owner !== f.own) return false;
+      if (f.mx === 'no' && r.mx_at) return false; if (f.mx === 'yes' && !r.mx_at) return false;
+      if (q) { var d = r.data || {}, c = r.cust || {}; if ((r.sr + ' ' + (d.loc || '') + ' ' + (d.team || '') + ' ' + (c.name || '') + ' ' + ((d.lines || [])[0] || {}).d).toLowerCase().indexOf(q) < 0) return false; }
+      return true;
+    });
+  }
+  function svoDraw() {
+    var el = SVO.el, R = SVO.rows, today = svcDubaiDay(), wk = Date.now() - 7 * 864e5;
+    var k = { today: 0, week: 0, wait: 0, draft: 0, nomx: 0 };
+    R.forEach(function (r) { if (r.status === 'signed') { if (svcDubaiDay(r.signed_at) === today) k.today++; if (Date.parse(r.signed_at) >= wk) k.week++; if (!r.mx_at) k.nomx++; } else if (r.status === 'draft') k.draft++; else k.wait++; });
+    var owners = R.map(function (r) { return r.owner; }).filter(function (x, i, a) { return x && a.indexOf(x) === i; }).sort();
+    var list = svoList(), f = SVO.f, o = function (v, t, cur) { return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(t) + '</option>'; };
+    var nsel = list.filter(function (r) { return SVO.sel[r.sr]; }).length;
+    el.innerHTML = '<div class="kpis">' +
+      [['Signed today', k.today, 'by the customer'], ['Signed in 7 days', k.week, 'reports received'], ['Waiting for customer', k.wait, 'ready or link sent'], ['Drafts on phones', k.draft, 'not finished'], ['To upload to Maximo', k.nomx, 'signed, not marked uploaded']].map(function (x) { return '<div class="kpi"><span class="l">' + x[0] + '</span><span class="v">' + x[1] + '</span><span class="s">' + x[2] + '</span></div>'; }).join('') + '</div>' +
+      '<div class="filters" style="margin:12px 0 8px;padding:0"><div class="f"><label for="svoSt">Status</label><select id="svoSt">' + o('signed', 'Signed by customer', f.st) + o('wait', 'Waiting for customer', f.st) + o('draft', 'Drafts', f.st) + o('', 'All', f.st) + '</select></div>' +
+      '<div class="f"><label for="svoOw">Supervisor</label><select id="svoOw">' + o('', 'All supervisors', f.own) + owners.map(function (x) { return o(x, x, f.own); }).join('') + '</select></div>' +
+      '<div class="f"><label for="svoMx">Maximo</label><select id="svoMx">' + o('', 'All', f.mx) + o('no', 'Not uploaded yet', f.mx) + o('yes', 'Uploaded', f.mx) + '</select></div>' +
+      '<div class="f"><label for="svoQ">Search</label><input id="svoQ" type="search" value="' + esc(f.q) + '" placeholder="SR, location, customer"></div></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn primary" id="svoZip"' + (nsel ? '' : ' disabled') + '>⬇ Download PDF (' + nsel + ' selected, ZIP)</button><button class="btn" id="svoMxOn"' + (nsel ? '' : ' disabled') + '>Mark uploaded to Maximo</button><button class="btn" id="svoMxOff"' + (nsel ? '' : ' disabled') + '>Undo uploaded</button><span class="status" id="svoSt2"></span></div>' +
+      '<div class="tw" style="max-height:520px"><table class="t"><thead><tr><th><input type="checkbox" id="svoAll" aria-label="Select all"></th><th>SR</th><th>Location</th><th>Supervisor</th><th>Status</th><th>Customer</th><th>Quality / Response</th><th>Signed</th><th>Maximo</th><th></th></tr></thead><tbody>' +
+      list.slice(0, 400).map(function (r) {
+        var d = r.data || {}, c = r.cust || {}, st = { signed: '<span class="pill good">Signed</span>', sent: '<span class="pill avg">Link sent</span>', ready: '<span class="pill avg">Ready</span>', draft: '<span class="pill na">Draft</span>' }[r.status];
+        return '<tr><td><input type="checkbox" data-svo="' + esc(r.sr) + '"' + (SVO.sel[r.sr] ? ' checked' : '') + ' aria-label="Select SR ' + esc(r.sr) + '"></td><td>' + esc(r.sr) + '</td><td>' + esc(d.loc || '') + '</td><td>' + esc(r.owner || d.team || '') + '</td><td>' + st + '</td><td>' + esc(svcCustTxt(c.name ? c : d.cust)) + '</td><td>' + (c.quality ? esc(c.quality) + ' / ' + esc(c.response) : '—') + '</td>' +
+          '<td>' + (r.signed_at ? esc(String(r.signed_at).slice(0, 16).replace('T', ' ')) + (c.method === 'link' ? ' · link' : ' · on site') : '—') + '</td><td>' + (r.mx_at ? '✓ ' + esc(String(r.mx_at).slice(0, 10)) : '—') + '</td>' +
+          '<td style="white-space:nowrap">' + (r.status === 'signed' ? '<button class="btn xs" data-svp="' + esc(r.sr) + '">PDF</button> <button class="btn xs" data-svx="' + esc(r.sr) + '">Excel</button>' + (profile.role === 'admin' ? ' <button class="btn xs" data-svr="' + esc(r.sr) + '" title="Admin: re-open so the customer can sign again">Re-open</button>' : '') : '<button class="btn xs" data-svp="' + esc(r.sr) + '">Preview PDF</button>') + '</td></tr>';
+      }).join('') + '</tbody></table></div>' + (list.length > 400 ? '<p class="muted">Showing 400 of ' + list.length + '. Use the filters.</p>' : '') + (!list.length ? '<p class="muted">No reports for these filters.</p>' : '');
+    var re = function () { SVO.sel = {}; svoDraw(); };
+    $('#svoSt').onchange = function (e) { SVO.f.st = e.target.value; re(); }; $('#svoOw').onchange = function (e) { SVO.f.own = e.target.value; re(); }; $('#svoMx').onchange = function (e) { SVO.f.mx = e.target.value; re(); };
+    var qt; $('#svoQ').oninput = function (e) { clearTimeout(qt); qt = setTimeout(function () { SVO.f.q = e.target.value; svoDraw(); var x = $('#svoQ'); x.focus(); x.setSelectionRange(x.value.length, x.value.length); }, 300); };
+    svcAll('[data-svo]').forEach(function (c) { c.onchange = function () { var s = c.getAttribute('data-svo'); if (c.checked) SVO.sel[s] = 1; else delete SVO.sel[s]; svoDraw(); }; });
+    $('#svoAll').onchange = function (e) { list.slice(0, 400).forEach(function (r) { if (e.target.checked) SVO.sel[r.sr] = 1; else delete SVO.sel[r.sr]; }); svoDraw(); };
+    $('#svoAll').checked = !!list.length && list.slice(0, 400).every(function (r) { return SVO.sel[r.sr]; });
+    var row = function (sr) { return SVO.rows.filter(function (r) { return r.sr === sr; })[0]; };
+    svcAll('[data-svp]').forEach(function (b) { b.onclick = async function () { b.disabled = true; try { var bl = await svcPdf(row(b.getAttribute('data-svp'))); svcSave(bl, 'Service_Report_SR_' + b.getAttribute('data-svp') + '.pdf'); } catch (e) { setMsg('svoSt2', e.message || String(e), 'err'); } b.disabled = false; }; });
+    svcAll('[data-svx]').forEach(function (b) { b.onclick = async function () { b.disabled = true; try { var bl = await svcXlsx(row(b.getAttribute('data-svx'))); svcSave(bl, 'Service_Report_SR_' + b.getAttribute('data-svx') + '.xlsx'); } catch (e) { setMsg('svoSt2', e.message || String(e), 'err'); } b.disabled = false; }; });
+    svcAll('[data-svr]').forEach(function (b) { b.onclick = async function () { if (!confirm('Re-open SR ' + b.getAttribute('data-svr') + '? The customer signature is removed and the report goes back to "Ready".')) return; var r = await sb.rpc('svc_reopen', { p_sr: b.getAttribute('data-svr') }); if (r.error) return setMsg('svoSt2', r.error.message, 'err'); svcOffice(SVO.el); }; });
+    var sel = function () { return list.filter(function (r) { return SVO.sel[r.sr]; }); };
+    $('#svoZip').onclick = async function () {
+      var b = this, S = sel(); b.disabled = true;
+      try {
+        await svcLib('zip', function () { return !!window.JSZip; }); var z = new JSZip();
+        for (var i = 0; i < S.length; i++) { setMsg('svoSt2', 'Preparing PDF ' + (i + 1) + ' of ' + S.length + '…'); z.file('Service_Report_SR_' + S[i].sr + '.pdf', await svcPdf(S[i])); }
+        svcSave(await z.generateAsync({ type: 'blob' }), 'Service_Reports_' + svcDubaiDay() + '_' + S.length + '.zip'); setMsg('svoSt2', S.length + ' PDFs downloaded.', 'ok');
+      } catch (e) { setMsg('svoSt2', e.message || String(e), 'err'); }
+      b.disabled = false;
+    };
+    var mark = async function (on) { var S = sel().filter(function (r) { return r.status === 'signed'; }).map(function (r) { return r.sr; }); if (!S.length) return setMsg('svoSt2', 'Select signed reports.', 'err'); var r = await sb.rpc('svc_mx_mark', { p_srs: S, p_on: on }); if (r.error) return setMsg('svoSt2', r.error.message, 'err'); SVO.rows.forEach(function (x) { if (S.indexOf(x.sr) >= 0) x.mx_at = on ? new Date().toISOString() : null; }); SVO.sel = {}; svoDraw(); setMsg('svoSt2', r.data + ' report(s) updated.', 'ok'); };
+    $('#svoMxOn').onclick = function () { mark(true); }; $('#svoMxOff').onclick = function () { mark(false); };
+  }
+  function svcSave(blob, name) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000); }
+  async function svcDataUrls(paths) {
+    paths = paths.filter(Boolean); var u = paths.length ? await photoUrls(paths) : {}, out = {};
+    await Promise.all(paths.map(async function (p) { try { var r = await fetch(u[p]); if (!r.ok) return; var b = await r.blob(); out[p] = await new Promise(function (res) { var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.readAsDataURL(b); }); } catch (e) { } }));
+    return out;
+  }
+  function svcSupSig(r) { return r.sup_sig || (SVO.sig && SVO.sig[r.uid]) || null; }
+  function svcRepPaths(r) { var p = r.photos || {}, c = r.cust || {}; return [p.before, p.after].concat(p.extra || []).concat([svcSupSig(r), c.sig]).filter(Boolean); }
+  function svcTime12(s) { var m = /T(\d{2}):(\d{2})/.exec(s || ''); if (!m) return ''; var h = +m[1]; return svcPad2(((h + 11) % 12) + 1) + ':' + m[2] + (h < 12 ? ' AM' : ' PM'); }
+  function svcDay(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? m[3] + '-' + SVC_MON[+m[2] - 1] + '-' + m[1] : ''; }
+
+  // ---------- PDF: same layout as the FM Service Report form (page 2 = additional photos)
+  function svcPdfHTML(r, I) {
+    var d = r.data || {}, c = r.cust || {}, p = r.photos || {}, L = logos(), lines = (d.lines || []).slice(0, 3), mats = d.mats || [], tk = d.techs || [];
+    while (lines.length < 3) lines.push(null);
+    var mrows = Math.max(4, mats.length), tick = '<span class="svp-tk">✔</span>';
+    var img = function (path, h) { return I[path] ? '<img src="' + I[path] + '" style="max-width:100%;max-height:' + h + 'px">' : ''; };
+    var cat = function (k) { return '<td class="svp-c">' + k + '</td><td class="svp-bx">' + (d.cat === k ? tick : '') + '</td>'; };
+    var pri = function (k) { return '<td class="svp-c"><b>' + k + '</b></td><td class="svp-bx">' + (d.pri === k ? tick : '') + '</td>'; };
+    var rate = function (key) { return SVC_Q.map(function (q) { return '<td class="svp-bx">' + (c[key] === q ? tick : '') + '</td>'; }).join(''); };
+    var head = '<div class="svp-h">' + (L.left ? '<img src="' + L.left + '" style="height:58px">' : '<b>Imdaad</b>') + '<div class="svp-t">FM SERVICE REPORT</div>' + (L.right ? '<img src="' + L.right + '" style="height:46px">' : '<b>Dubai Municipality</b>') + '</div>';
+    var p1 = '<div class="svp-pg">' + head + '<table class="svp">' +
+      '<tr><td colspan="8" class="svp-r"><b>Imdaad SR No./WO No.:</b> <span class="svp-v">' + esc(r.sr + (d.wo && d.wo !== r.sr ? ' / ' + d.wo : '')) + '</span></td></tr>' +
+      '<tr><td colspan="2">Facility Name :</td><td colspan="2"><span class="svp-v">' + esc(d.facility || '') + '</span></td><td colspan="4">Equipment No. / Loc: <span class="svp-v">' + esc(d.loc || '') + '</span></td></tr>' +
+      '<tr><td colspan="2">Facility Zone :</td><td colspan="2"><span class="svp-v">' + esc(d.zone || '') + '</span></td><td colspan="4"></td></tr>' +
+      '<tr><td colspan="2">Reported Date:</td><td colspan="2"><span class="svp-v">' + esc(d.rdate || '') + '</span></td><td colspan="4">Reported Time: <span class="svp-v">' + esc(d.rtime || '') + '</span></td></tr>' +
+      '<tr><td colspan="8"><b>Category</b> (please circle appropriate box)</td></tr></table>' +
+      '<table class="svp"><tr>' + cat('AC') + cat('CIVIL') + cat('PLUMB') + cat('COM') + '</tr><tr>' + cat('CARP') + cat('ELEC') + cat('PAINT') + cat('OTHER') + '</tr></table>' +
+      '<table class="svp"><tr><td colspan="10"><b>Priority Level</b> (please tick appropriate box)</td></tr><tr>' + SVC_PRI.map(pri).join('') + '</tr></table>' +
+      '<table class="svp"><tr><td colspan="4"><b>Service Call Reported By:</b> <span class="svp-v">' + esc(d.rby || '') + '</span></td><td colspan="4"><b>Phone No.:</b> <span class="svp-v">' + esc(d.phone || '') + '</span></td></tr>' +
+      '<tr><td rowspan="2" style="width:22%">Actual Date Attended Date in dd/mm/yy Time in Hrs.</td><td colspan="3">Date (from): <span class="svp-v">' + esc(svcDay(d.from)) + '</span></td><td colspan="4">Date (to): <span class="svp-v">' + esc(svcDay(d.to)) + '</span></td></tr>' +
+      '<tr><td colspan="3">Time (from): <span class="svp-v">' + esc(svcTime12(d.from)) + '</span></td><td colspan="4">Time (to): <span class="svp-v">' + esc(svcTime12(d.to)) + '</span></td></tr></table>' +
+      '<table class="svp"><tr><td colspan="4"><b>Job Description</b></td></tr><tr class="svp-hd"><td style="width:7%">Sr. No.</td><td>Description of Service</td><td style="width:14%">Completed</td><td style="width:14%">Pending</td></tr>' +
+      lines.map(function (x, i) { return '<tr><td class="svp-ct">' + (i + 1) + '</td><td><span class="svp-v">' + (x ? esc(x.d) : '') + '</span></td><td class="svp-ct">' + (x && x.d ? tick : '') + '</td><td></td></tr>'; }).join('') + '</table>' +
+      '<table class="svp"><tr><td colspan="3"><b>Material Used during the Service</b></td></tr><tr class="svp-hd"><td style="width:7%">Sr. No.</td><td>Material Description</td><td style="width:28%">Quantity</td></tr>' +
+      Array.apply(null, Array(mrows)).map(function (_, i) { var m = mats[i]; return '<tr><td class="svp-ct">' + (i + 1) + '</td><td><span class="svp-v">' + (m ? esc(m.d) : '') + '</span></td><td class="svp-ct"><span class="svp-v">' + (m ? esc(m.q) + (m.u ? ' ' + esc(m.u) : '') : '') + '</span></td></tr>'; }).join('') + '</table>' +
+      '<table class="svp"><tr><td style="width:50%">Technician ID No.: <span class="svp-v">' + esc(tk[0] || '') + '</span></td><td>Technician ID No.: <span class="svp-v">' + esc(tk[1] || '') + '</span></td></tr>' +
+      '<tr class="svp-hd"><td>Before Picture</td><td>After Picture</td></tr><tr><td class="svp-pic">' + img(p.before, 230) + '</td><td class="svp-pic">' + img(p.after, 230) + '</td></tr></table>' +
+      '<table class="svp"><tr><td colspan="5"><b>Customer Feedback</b><br>ملاحظات العميل</td></tr><tr class="svp-hd"><td style="width:20%"></td><td>Extremely Satisfied &nbsp; راضٍ جداً</td><td>Good &nbsp; جيد</td><td>Satisfied &nbsp; راضٍ</td><td>Poor &nbsp; سيء</td></tr>' +
+      '<tr><td><b>Quality</b> &nbsp; الجودة</td>' + rate('quality') + '</tr><tr><td><b>Response</b> &nbsp; الاستجابة</td>' + rate('response') + '</tr>' +
+      '<tr><td colspan="5" style="height:34px"><b>Customer Comments:</b> &nbsp; تعليقات العميل: <span class="svp-v">' + esc(c.comments || '') + '</span></td></tr></table>' +
+      '<table class="svp"><tr><td style="width:50%">Completed By Team:</td><td>Confirmed by Customer:</td></tr><tr><td class="svp-sg">Name: <span class="svp-v">' + esc(d.team || '') + '</span><br>Signature: ' + img(svcSupSig(r), 46) + '</td>' +
+      '<td class="svp-sg">Name: <span class="svp-v">' + esc(c.name || '') + '</span>' + (c.designation ? ' &nbsp; Designation: <span class="svp-v">' + esc(c.designation) + '</span>' : '') + '<br>Signature: ' + img(c.sig, 46) + (r.signed_at ? '<div class="svp-sm">Signed ' + esc(String(r.signed_at).slice(0, 16).replace('T', ' ')) + ' UTC · ' + (c.method === 'link' ? 'via private link' : 'on site') + '</div>' : '') + '</td></tr>' +
+      '<tr><td colspan="2"><b>If you have any feedback or comments, please call our 24/7 Customer Response Centre @ 8008200</b></td></tr><tr><td colspan="2"><b>For Imdaad’s Official Use Only</b></td></tr>' +
+      '<tr><td><b>Engineer Details</b></td><td><b>Supervisor Details</b></td></tr><tr><td>Name &amp; Signature:</td><td>Name &amp; Signature:</td></tr></table></div>';
+    var ex = (p.extra || []).filter(function (x) { return I[x]; }), p2 = '';
+    if (ex.length) { var cells = ''; for (var i = 0; i < ex.length; i += 2) cells += '<tr><td class="svp-pic2">' + img(ex[i], 220) + '</td><td class="svp-pic2">' + (ex[i + 1] ? img(ex[i + 1], 220) : '') + '</td></tr>'; p2 = '<div class="svp-pg">' + head + '<table class="svp"><tr><td colspan="2" class="svp-ct">Additional Photos</td></tr>' + cells + '</table></div>'; }
+    return [p1, p2].filter(Boolean);
+  }
+  var SVP_CSS = '.svp-pg{width:794px;height:1123px;padding:26px 30px;box-sizing:border-box;background:#fff;color:#000;font:11px Arial,Helvetica,sans-serif;position:relative}' +
+    '.svp-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.svp-t{font-size:16px;font-weight:700}' +
+    '.svp{width:100%;border-collapse:collapse;margin-top:-1px}.svp td{border:1px solid #000;padding:2px 5px;vertical-align:middle;height:16px}.svp-r{text-align:right}' +
+    '.svp-v{color:#0a5aa8}.svp-c{text-align:center;width:14%}.svp-bx{text-align:center;width:11%}.svp-tk{font-size:13px;font-weight:700}.svp-ct{text-align:center}' +
+    '.svp-hd td{text-align:center;font-weight:700}.svp-pic{height:236px;text-align:center}.svp-pic2{height:226px;text-align:center;width:50%}.svp-sg{height:64px;vertical-align:top}.svp-sg img{vertical-align:middle}.svp-sm{font-size:8px;color:#555;margin-top:2px}';
+  async function svcPdf(r) {
+    await svcLib('h2c', function () { return !!window.html2canvas; }); await svcLib('pdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); });
+    var I = await svcDataUrls(svcRepPaths(r)), pages = svcPdfHTML(r, I);
+    var host = document.createElement('div'); host.style.cssText = 'position:fixed;left:-10000px;top:0;z-index:-1'; host.innerHTML = '<style>' + SVP_CSS + '</style>' + pages.join(''); document.body.appendChild(host);
+    try {
+      await Promise.all(Array.prototype.map.call(host.querySelectorAll('img'), function (im) { return im.complete ? 0 : new Promise(function (res) { im.onload = im.onerror = res; }); }));
+      var pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' }), pg = host.querySelectorAll('.svp-pg');
+      for (var i = 0; i < pg.length; i++) { var cv = await window.html2canvas(pg[i], { scale: 2, backgroundColor: '#ffffff', logging: false }); if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', 0.86), 'JPEG', 0, 0, 210, 297); }
+      pdf.setProperties({ title: 'Service Report SR ' + r.sr, author: 'Imdaad FM' });
+      return pdf.output('blob');
+    } finally { host.remove(); }
+  }
+
+  // ---------- Excel: the FM Service Report template, filled
+  async function svcXlsx(r) {
+    await svcLib('xl', function () { return !!window.ExcelJS; }); await svcLib('tpl', function () { return !!window.DM_SVC_TPL; });
+    var I = await svcDataUrls(svcRepPaths(r)), d = r.data || {}, c = r.cust || {}, p = r.photos || {}, supSig = svcSupSig(r);
+    var wb = new ExcelJS.Workbook(), bin = atob(window.DM_SVC_TPL), u8 = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    await wb.xlsx.load(u8.buffer); var ws = wb.worksheets[0];
+    var own = function (cl) { cl.style = JSON.parse(JSON.stringify(cl.style || {})); return cl; };   // template cells share style objects
+    var set = function (a, v) { ws.getCell(a).value = v; }, blue = function (a) { var cl = own(ws.getCell(a)); cl.font = Object.assign({}, cl.font || {}, { color: { argb: 'FF0A5AA8' } }); };
+    set('K2', r.sr + (d.wo && d.wo !== r.sr ? ' / ' + d.wo : '')); blue('K2'); set('C3', d.facility || ''); set('M3', d.loc || ''); blue('M3'); set('C4', d.zone || ''); blue('C4');
+    set('D5', d.rdate || ''); blue('D5'); set('L5', d.rtime || ''); blue('L5');
+    var cats = { AC: 'B7', CIVIL: 'D7', PLUMB: 'G7', COM: 'K7', CARP: 'B8', ELEC: 'D8', PAINT: 'G8', OTHER: 'K8' }; if (cats[d.cat]) { var cc = own(ws.getCell(cats[d.cat])); cc.value = d.cat + '  ✔'; cc.font = Object.assign({}, cc.font || {}, { bold: true }); cc.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2A8' } }; }
+    var pr = { High: 'C10', Medium: 'E10', Low: 'J10', Normal: 'L10', Mild: 'O10' }; if (d.pri === 'Mild') set('N10', 'Mild  ✔'); else if (pr[d.pri]) set(pr[d.pri], '✔');
+    set('A11', 'Service Call Reported By: ' + (d.rby || '')); set('I11', 'Phone No.: ' + (d.phone || ''));
+    set('F12', svcDay(d.from)); set('L12', svcDay(d.to)); set('D13', 'Time (from): ' + svcTime12(d.from)); set('K13', 'Time (to): ' + svcTime12(d.to));
+    (d.lines || []).slice(0, 3).forEach(function (x, i) { set('A' + (16 + i), i + 1); set('B' + (16 + i), x.d || ''); blue('B' + (16 + i)); if (x.d) set('K' + (16 + i), '✔'); });
+    var M = d.mats || []; M.slice(0, 4).forEach(function (m, i) { set('A' + (21 + i), i + 1); set('B' + (21 + i), m.d); set('K' + (21 + i), m.u ? m.q + ' ' + m.u : m.q); blue('B' + (21 + i)); });
+    if (M.length > 4) { set('B24', M.slice(3).map(function (m) { return m.d + ' (' + m.q + (m.u ? ' ' + m.u : '') + ')'; }).join('; ')); set('K24', ''); }
+    set('C25', (d.techs || [])[0] || ''); set('H25', 'Technician ID No.: ' + ((d.techs || [])[1] || ''));
+    var fb = { 'Extremely Satisfied': 'D', Good: 'H', Satisfied: 'K', Poor: 'N' }; if (fb[c.quality]) set(fb[c.quality] + '30', '✔'); if (fb[c.response]) set(fb[c.response] + '31', '✔');
+    set('A32', 'Customer Comments:   تعليقات العميل:   ' + (c.comments || ''));
+    ws.getRow(34).height = 72; set('A34', 'Name: ' + (d.team || '') + '\nSignature:'); set('H34', 'Name: ' + (c.name || '') + '\nDesignation: ' + (c.designation || '') + '\nSignature:');
+    ['A34', 'H34', 'A32'].forEach(function (a) { own(ws.getCell(a)).alignment = { wrapText: true, vertical: 'top' }; });
+    ['M3', 'B16', 'B17', 'B18', 'B21', 'B22', 'B23', 'B24'].forEach(function (a) { var cl = own(ws.getCell(a)); cl.alignment = Object.assign({}, cl.alignment || {}, { wrapText: true, vertical: 'middle', shrinkToFit: false }); });
+    var colW = function (a, b) { var w = 0; for (var k = a; k <= b; k++) w += (ws.getColumn(k).width || 8.43) * 7.2 + 5; return w; };
+    var rowH = function (rr) { return (ws.getRow(rr).height || 15) * 4 / 3; };
+    var put = function (path, c1, c2, row, padTop, maxH) {
+      var du = I[path]; if (!du) return; var id = wb.addImage({ base64: du.split(',')[1], extension: 'jpeg' });
+      var bw = colW(c1, c2) - 8, bh = Math.min(maxH || 1e9, rowH(row)) - 8, im = new Image(); im.src = du;
+      var nw = im.naturalWidth || 4, nh = im.naturalHeight || 3, k = Math.min(bw / nw, bh / nh);
+      ws.addImage(id, { tl: { col: c1 - 1 + 0.1, row: row - 1 + (padTop || 0.04) }, ext: { width: Math.round(nw * k), height: Math.round(nh * k) }, editAs: 'oneCell' });
+    };
+    await Promise.all(Object.keys(I).map(function (k) { return new Promise(function (res) { var im = new Image(); im.onload = im.onerror = res; im.src = I[k]; }); }));
+    put(p.before, 1, 7, 27); put(p.after, 8, 14, 27);
+    put(supSig, 3, 6, 34, 0.42, 40); put(c.sig, 10, 14, 34, 0.5, 34);
+    (p.extra || []).slice(0, 8).forEach(function (x, i) { var rr = 42 + Math.floor(i / 2); if (i % 2) put(x, 8, 14, rr); else put(x, 1, 7, rr); });
+    var buf = await wb.xlsx.writeBuffer();
+    return new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  }
+
+
+
+
+  window.DM_CLOUD = { svcOffice: svcOffice, reportsAdd: reportsAdd, reportsRemove: reportsRemove, reportsReload: reportsReload, syncKeyNew: syncKeyNew, syncKeyRevoke: syncKeyRevoke, syncScript: syncScript, syncCmd: syncCmd, emgList: emgList, emgFlag: emgFlag, emgClear: emgClear, emgPushStatus: emgPushStatus, emgSaveCfg: emgSaveCfg, purgePhotos: purgePhotos, rmActivity: rmActivity, materials: materials, matDecide: matDecide, photoUrls: photoUrls, loadUtil: loadUtil, utilSave: utilSave, utilDropMonth: utilDropMonth, utilZoneSet: utilZoneSet, photoCounts: photoCounts, photoCount: photoCount, loadFlags: loadFlags, flagOf: flagOf, flagLabel: flagLabel, flagPill: flagPill, flagCanSet: flagCanSet, flagFormHTML: flagFormHTML, flagFormBind: flagFormBind, FLAGS: FLAGS, srPhotos: srPhotos, photoStrip: photoStrip, gallery: gallery, mxAllowed: mxAllowed, mxKeyNew: mxKeyNew, mxStatus: mxStatus, mxScript: mxScript, rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
 
   /* ---------- route: direct to Supabase, or through the relay when supabase.co is blocked (e.g. UAE mobile data) ---------- */
   function probe(base, ms) {
@@ -2550,7 +3422,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (!CLOUD) return '<div class="notice" style="margin-top:18px">Service reports are available in the online portal only.</div>';
     if (RAW.reports == null) return section('R', 'Service reports', 'تقارير الخدمة', '', '<div class="notice">Service reports are not set up yet. The administrator needs to run the update <b>8_SQL_service_reports.sql</b> in Supabase.</div>');
     var D = reportsCompute(cm), S = reportsSpecs(D), last = syncAge(), stale = !last || Date.now() - last > 3600000;
-    var out = section('R', 'Service reports', 'تقارير الخدمة', 'A completed SR has a service report when its number is in the Outlook group <b>DM - Reports</b> (email subject) or in an uploaded report list. Completed = Final Status closed, excluding not-in-scope / duplicate / cancelled.',
+    var out = section('R0', 'Service reports from the phones', 'تقارير الخدمة من الهاتف', 'Reports prepared by the labour supervisors on the phone and signed by the customer (on site or by private link). A signed report counts as the service report of the SR. Download the PDF (same layout as the FM Service Report form) or the Excel form, upload it to Maximo, then mark it uploaded.', '<div id="svcOff"><div class="notice">Loading…</div></div>');
+    out += section('R', 'Service reports', 'تقارير الخدمة', 'A completed SR has a service report when its number is in the Outlook group <b>DM - Reports</b> (email subject) or in an uploaded report list. Completed = Final Status closed, excluding not-in-scope / duplicate / cancelled.',
       '<div class="kpis">' +
       kpiTile('Completed SRs', fmt(D.done), 'for the current filters') +
       kpiTile('With service report', fmt(D.with), '<span class="pill ' + band(D.cov).cls + '">' + fp(D.cov) + '</span> coverage') +
@@ -2596,6 +3469,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     return out;
   }
   function bindReports(cm) {
+    if (window.DM_CLOUD && window.DM_CLOUD.svcOffice) window.DM_CLOUD.svcOffice(document.getElementById('svcOff'));
     var sel = $('#repSup'); if (sel) sel.onchange = function () { REPF.sup = sel.value; render(); };
     function pend(nums, src) {
       var have = (RAW.reports || []).reduce(function (m, r) { m[r.sr] = 1; return m; }, {}), ids = CM.reduce(function (m, o) { m[o.id] = 1; return m; }, {});
@@ -2679,6 +3553,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (t === 'int') return '<td class="n">' + fmt(v) + '</td>';
     if (t === 'aed') return '<td class="n">' + (v == null ? '—' : fmt(Math.round(v))) + '</td>';
     if (t === 'pct') return '<td class="n">' + fp(v) + '</td>';
+    if (t === 'num') return '<td class="n">' + esc(v) + '</td>';
     if (t === 'band') { var b = band(v); return '<td class="n">' + fp(v) + ' <span class="pill ' + b.cls + '">' + esc(b.label) + '</span></td>'; }
     if (t === 'delta') return '<td class="n ' + (v > 0 ? 'bad-t' : v < 0 ? 'good-t' : '') + '">' + (v == null ? '—' : (v > 0 ? '+' : '') + fmt(v)) + '</td>';
     if (t === 'dpct') return '<td class="n ' + (v > 0 ? 'bad-t' : v < 0 ? 'good-t' : '') + '">' + (v == null ? '—' : (v > 0 ? '▲ +' : v < 0 ? '▼ ' : '') + fp(v)) + '</td>';
@@ -2698,7 +3573,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (!sp.rows.length) return '<div class="notice">No SRs match the current filters.</div>';
     var tid = 'x' + (TBLn++); TBL[tid] = sp;
     var h = '<div class="tblock"><div class="tbar">' + fsBtn() + (CAN_SAVE() ? '<button class="btn xs" data-xl="' + tid + '" title="Download this table as an Excel file">Excel ⬇</button>' : '') + '</div><div class="tw"' + (opts.max ? ' style="max-height:' + opts.max + 'px"' : '') + '><table class="t"><thead><tr>';
-    sp.cols.forEach(function (c) { h += '<th class="' + (/int|pct|band|delta|dpct|auto|mv|mchg/.test(c.t) ? 'n' : '') + '">' + esc(c.label) + '</th>'; });
+    sp.cols.forEach(function (c) { h += '<th class="' + (/int|pct|band|delta|dpct|auto|mv|mchg|num/.test(c.t) ? 'n' : '') + '">' + esc(c.label) + '</th>'; });
     h += '</tr></thead><tbody>';
     var rws = opts.limit && sp.rows.length > opts.limit ? sp.rows.slice(0, opts.limit) : sp.rows;
     rws.forEach(function (r) { h += '<tr class="' + (r._cls || '') + '">'; sp.cols.forEach(function (c) { h += cellHTML(c, r[c.k], r); }); h += '</tr>'; });
@@ -2931,6 +3806,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       out += registerHTML(cm);
     } else if (tab === 'check' && checkAllowed()) {
       out += checkHTML();
+    } else if (tab === 'util' && utilAllowed()) {
+      out += utilHTML();
     } else if (tab === 'data' && dataAllowed()) {
       out += adminHTML(R);
     } else if (tab === 'rm' && rmVisible()) {
@@ -2953,6 +3830,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     Array.prototype.forEach.call(document.querySelectorAll('#view [data-go]'), function (b) { b.onclick = function () { tab = b.getAttribute('data-go'); drawTabs(); render(); try { history.replaceState(null, '', '#' + tab); } catch (e) { } window.scrollTo(0, 0); }; });
     if (tab === 'register') bindRegister(cm);
     if (tab === 'check' && checkAllowed()) bindCheck();
+    if (tab === 'util' && utilAllowed()) bindUtil();
     if (tab === 'reports' && CLOUD && RAW.reports != null) bindReports(cm);
     if (tab === 'site') bindSite();
     if (tab === 'admin' && ADMIN) { bindAdmin(); permBind(); }
@@ -4641,11 +5519,195 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var list = TABS.filter(function (t) { return !allowed || allowed.indexOf(t[0]) >= 0; });
     if (rmVisible()) list.push(['rm', 'RM works']);
     if (checkAllowed()) list.push(['check', 'SR status check']);
+    if (utilAllowed()) list.push(['util', 'Electricity & water']);
     if (ROLE === 'admin' || ROLE === 'operator') list.push(['data', 'Data update']);
     if (ROLE === 'admin' || ROLE === 'manager' || ROLE === 'operator') list.push(['log', 'Upload history']);
     if (ROLE === 'admin') list.push(['admin', 'Admin']);
     return list;
   }
+  /* ---------- Electricity & water (DEWA meters): consumption by zone and month ---------- */
+  function utilAllowed() { return false; } // v4.24 utilities reverted
+  var UTF = { per: '', type: '', fz: '' };
+  var MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function monLabel(k) { var p = String(k).split('-'); return MON3[+p[1] - 1] + ' ' + p[0]; }
+  function utilZone(loc) {
+    var s0 = String(loc || '').toLowerCase(), s = s0;
+    for (var k in CFG.ppmZoneOverrides) if (k && s.indexOf(k.toLowerCase()) >= 0) return CFG.ppmZoneOverrides[k] || '?';
+    for (var a in CFG.zoneAliases) if (s.indexOf(a) >= 0) s += ' ' + CFG.zoneAliases[a];
+    var head = normArea(s0.split(' - ')[0]);
+    if (AREA_ZONE[head]) return AREA_ZONE[head];
+    for (var i = 0; i < AREA_KEYS.length; i++) if (s.indexOf(AREA_KEYS[i]) >= 0) return AREA_ZONE[AREA_KEYS[i]];
+    return '?';
+  }
+  function utilMonths(list) { var m = {}; list.forEach(function (x) { Object.keys(x.readings || {}).forEach(function (k) { if (/^\d{4}-\d{2}$/.test(k)) m[k] = 1; }); }); return Object.keys(m).sort(); }
+  function utilFmt(v, type) { if (v == null || v === '') return ''; v = +v; return type === 'WATER' && Math.abs(v) < 100 ? (Math.round(v * 100) / 100).toLocaleString('en-US') : Math.round(v).toLocaleString('en-US'); }
+  // value of one meter for the chosen period: 'base' = 2025 consumption, 'Y2026' = months of 2026, '2026-09' = one month
+  function utilVal(x, per) {
+    if (!per || per === 'base') return x.cons_base;
+    var r = x.readings || {};
+    if (per.charAt(0) === 'Y') { var y = per.slice(1), t = null; Object.keys(r).forEach(function (k) { if (k.slice(0, 4) === y && r[k] != null && r[k] !== '') t = (t || 0) + (+r[k]); }); return t; }
+    return r[per] == null || r[per] === '' ? null : +r[per];
+  }
+  function utilHTML() {
+    var all = RAW.util;
+    if (all == null) return section('U', 'Electricity & water', 'استهلاك الكهرباء والمياه', '', '<div class="notice">Not set up yet. The administrator needs to run the update <b>16_SQL_utilities.sql</b> in Supabase, then upload the DEWA data sheet below.</div>' + utilAdminHTML([]));
+    all.forEach(function (x) { x.fz = x.zone || utilZone(x.loc); });
+    var months = utilMonths(all), years = {}; months.forEach(function (k) { years[k.slice(0, 4)] = 1; });
+    if (!UTF.per) UTF.per = months.length ? months[months.length - 1] : 'base';
+    var per = UTF.per, perLabel = per === 'base' ? '2025 consumption' : per.charAt(0) === 'Y' ? per.slice(1) + ' (' + months.filter(function (k) { return k.slice(0, 4) === per.slice(1); }).map(monLabel).join(', ').replace(/ \d{4}/g, '') + ')' : monLabel(per);
+    var list = all.filter(function (x) { return (!UTF.type || x.type === UTF.type) && (!UTF.fz || x.fz === UTF.fz); });
+    var E = list.filter(function (x) { return x.type === 'ELECTRICITY'; }), W = list.filter(function (x) { return x.type === 'WATER'; });
+    var sum = function (a) { return a.reduce(function (t, x) { var v = utilVal(x, per); return t + (v == null ? 0 : v); }, 0); };
+    var locs = {}; all.forEach(function (x) { locs[x.loc] = locs[x.loc] || {}; locs[x.loc][x.type] = 1; });
+    var elecOnly = Object.keys(locs).filter(function (l) { return locs[l].ELECTRICITY && !locs[l].WATER; }).length;
+    var zones = uniq(all.map(function (x) { return x.fz; })).sort(function (a, b) { return a === '?' ? 1 : b === '?' ? -1 : a < b ? -1 : 1; });
+    var ctl = '<div class="filters" style="margin:0 0 12px;padding:0">' +
+      '<div class="f"><label for="utPer">Period</label><select id="utPer">' + months.slice().reverse().map(function (k) { return opt(k, monLabel(k), per); }).join('') + Object.keys(years).sort().reverse().map(function (y) { return opt('Y' + y, y + ' — all months uploaded', per); }).join('') + opt('base', '2025 consumption (data sheet)', per) + '</select></div>' +
+      '<div class="f"><label for="utType">Type</label><select id="utType">' + opt('', 'Electricity and water', UTF.type) + opt('ELECTRICITY', 'Electricity (kWh)', UTF.type) + opt('WATER', 'Water (m³)', UTF.type) + '</select></div>' +
+      '<div class="f"><label for="utZone">Zone</label><select id="utZone">' + opt('', 'All zones', UTF.fz) + zones.map(function (z) { return opt(z, zl(z), UTF.fz); }).join('') + '</select></div></div>';
+    var k = '<div class="kpis">' + kpiTile('Electricity (kWh)', fmt(Math.round(sum(E))), esc(perLabel) + ' · ' + fmt(E.length) + ' meters') +
+      kpiTile('Water (m³)', utilFmt(sum(W), 'WATER'), esc(perLabel) + ' · ' + fmt(W.length) + ' meters') +
+      kpiTile('Locations', fmt(Object.keys(locs).length), fmt(elecOnly) + ' with electricity only (no water meter)') +
+      kpiTile('Months uploaded', fmt(months.length), months.length ? monLabel(months[0]) + ' – ' + monLabel(months[months.length - 1]) : 'only the 2025 total so far') + '</div>';
+    // by zone
+    var zr = zones.map(function (z) { var e = sum(E.filter(function (x) { return x.fz === z; })), w = sum(W.filter(function (x) { return x.fz === z; })); return { zone: zl(z), e: e, w: w, z: z }; }).filter(function (r) { return r.e || r.w; });
+    var te = sum(E), tw = sum(W);
+    var zsp = { title: 'Consumption by zone — ' + perLabel, cols: [{ k: 'zone', label: 'Zone', t: 'text' }, { k: 'ef', label: 'Electricity (kWh)', t: 'num' }, { k: 'es', label: '% of electricity', t: 'pct' }, { k: 'wf', label: 'Water (m³)', t: 'num' }, { k: 'ws', label: '% of water', t: 'pct' }],
+      rows: zr.map(function (r) { return { zone: r.zone, ef: utilFmt(r.e, 'ELECTRICITY'), es: te ? r.e / te : null, wf: utilFmt(r.w, 'WATER'), ws: tw ? r.w / tw : null }; }).concat([{ zone: 'Total', ef: utilFmt(te, 'ELECTRICITY'), es: te ? 1 : null, wf: utilFmt(tw, 'WATER'), ws: tw ? 1 : null, _cls: 'tot' }]) };
+    UTIL_PIE = { zr: zr };
+    var charts = '<div class="grid">' + (UTF.type !== 'WATER' ? panel('Electricity by zone', perLabel + ' · kWh', '<div class="chart"><canvas id="utPieE" role="img" aria-label="Electricity by zone"></canvas></div>') : '') +
+      (UTF.type !== 'ELECTRICITY' ? panel('Water by zone', perLabel + ' · m³', '<div class="chart"><canvas id="utPieW" role="img" aria-label="Water by zone"></canvas></div>') : '') + '</div>';
+    var trend = '';
+    if (months.length) {
+      UTIL_PIE.months = months; UTIL_PIE.me = months.map(function (m) { return Math.round(E.reduce(function (t, x) { return t + (+((x.readings || {})[m]) || 0); }, 0)); }); UTIL_PIE.mw = months.map(function (m) { return Math.round(W.reduce(function (t, x) { return t + (+((x.readings || {})[m]) || 0); }, 0) * 100) / 100; });
+      trend = '<div class="grid" style="margin-top:16px">' + (UTF.type !== 'WATER' ? panel('Electricity by month', 'kWh', chartBox('utBarE')) : '') + (UTF.type !== 'ELECTRICITY' ? panel('Water by month', 'm³', chartBox('utBarW')) : '') + '</div>';
+    }
+    // detail
+    var mcols = months.map(function (m) { return { k: 'm_' + m, label: monLabel(m), t: 'num' }; });
+    var dsp = { title: 'Meters — consumption by month', cols: [{ k: 'loc', label: 'Location Description', t: 'wrap' }, { k: 'zone', label: 'Zone', t: 'text' }, { k: 'type', label: 'Type', t: 'text' }, { k: 'acc', label: 'DEWA Account Number', t: 'text' }, { k: 'base', label: '2025 Consumption', t: 'num' }, { k: 'unit', label: 'Unit', t: 'text' }].concat(mcols).concat(months.length ? [{ k: 'tot', label: 'Total (months)', t: 'num' }] : []),
+      rows: list.slice().sort(function (a, b) { return ((a.fz === '?') - (b.fz === '?')) || (a.fz < b.fz ? -1 : a.fz > b.fz ? 1 : 0) || (a.loc < b.loc ? -1 : a.loc > b.loc ? 1 : 0) || (a.type < b.type ? -1 : 1); }).map(function (x) {
+        var r = { loc: x.loc, zone: zl(x.fz), type: x.type === 'ELECTRICITY' ? 'Electricity' : 'Water', acc: x.account || '', base: utilFmt(x.cons_base, x.type), unit: x.type === 'ELECTRICITY' ? 'kWh' : 'M3' }, t = null;
+        months.forEach(function (m) { var v = (x.readings || {})[m]; r['m_' + m] = utilFmt(v, x.type); if (v != null && v !== '') t = (t || 0) + (+v); });
+        if (months.length) r.tot = utilFmt(t, x.type); return r; }) };
+    return section('U', 'Electricity & water', 'استهلاك الكهرباء والمياه', 'DEWA meters of the contract sites. Electricity in kWh, water in m³. Monthly figures are the consumption of each month from the DEWA bills, added each month by the Admin or CAFM operator. Some sites have electricity only (no water meter). Zone = from the location name (same areas as the SR tracker).',
+      ctl + k + '<div style="margin-top:16px">' + charts + '</div>' + trend) +
+      section('U1', 'By zone', 'حسب المنطقة', '', tableHTML(zsp)) +
+      section('U2', 'All meters', 'جميع العدادات', fmt(list.length) + ' meters. Excel ⬇ downloads the table.', tableHTML(dsp, { max: 640 })) +
+      ((ROLE === 'admin' || ROLE === 'operator') ? utilAdminHTML(months, all) : '');
+  }
+  var UTIL_PIE = null, UTIL_UN = {};
+  function utilAdminHTML(months, all) {
+    var un = {}; (all || []).forEach(function (x) { if (x.fz === '?') { var h = utilNorm(String(x.loc).split(' - ')[0]); (un[h] = un[h] || []).push(x.id); } });
+    var unK = Object.keys(un).sort();
+    UTIL_UN = un;
+    var nm = (function () { var d = new Date(Date.now() + 4 * 3600e3), y = d.getUTCFullYear(), m = d.getUTCMonth(); if (m === 0) { y--; m = 12; } return y + '-' + String(m).padStart(2, '0'); })();
+    return section('U3', 'Update the consumption', 'تحديث الاستهلاك', '',
+      '<div class="grid">' + panel('Upload', 'the DEWA data sheet, or the monthly file', '<p>Drop the <b>Electricity and Water Consumption Data sheet</b> to add or update the meters (Location Description, Type, DEWA Account Number, 2025 Consumption, Unit). Month columns in the file (for example <i>Jan 2026</i> or <i>2026-01</i>) are added as monthly consumption; a month left empty keeps its old value.</p><div class="drop" id="dropUt" tabindex="0">Drop the Excel file here, or click to choose<input type="file" id="fileUt" accept=".xlsx,.xlsm,.xls" hidden></div><div id="pendUt"></div><div class="status" id="stUt"></div>') +
+      (unK.length ? panel('Sites without a zone', unK.length + ' areas are not in the SR tracker', '<p>Choose the zone of each area once; it is kept for its meters.</p><div class="tw"><table class="t"><tbody>' + unK.map(function (h, i) { return '<tr><td>' + esc(h) + ' <span class="muted">(' + un[h].length + ' meters)</span></td><td><select data-utz="' + i + '"><option value="">Zone…</option>' + ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(function (z) { return '<option value="' + z + '">Zone ' + z + '</option>'; }).join('') + '</select></td></tr>'; }).join('') + '</tbody></table></div><div class="status" id="stUtZ"></div>') : '') +
+      panel('Monthly file', 'fill in one month and upload it', '<p>Download the list of meters with an empty column for the month, write each meter\'s consumption from the DEWA bill, then upload the file above.</p><div class="form"><div class="f"><label for="utMon">Month</label><input type="month" id="utMon" value="' + nm + '"></div><div class="f full"><button class="btn primary" id="utTpl">Download the monthly file ⬇</button></div></div>' +
+        (months.length ? '<details style="margin-top:10px"><summary>Remove a month uploaded by mistake</summary><div class="form" style="margin-top:8px"><div class="f"><label for="utDrop">Month</label><select id="utDrop">' + months.map(function (m) { return opt(m, monLabel(m), ''); }).join('') + '</select></div><div class="f full"><button class="btn" id="utDropGo">Remove this month</button></div></div></details>' : '') + '<div class="status" id="stUt2"></div>') + '</div>');
+  }
+  function utilNorm(t) { return String(t == null ? '' : t).replace(/\s+/g, ' ').trim(); }
+  function utilId(type, acc, loc) { return type.charAt(0) + '|' + utilNorm(acc).toUpperCase() + '|' + utilNorm(loc).toLowerCase(); }
+  function utilMonthKey(h) {
+    if (h instanceof Date && !isNaN(h)) return h.getUTCFullYear() + '-' + String(h.getUTCMonth() + 1).padStart(2, '0');
+    if (typeof h === 'number' && h > 40000 && h < 60000) { var d = new Date(Math.round((h - 25569) * 86400000)); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0'); }
+    var s = utilNorm(h).toLowerCase(), m;
+    if ((m = s.match(/^(20\d\d)[-\/ .](\d{1,2})$/))) return m[1] + '-' + String(+m[2]).padStart(2, '0');
+    if ((m = s.match(/^(\d{1,2})[-\/ .](20\d\d)$/))) return m[2] + '-' + String(+m[1]).padStart(2, '0');
+    if ((m = s.match(/^([a-z]{3,9})[-\/ .,']*(\d{2}|\d{4})$/))) { var i = MON3.map(function (x) { return x.toLowerCase(); }).indexOf(m[1].slice(0, 3)); if (i >= 0) { var y = m[2].length === 2 ? '20' + m[2] : m[2]; return y + '-' + String(i + 1).padStart(2, '0'); } }
+    return null;
+  }
+  function utilParse(wb) {
+    var out = [], months = {}, skipped = 0;
+    wb.SheetNames.forEach(function (sn) {
+      var rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: true, defval: null, blankrows: false }), hr = -1;
+      for (var r = 0; r < Math.min(rows.length, 20); r++) { var t = (rows[r] || []).map(function (v) { return utilNorm(v).toLowerCase(); }); if (t.some(function (v) { return v.indexOf('location description') >= 0; }) && t.some(function (v) { return /^type/.test(v); })) { hr = r; break; } }
+      if (hr < 0) return;
+      var H = rows[hr], c = function (rx) { for (var i = 0; i < H.length; i++) if (rx.test(utilNorm(H[i]).toLowerCase())) return i; return -1; };
+      var C = { loc: c(/location description/), type: c(/^type/), acc: c(/dewa account|account number|account/), cons: c(/consumption/), bill: c(/bill/), dept: c(/department/) }, MC = [];
+      H.forEach(function (h, i) { if (i === C.cons || i === C.bill) return; var k = utilMonthKey(h); if (k) MC.push([i, k]); });
+      for (var r2 = hr + 1; r2 < rows.length; r2++) {
+        var x = rows[r2] || [], loc = utilNorm(x[C.loc]), ty = utilNorm(x[C.type]).toUpperCase();
+        if (!loc) continue;
+        if (ty !== 'ELECTRICITY' && ty !== 'WATER') { skipped++; continue; }
+        var num = function (v) { if (v == null || v === '') return null; var n = typeof v === 'number' ? v : parseFloat(String(v).replace(/,/g, '')); return isFinite(n) ? n : null; };
+        var acc = C.acc >= 0 ? utilNorm(x[C.acc]) : '', rd = {};
+        MC.forEach(function (mc) { var v = num(x[mc[0]]); if (v != null) { rd[mc[1]] = v; months[mc[1]] = 1; } });
+        out.push({ id: utilId(ty, acc, loc), loc: loc, dept: C.dept >= 0 ? utilNorm(x[C.dept]) : '', type: ty, account: /^[_\-]+$|^n\/?a$/i.test(acc) ? '' : acc, unit: ty === 'ELECTRICITY' ? 'kWh' : 'M3', cons: C.cons >= 0 ? num(x[C.cons]) : null, bill: C.bill >= 0 ? num(x[C.bill]) : null, readings: rd, ord: out.length + 1 });
+      }
+    });
+    var seen = {}; out = out.filter(function (o) { if (seen[o.id]) { var p = seen[o.id]; if (p.cons == null) p.cons = o.cons; Object.assign(p.readings, o.readings); return false; } seen[o.id] = o; return true; });
+    return { rows: out, months: Object.keys(months).sort(), skipped: skipped };
+  }
+  function bindUtil() {
+    var per = $('#utPer'); if (per) per.onchange = function () { UTF.per = per.value; render(); };
+    var ty = $('#utType'); if (ty) ty.onchange = function () { UTF.type = ty.value; render(); };
+    var zz = $('#utZone'); if (zz) zz.onchange = function () { UTF.fz = zz.value; render(); };
+    if (UTIL_PIE && typeof Chart !== 'undefined') {
+      var P = palette(false), cols = [P.s1, P.s2, P.s3, P.s4, P.s7, '#8e6bb8', '#d4a017', '#5f7f5f', '#b85c5c', '#4a90a4'];
+      var pie = function (id, key, unit) {
+        var el = document.getElementById(id); if (!el) return;
+        var rows = UTIL_PIE.zr.filter(function (r) { return r[key] > 0; }), tot = rows.reduce(function (t, r) { return t + r[key]; }, 0);
+        charts.push(new Chart(el.getContext('2d'), { type: 'pie', data: { labels: rows.map(function (r) { return r.zone; }), datasets: [{ data: rows.map(function (r) { return Math.round(r[key] * 100) / 100; }), backgroundColor: rows.map(function (r, i) { return cols[i % cols.length]; }), borderColor: P.surf, borderWidth: 2 }] },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: P.ink2, generateLabels: function (ch) { var d = ch.data.datasets[0]; return ch.data.labels.map(function (l, i) { return { text: l + '  ' + (tot ? Math.round(d.data[i] / tot * 1000) / 10 : 0) + '%', fillStyle: d.backgroundColor[i], strokeStyle: d.backgroundColor[i], index: i, fontColor: P.ink2 }; }); } } },
+            tooltip: { callbacks: { label: function (c) { return c.label + ': ' + c.parsed.toLocaleString('en-US') + ' ' + unit + ' (' + (tot ? Math.round(c.parsed / tot * 1000) / 10 : 0) + '%)'; } } } } } }));
+      };
+      pie('utPieE', 'e', 'kWh'); pie('utPieW', 'w', 'm³');
+      if (UTIL_PIE.months) {
+        var lab = UTIL_PIE.months.map(monLabel);
+        drawChart('utBarE', { type: 'bar', title: 'Electricity by month (kWh)', labels: lab, series: [{ name: 'Electricity (kWh)', data: UTIL_PIE.me, color: 's2' }] });
+        drawChart('utBarW', { type: 'bar', title: 'Water by month (m³)', labels: lab, series: [{ name: 'Water (m³)', data: UTIL_PIE.mw, color: 's3' }] });
+      }
+    }
+    var d = $('#dropUt'), f = $('#fileUt');
+    if (d && f) {
+      var go = async function (file) {
+        setSt('stUt', 'Reading ' + file.name + '…');
+        try {
+          var p = utilParse(await readWorkbook(file));
+          if (!p.rows.length) throw new Error('No meters found. The sheet needs the columns "Location Description" and "Type (Electricity, Water)".');
+          var nE = p.rows.filter(function (x) { return x.type === 'ELECTRICITY'; }).length, nW = p.rows.length - nE, known = {}; (RAW.util || []).forEach(function (x) { known[x.id] = 1; });
+          var nNew = p.rows.filter(function (x) { return !known[x.id]; }).length;
+          $('#pendUt').innerHTML = '<div class="notice" style="margin-top:10px"><b>' + fmt(p.rows.length) + ' meters</b> (' + fmt(nE) + ' electricity, ' + fmt(nW) + ' water) · ' + fmt(nNew) + ' new · ' + fmt(p.rows.length - nNew) + ' already in the portal' + (p.skipped ? ' · ' + fmt(p.skipped) + ' rows without a meter type skipped' : '') + '<br>Months in the file: <b>' + (p.months.length ? p.months.map(monLabel).join(', ') : 'none (2025 totals only)') + '</b>' +
+            '<div style="margin-top:8px"><button class="btn primary" id="utGo">Save</button> <button class="btn" id="utNo">Cancel</button></div></div>';
+          $('#utNo').onclick = function () { $('#pendUt').innerHTML = ''; setSt('stUt', ''); };
+          $('#utGo').onclick = async function () {
+            this.disabled = true; setSt('stUt', 'Saving…');
+            try { var r = await window.DM_CLOUD.utilSave(p.rows, false); RAW.util = await window.DM_CLOUD.loadUtil(); if (p.months.length) UTF.per = p.months[p.months.length - 1]; render(); setSt('stUt', 'Saved: ' + fmt(r.added) + ' new meters, ' + fmt(r.updated) + ' updated' + (p.months.length ? ', months ' + p.months.map(monLabel).join(', ') : '') + '.', 'ok'); }
+            catch (e) { setSt('stUt', /utility_save/.test(e.message || '') ? 'Run the update 16_SQL_utilities.sql in Supabase first.' : e.message, 'err'); this.disabled = false; }
+          };
+          setSt('stUt', '');
+        } catch (e) { setSt('stUt', e.message || String(e), 'err'); }
+      };
+      d.onclick = function () { f.click(); }; d.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); f.click(); } };
+      f.onchange = function () { if (f.files[0]) go(f.files[0]); f.value = ''; };
+      d.ondragover = function (e) { e.preventDefault(); d.classList.add('over'); }; d.ondragleave = function () { d.classList.remove('over'); };
+      d.ondrop = function (e) { e.preventDefault(); d.classList.remove('over'); if (e.dataTransfer.files[0]) go(e.dataTransfer.files[0]); };
+    }
+    var tb = $('#utTpl'); if (tb) tb.onclick = async function () {
+      var m = ($('#utMon') || {}).value; if (!/^\d{4}-\d{2}$/.test(m || '')) return setSt('stUt2', 'Choose a month.', 'err');
+      tb.disabled = true;
+      try {
+        if (typeof ExcelJS === 'undefined') await loadScript(CDN.exceljs);
+        var wb = new ExcelJS.Workbook(), ws = wb.addWorksheet('Consumption ' + monLabel(m), { views: [{ state: 'frozen', ySplit: 1 }] });
+        var head = ['Location Description', 'Zone', 'Type (Electricity, Water)', 'DEWA Account Number', 'Unit (kWh, M3)', '2025 Consumption', monLabel(m)];
+        ws.addRow(head); ws.getRow(1).eachCell(function (c, i) { c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i === head.length ? 'FFC09A52' : 'FF1C3B67' } }; c.alignment = { wrapText: true, vertical: 'middle' }; });
+        (RAW.util || []).slice().sort(function (a, b) { return (a.fz < b.fz ? -1 : a.fz > b.fz ? 1 : 0) || (a.loc < b.loc ? -1 : 1); }).forEach(function (x) { var v = (x.readings || {})[m]; var row = ws.addRow([x.loc, zl(x.fz || utilZone(x.loc)), x.type, x.account || '', x.type === 'ELECTRICITY' ? 'KWH' : 'M3', x.cons_base, v == null ? null : +v]); row.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } }; });
+        [70, 10, 14, 18, 10, 16, 16].forEach(function (w, i) { ws.getColumn(i + 1).width = w; });
+        await saveFile('DEWA_Consumption_' + m + '.xlsx', new Blob([await wb.xlsx.writeBuffer()]));
+        setSt('stUt2', 'Downloaded. Fill in the yellow column and upload the file in "Upload".', 'ok');
+      } catch (e) { setSt('stUt2', e.message || String(e), 'err'); }
+      tb.disabled = false;
+    };
+    var unK = Object.keys(UTIL_UN).sort();
+    Array.prototype.forEach.call(document.querySelectorAll('[data-utz]'), function (sel) { sel.onchange = async function () { var h = unK[+sel.getAttribute('data-utz')]; if (!sel.value || !h) return; try { await window.DM_CLOUD.utilZoneSet(UTIL_UN[h], sel.value); RAW.util = await window.DM_CLOUD.loadUtil(); render(); } catch (e) { setSt('stUtZ', /utility_zone/.test(e.message || '') ? 'Run the update 16_SQL_utilities.sql in Supabase first.' : e.message, 'err'); } }; });
+    var dg = $('#utDropGo'); if (dg) dg.onclick = async function () {
+      var m = $('#utDrop').value; if (!confirm('Remove all readings of ' + monLabel(m) + '?')) return;
+      try { await window.DM_CLOUD.utilDropMonth(m); RAW.util = await window.DM_CLOUD.loadUtil(); UTF.per = ''; render(); } catch (e) { setSt('stUt2', e.message, 'err'); }
+    };
+  }
+
   /* ---------- SR status check: any Excel with SR numbers -> Maximo status, done-not-closed, remarks ---------- */
   function checkAllowed() { return CLOUD && !!ROLE && ROLE !== 'dm_engineer' && ROLE !== 'supervisor'; }
   // tracker Remarks / Internal Status written in many ways -> one standard wording
@@ -4822,7 +5884,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       maximo: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>', weekly: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 9v11M15 9v11"/>',
       reports: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>', register: '<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
       rm: '<path d="M4 15a8 8 0 0 1 16 0v2H4z"/><path d="M12 7v4M2 17h20"/>', data: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
-      check: '<path d="M9 3h6l1 2h3v16H5V5h3z"/><path d="m9 13 2 2 4-4"/>', log: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 8v4l3 2"/>', admin: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+      check: '<path d="M9 3h6l1 2h3v16H5V5h3z"/><path d="m9 13 2 2 4-4"/>', util: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>', log: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 8v4l3 2"/>', admin: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
       full: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>', close: '<path d="M6 6l12 12M18 6 6 18"/>'
     };
     var o = {}; for (var k in P) o[k] = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + P[k] + '</svg>';
@@ -4832,7 +5894,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     summary: 'Key figures, monthly and weekly trends', cm: 'Corrective maintenance by trade, zone and month', backlog: 'Open SRs by age and the oldest open SRs',
     sla: 'Priority and SLA compliance', ppm: 'Preventive maintenance compliance and cost', site: 'Pick a zone, area or location and compare',
     loc: 'Top locations and repeat failures', maximo: 'Done on site vs closed in Maximo', weekly: 'Weekly and monthly tables and comparisons',
-    reports: 'Service reports by supervisor and reports still needed', check: 'Upload any Excel with SR numbers: adds Maximo status, done-not-closed and remarks', register: 'Search and list every SR', rm: 'Remaining works for the labour supervisors',
+    reports: 'Service reports by supervisor and reports still needed', check: 'Upload any Excel with SR numbers: adds Maximo status, done-not-closed and remarks', util: 'DEWA electricity and water consumption by zone and month', register: 'Search and list every SR', rm: 'Remaining works for the labour supervisors',
     data: 'Upload the tracker and the PPM report', log: 'Every data upload, newest first', admin: 'Users, permissions and settings'
   };
   function homeHTML() {
