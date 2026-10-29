@@ -508,6 +508,17 @@ a.sv-b{text-decoration:none;justify-content:center}
 .svc-u{font-size:.78rem;color:var(--ink-2);margin-left:2px}
 .svc-minfo{display:block;font-size:.74rem;color:#0a5aa8;margin-top:3px}.svc-minfo i{font-style:normal;color:var(--ink-2);font-weight:700}
 .svc-share{width:100%;min-height:48px;flex-direction:row;margin:10px 0 0}
+/* v4.27 team account, after photos */
+.sv-apb{border-color:#b9d3ee;border-left-color:#0a66c2;background:#eef5fc}
+.sv-apb.on{background:#dcebfa;box-shadow:0 0 0 2px #0a66c2 inset}
+.svc-p-team{background:#efe7fb;color:#5b3a9e}
+.svc-del{color:#b42318}
+.svc-dell{display:block;margin-top:6px;color:#b42318;font-size:.82rem}
+.ap-bf{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ap-bf img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:#f2f4f7;cursor:zoom-in}
+.ap-zoom{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;padding:12px;cursor:zoom-out}
+.ap-zoom img{max-width:100%;max-height:100%;object-fit:contain}
+.bar-p{height:8px;border-radius:4px;background:#e6e9ee;overflow:hidden}.bar-p span{display:block;height:100%;background:#1f7a4d;transition:width .3s}
 </style></head><body><div id="app"></div><script>
 /* ==== PORTAL CONNECTION — fill in from Supabase: Project Settings > API ==== */
 window.DM_CLOUD_CONFIG = {
@@ -783,7 +794,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
 (function () {
   'use strict';
   var CONF = window.DM_CLOUD_CONFIG || {};
-  var ROLES = [['admin', 'Admin'], ['operator', 'CAFM operator'], ['manager', 'Manager'], ['dm_engineer', 'DM engineer'], ['imdaad_engineer', 'Imdaad engineer'], ['supervisor', 'Labour supervisor']];
+  var ROLES = [['admin', 'Admin'], ['operator', 'CAFM operator'], ['manager', 'Manager'], ['dm_engineer', 'DM engineer'], ['imdaad_engineer', 'Imdaad engineer'], ['supervisor', 'Labour supervisor'], ['team', 'Labour team (shared)']];
   var ALL_TABS = ['summary', 'cm', 'backlog', 'sla', 'ppm', 'site', 'loc', 'maximo', 'weekly', 'reports', 'register'];
   var REP_ROLES = ['admin', 'operator', 'imdaad_engineer', 'manager']; // service reports: never DM engineers
   var DEFAULT_PERMS = {
@@ -999,10 +1010,12 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var pc0 = (cfgRow.config || {}), pStamp = JSON.stringify(pc0.ppmUpload || pc0.ppmFile || '') + (cfgRow.updated_at || '');
     var pPpm = ppmViaEdge(pStamp).then(function (rows) { return rows || cachedTable('ppm', 'ppm', PPM_COLS + ',cost', 'id', null, null, pStamp).catch(function () { return fetchAll('ppm', PPM_COLS, 'id'); }); });
     var pSn = (async function () { var sq = await sb.from('snapshots').select('c,t,o,d').order('c'); if (sq.error && /\bd\b|column/i.test(sq.error.message || '')) sq = await sb.from('snapshots').select('c,t,o').order('c'); return chk(sq); })();
-    var all = await Promise.all([pSr, loadReports(), pPpm, pSn]);
-    var sr = all[0], reps = all[1], ppm = all[2], snaps = all[3], util = all[4];
+    var pXf = rpcAll('sr_transfers').catch(function () { return []; });
+    var all = await Promise.all([pSr, loadReports(), pPpm, pSn, pXf]);
+    var sr = all[0], reps = all[1], ppm = all[2], snaps = all[3], util = undefined, xf = {};
+    (all[4] || []).forEach(function (x) { xf[x.id] = x; });
     progress(1, 'Opening dashboard…');
-    sr.forEach(function (o) { o.rd = +o.rd; o.cd = o.cd == null ? null : +o.cd; o.closed_seen = o.closed_seen == null ? null : +o.closed_seen; o.pr = o.pr || 0; ['wo', 'sum', 'wt', 'svc', 'tr', 'rbn', 'dept', 'mx', 'loc', 'locd', 'zn', 'fz', 'area', 'sup', 'ist', 'st', 'cnote', 'rem', 'park'].forEach(function (k) { if (o[k] == null) o[k] = ''; }); });
+    sr.forEach(function (o) { o.rd = +o.rd; o.cd = o.cd == null ? null : +o.cd; o.closed_seen = o.closed_seen == null ? null : +o.closed_seen; o.pr = o.pr || 0; ['wo', 'sum', 'wt', 'svc', 'tr', 'rbn', 'dept', 'mx', 'loc', 'locd', 'zn', 'fz', 'area', 'sup', 'ist', 'st', 'cnote', 'rem', 'park'].forEach(function (k) { if (o[k] == null) o[k] = ''; }); var x = xf[o.id]; if (x) { o.xk = x.kind; if (x.kind === 'MEP' && x.sup) o.sup = x.sup; } });
     ppm.forEach(function (v) { v.st = +v.st; v.en = +v.en; v.cost = v.cost == null ? 0 : +v.cost; ['sheet', 'item', 'desc', 'sys', 'site', 'route', 'sc', 'freq', 'tr'].forEach(function (k) { if (v[k] == null) v[k] = ''; }); });
     var cfg = cfgRow.config || {}, lg = cfgRow.logos || {}, dl = logos();
     return {
@@ -1014,7 +1027,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   async function enter() {
     loadingScreen('Checking your account…');
     var u = (await sb.auth.getUser()).data.user; if (!u) return loginScreen();
-    var pr0 = await sb.from('profiles').select('id,email,full_name,role,active,must_set_password,sup_names').eq('id', u.id).maybeSingle();
+    var pr0 = await sb.from('profiles').select('id,email,full_name,role,active,must_set_password,sup_names,team_of').eq('id', u.id).maybeSingle();
+    if (pr0.error && /team_of/.test(pr0.error.message || '')) pr0 = await sb.from('profiles').select('id,email,full_name,role,active,must_set_password,sup_names').eq('id', u.id).maybeSingle();
     if (pr0.error && /sup_names/.test(pr0.error.message || '')) pr0 = await sb.from('profiles').select('id,email,full_name,role,active,must_set_password').eq('id', u.id).maybeSingle();
     profile = chk(pr0);
     cleanUrl();
@@ -1023,7 +1037,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       screen('<div class="auth-f"><p><b>Your account is waiting for access.</b></p><p>Signed in as ' + esc(u.email) + '. Ask the portal administrator to assign you a role.</p><button class="btn" id="soBtn">Sign out</button></div>');
       $('#soBtn').onclick = signOut; return;
     }
-    if (profile.role === 'supervisor') return supervisorApp();
+    if (profile.role === 'supervisor' || profile.role === 'team') return supervisorApp();
     try { RAWC = await loadData(); } catch (e) { screen('<div class="auth-f"><p class="status err">Could not load data: ' + esc(e.message) + '</p><button class="btn" id="rtBtn">Try again</button> <button class="btn" id="soBtn">Sign out</button></div>'); $('#rtBtn').onclick = enter; $('#soBtn').onclick = signOut; return; }
     start();
   }
@@ -1086,7 +1100,19 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     return rows;
   }
   async function supervisorApp() {
-    loadingScreen('Loading your works…');
+    loadingScreen(isTeam() ? 'Loading the team reports…' : 'Loading your works…');
+    if (isTeam()) {
+      try {
+        var tr = await Promise.all([rpcAll('my_reports_needed').catch(function () { return null; }), sb.rpc('my_sup_names')]);
+        SV.rows = []; SV.today = { started: 0, completed: 0 }; SV.mats = []; SV.emg = []; SV.emgSeen = SV.emgSeen || {};
+        SV.reps = tr[0]; if (SV.reps) SV.reps.forEach(function (x) { x.rd = +x.rd; });
+        profile.sup_names = tr[1].error ? [] : (tr[1].data || []);
+        if (!profile.team_of || !profile.sup_names.length) { screen('<div class="auth-f"><p><b>This team account is not linked to a supervisor yet.</b></p><p>Ask the portal administrator to choose the supervisor (Admin → Users → Team of supervisor).</p><button class="btn" id="soBtn">Sign out</button></div>'); $('#soBtn').onclick = signOut; return; }
+        await svcLoad(); await apLoad();
+        if (SV.f !== 'ap') SV.f = 'rep';
+      } catch (e) { screen('<div class="auth-f"><p class="status err">Could not load: ' + esc(e.message) + '</p><button class="btn" id="rtBtn">Try again</button> <button class="btn" id="soBtn">Sign out</button></div>'); $('#rtBtn').onclick = supervisorApp; $('#soBtn').onclick = signOut; return; }
+      return svDraw();
+    }
     try {
       var res = await Promise.all([rpcAll('my_works'), sb.rpc('my_today'), sb.rpc('my_materials'), sb.rpc('my_emergencies'), photoCounts(true), loadFlags(true), rpcAll('my_reports_needed').catch(function () { return null; })]);
       SV.rows = res[0] || [];
@@ -1095,7 +1121,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       SV.emg = res[3].error ? [] : (res[3].data || []);
       SV.reps = res[6]; if (SV.reps) SV.reps.forEach(function (x) { x.rd = +x.rd; }); SV.emgSeen = SV.emgSeen || {}; SV.emg.forEach(function (e) { SV.emgSeen[e.id] = 1; });
       SV.push = await pushState(); if (SV.push === 'on') pushResync();
-      await svcLoad();
+      await svcLoad(); await apLoad();
       var qp = new URLSearchParams(location.search); if (qp.get('sr') && !SV.deep) { SV.deep = qp.get('sr'); SV.f = 'emg'; } svPoll();
     } catch (e) { screen('<div class="auth-f"><p class="status err">Could not load your works: ' + esc(e.message) + '</p><button class="btn" id="rtBtn">Try again</button> <button class="btn" id="soBtn">Sign out</button></div>'); $('#rtBtn').onclick = supervisorApp; $('#soBtn').onclick = signOut; return; }
     SV.rows.forEach(function (r) { r.rd = +r.rd; r.pr = +r.pr || 0; });
@@ -1109,17 +1135,18 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var names = (profile.sup_names || []).filter(function (x) { return x.toUpperCase() !== String(profile.full_name || '').toUpperCase(); }).join(' · ');
     $('#app').innerHTML = '<div class="sv">' +
       '<header class="sv-top"><div class="sv-logos">' + (L.left ? '<img src="' + L.left + '" alt="Imdaad">' : '') + (L.right ? '<img src="' + L.right + '" alt="Dubai Municipality">' : '') + '</div>' +
-      '<div class="sv-h"><div><h1>My works </h1><div class="sv-who">' + esc(profile.full_name || profile.email) + (names ? ' · ' + esc(names) : '') + '</div></div>' +
+      '<div class="sv-h"><div><h1>' + (isTeam() ? 'Team reports' : 'My works ') + '</h1><div class="sv-who">' + esc(profile.full_name || profile.email) + (names ? ' · ' + esc(names) : '') + '</div></div>' +
       '<div class="sv-act"><button class="sv-ib" id="svRef" aria-label="Refresh">↻</button><details class="sv-menu"><summary class="sv-ib" aria-label="Account">☰</summary><div class="sv-pop"><form id="svPw"><label for="svP">New password</label><input id="svP" type="password" minlength="8" autocomplete="new-password"><button class="btn" type="submit">Change password</button><div class="status" id="svPwSt"></div></form><button class="btn" id="svOut">Sign out</button></div></details></div></div>' +
-      '<div class="sv-today">Today: <b>' + SV.today.started + '</b> started &nbsp;·&nbsp; <b>' + SV.today.completed + '</b> completed</div></header>' +
-      '<div class="sv-sum">' + [['todo', 'To do', '', n.todo], ['work', 'Working', '', n.work], ['done', 'Done', '', n.done], ['sub', 'Contractor', '', n.sub]].map(function (x) {
-        return '<button class="sv-k k-' + x[0] + '" data-f="' + x[0] + '" aria-pressed="' + (SV.f === x[0]) + '"><b>' + x[3] + '</b><span>' + x[1] + '</span></button>'; }).join('') + '</div>' +
+      (isTeam() ? '<div class="sv-today">👥 Team account — prepare the reports and send them to your supervisor</div>' : '<div class="sv-today">Today: <b>' + SV.today.started + '</b> started &nbsp;·&nbsp; <b>' + SV.today.completed + '</b> completed</div>') + '</header>' +
+      (isTeam() ? '' : '<div class="sv-sum">' + [['todo', 'To do', '', n.todo], ['work', 'Working', '', n.work], ['done', 'Done', '', n.done], ['sub', 'Contractor', '', n.sub]].map(function (x) {
+        return '<button class="sv-k k-' + x[0] + '" data-f="' + x[0] + '" aria-pressed="' + (SV.f === x[0]) + '"><b>' + x[3] + '</b><span>' + x[1] + '</span></button>'; }).join('') + '</div>') +
       (SV.reps ? '<button class="sv-repb' + (SV.f === 'rep' ? ' on' : '') + (SV.reps.length ? '' : ' ok') + '" data-f="rep" aria-pressed="' + (SV.f === 'rep') + '">📄 <b>' + SV.reps.length + '</b> completed work' + (SV.reps.length === 1 ? '' : 's') + ' still need a service report' + (SV.reps.length ? ' — tap to see' : ' ✓') + '</button>' : '') +
+      (apOn() && SV.ap.length ? '<button class="sv-repb sv-apb' + (SV.f === 'ap' ? ' on' : '') + (apPending() ? '' : ' ok') + '" data-f="ap" aria-pressed="' + (SV.f === 'ap') + '">📷 <b>' + apPending() + '</b> finished work' + (apPending() === 1 ? '' : 's') + ' need an after photo' + (apPending() ? ' — tap to see' : ' ✓') + '</button>' : '') +
       '<div class="sv-search">' + svAreaSel() + '<input type="search" id="svQ" placeholder="Search SR, location, text" value="' + esc(SV.q) + '"></div>' +
-      svPushHTML() + '<div id="svEmg">' + svEmgHTML() + '</div>' +
+      (isTeam() ? '' : svPushHTML() + '<div id="svEmg">' + svEmgHTML() + '</div>') +
       '<main id="svList" class="sv-list"></main><div id="svSheet"></div><div class="sv-toast" id="svToast" role="status" aria-live="polite"></div></div>';
     Array.prototype.forEach.call(document.querySelectorAll('.sv-k'), function (b) { b.onclick = function () { SV.f = b.getAttribute('data-f'); svDraw(); }; });
-    var rb = document.querySelector('.sv-repb'); if (rb) rb.onclick = function () { SV.f = SV.f === 'rep' ? 'todo' : 'rep'; svDraw(); };
+    Array.prototype.forEach.call(document.querySelectorAll('.sv-repb'), function (rb) { rb.onclick = function () { var f = rb.getAttribute('data-f'); SV.f = SV.f === f ? (isTeam() ? SV.f : 'todo') : f; svDraw(); }; });
     var asel = $('#svArea'); if (asel) asel.onchange = function () { SV.area = asel.value; svDraw(); };
     var qt; $('#svQ').oninput = function (e) { clearTimeout(qt); qt = setTimeout(function () { SV.q = e.target.value; svList(); }, 250); };
     $('#svRef').onclick = supervisorApp; $('#svOut').onclick = signOut;
@@ -1194,6 +1221,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         '<div class="sv-loc">' + esc(loc) + '</div><div class="sv-sum2">' + esc(r.summary || '') + '</div>' + svTr(r.summary) + (mat ? '<div style="margin-top:6px">' + mat + '</div>' : '') +
         (flagOf(r.id) ? '<div style="margin-top:6px">' + flagPill(r.id) + (flagOf(r.id).note ? ' <span class="sv-meta">' + esc(flagOf(r.id).note) + '</span>' : '') + '</div>' : '') +
         (photoCount(r.id) ? '<button class="sv-ph" data-a="photos">📷 ' + photoCount(r.id) + ' photo' + (photoCount(r.id) > 1 ? 's' : '') + ' from Maximo</button>' : '') + acts +
+        (st !== 'done' ? '<button class="sv-link" data-a="xfer">⇄ Transfer to Civil / MEP</button>' : '') +
         '<button class="sv-link" data-a="flag">🏷 ' + (flagOf(r.id) ? 'Change status' : 'Done by DM / Canceled / Adhoc') + '</button></article>';
   }
   async function svShowJob(sr) {
@@ -1227,6 +1255,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   }
   function svList() {
     if (SV.f === 'rep') return svRepList();
+    if (SV.f === 'ap') { $('#svList').innerHTML = apListHTML(); apBindList(); return; }
     var q = SV.q.trim().toLowerCase();
     var list = SV.rows.filter(function (r) {
       if (svState(r) !== (SV.f === 'emg' ? 'todo' : SV.f)) return false;
@@ -1255,6 +1284,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     return !bad;
   }
   function svAct(row, a) {
+    if (a === 'xfer') return svTransfer(row);
     if (a === 'yes') return svCall(row, 'sup_mark', { p_sr: row.id, p_need: 'yes' }, 'needs contractor');
     if (a === 'no') return svCall(row, 'sup_mark', { p_sr: row.id, p_need: 'no' }, 'our team');
     if (a === 'start') return svCall(row, 'sup_log', { p_sr: row.id, p_action: 'start', p_photos: [], p_note: null }, 'work started').then(function (ok) { if (ok) { SV.today.started++; svDraw(); } });
@@ -1555,17 +1585,17 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     async function drawUsers() {
       var el = $('#usersT'); if (!el) return;
       try {
-        var ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password,sup_names').order('created_at'); if (ur0.error && /sup_names/.test(ur0.error.message || '')) ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password').order('created_at'); USERS = chk(ur0);
+        var ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password,sup_names,team_of').order('created_at'); if (ur0.error && /team_of/.test(ur0.error.message || '')) ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password,sup_names').order('created_at'); if (ur0.error && /sup_names/.test(ur0.error.message || '')) ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password').order('created_at'); USERS = chk(ur0);
         var SUPN = (h.supNames ? h.supNames() : []);
         el.innerHTML = '<div class="tw"><table class="t"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Supervisor name (labour supervisors)</th><th>Status</th><th>Active</th><th></th></tr></thead><tbody>' + USERS.map(function (u) {
           var me = u.id === profile.id;
-          return '<tr><td><input data-un="' + u.id + '" value="' + esc(u.full_name || '') + '" style="width:150px"></td><td>' + esc(u.email) + '</td><td><select data-ur="' + u.id + '"' + (me ? ' disabled' : '') + '><option value="">No access</option>' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></td><td>' + (u.role === 'supervisor' ? '<select multiple size="4" data-usn="' + u.id + '" aria-label="Supervisor names" style="min-width:190px">' + SUPN.concat((u.sup_names || []).filter(function (x) { return SUPN.indexOf(x) < 0; })).map(function (n) { return '<option value="' + esc(n) + '"' + ((u.sup_names || []).indexOf(n) >= 0 ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Ctrl+click for more than one</div>' : '<span class="muted">—</span>') + '</td><td>' + (u.must_set_password ? '<span class="pill avg">Invited, password not set</span>' : '<span class="pill good">Active account</span>') + '</td><td><input type="checkbox" data-ua="' + u.id + '"' + (u.active ? ' checked' : '') + (me ? ' disabled' : '') + '></td><td><button class="btn xs" data-us="' + u.id + '">Save</button> ' + (u.must_set_password ? '<button class="btn xs" data-ri="' + esc(u.email) + '" data-rn="' + esc(u.full_name || '') + '">Resend invitation</button>' : '<button class="btn xs" data-rs="' + esc(u.email) + '" title="Email this user a link to set a new password">Reset password</button>') + '</td></tr>';
+          return '<tr><td><input data-un="' + u.id + '" value="' + esc(u.full_name || '') + '" style="width:150px"></td><td>' + esc(u.email) + '</td><td><select data-ur="' + u.id + '"' + (me ? ' disabled' : '') + '><option value="">No access</option>' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></td><td>' + (u.role === 'supervisor' ? '<select multiple size="4" data-usn="' + u.id + '" aria-label="Supervisor names" style="min-width:190px">' + SUPN.concat((u.sup_names || []).filter(function (x) { return SUPN.indexOf(x) < 0; })).map(function (n) { return '<option value="' + esc(n) + '"' + ((u.sup_names || []).indexOf(n) >= 0 ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Ctrl+click for more than one</div>' : u.role === 'team' ? '<label class="muted" style="font-size:.72rem;display:block" for="utf' + u.id + '">Team of supervisor</label><select id="utf' + u.id + '" data-utf="' + u.id + '" style="min-width:190px"><option value="">Choose the supervisor…</option>' + USERS.filter(function (x) { return x.role === 'supervisor'; }).map(function (x) { return '<option value="' + x.id + '"' + (u.team_of === x.id ? ' selected' : '') + '>' + esc(x.full_name || x.email) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Prepares reports only; the supervisor sends them</div>' : '<span class="muted">—</span>') + '</td><td>' + (u.must_set_password ? '<span class="pill avg">Invited, password not set</span>' : '<span class="pill good">Active account</span>') + '</td><td><input type="checkbox" data-ua="' + u.id + '"' + (u.active ? ' checked' : '') + (me ? ' disabled' : '') + '></td><td><button class="btn xs" data-us="' + u.id + '">Save</button> ' + (u.must_set_password ? '<button class="btn xs" data-ri="' + esc(u.email) + '" data-rn="' + esc(u.full_name || '') + '">Resend invitation</button>' : '<button class="btn xs" data-rs="' + esc(u.email) + '" title="Email this user a link to set a new password">Reset password</button>') + '</td></tr>';
         }).join('') + '</tbody></table></div>';
         Array.prototype.forEach.call(document.querySelectorAll('[data-us]'), function (b) {
           b.onclick = async function () {
             var id = b.getAttribute('data-us'), q = function (a) { return document.querySelector('[' + a + '="' + id + '"]'); };
-            var upd = { full_name: q('data-un').value.trim() }; if (!q('data-ur').disabled) { upd.role = q('data-ur').value || null; upd.active = q('data-ua').checked; } var sn = q('data-usn'); if (sn) upd.sup_names = Array.prototype.filter.call(sn.options, function (o) { return o.selected; }).map(function (o) { return o.value; });
-            try { var was = (USERS.filter(function (x) { return x.id === id; })[0] || {}).role; chk(await sb.from('profiles').update(upd).eq('id', id)); b.textContent = 'Saved'; setTimeout(function () { b.textContent = 'Save'; }, 1500); if ((upd.role === 'supervisor') !== (was === 'supervisor')) drawUsers(); } catch (e) { h.setSt('stU', e.message, 'err'); }
+            var upd = { full_name: q('data-un').value.trim() }; if (!q('data-ur').disabled) { upd.role = q('data-ur').value || null; upd.active = q('data-ua').checked; } var sn = q('data-usn'); if (sn) upd.sup_names = Array.prototype.filter.call(sn.options, function (o) { return o.selected; }).map(function (o) { return o.value; }); var tf = q('data-utf'); if (tf) upd.team_of = tf.value || null;
+            try { var was = (USERS.filter(function (x) { return x.id === id; })[0] || {}).role; chk(await sb.from('profiles').update(upd).eq('id', id)); b.textContent = 'Saved'; setTimeout(function () { b.textContent = 'Save'; }, 1500); if ((upd.role === 'supervisor') !== (was === 'supervisor') || (upd.role === 'team') !== (was === 'team')) drawUsers(); } catch (e) { h.setSt('stU', e.message, 'err'); }
           };
         });
         Array.prototype.forEach.call(document.querySelectorAll('[data-ri]'), function (b) {
@@ -1947,10 +1977,11 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   // ---------- load (called by the supervisor app)
   async function svcLoad() {
     try {
-      var r = await sb.from('svc_reports').select('sr,status,data,photos,updated_at,sent_at,signed_at,cust').order('updated_at', { ascending: false }).range(0, 999);
+      var r = await sb.from('svc_reports').select('sr,status,data,photos,updated_at,sent_at,signed_at,cust,prepared_name').order('updated_at', { ascending: false }).range(0, 999);
+      if (r.error && /prepared_name/.test(r.error.message || '')) r = await sb.from('svc_reports').select('sr,status,data,photos,updated_at,sent_at,signed_at,cust').order('updated_at', { ascending: false }).range(0, 999);
       if (r.error) throw r.error;
       SVC.list = {}; (r.data || []).forEach(function (x) { SVC.list[x.sr] = x; });
-      var s = await sb.from('svc_settings').select('*').eq('uid', profile.id).maybeSingle();
+      var s = await sb.from('svc_settings').select('*').eq('uid', isTeam() ? (profile.team_of || profile.id) : profile.id).maybeSingle();
       SVC.set = (s && s.data) || null;
       if (!SVC.set) { var ks = await svcKv('set'); SVC.set = ks || { techs: [], sig_path: null, sig_name: profile.full_name || '' }; }
     } catch (e) {
@@ -2027,16 +2058,18 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (!ph.after) m.push('after photo');
     if (!(d.techs || []).length) m.push('technician');
     if (!(d.cust && String(d.cust.name || '').trim())) m.push('customer name');
-    if (!(SVC.set && SVC.set.sig_path)) m.push('your signature (⚙ Settings)');
+    if (!isTeam() && !(SVC.set && SVC.set.sig_path)) m.push('your signature (⚙ Settings)');
     return m;
   }
   function svcListHTML() {
-    var tabs = [['todo', 'To do'], ['draft', 'Drafts'], ['cust', 'Customer'], ['sent', 'Sent']];
+    var tabs = isTeam() ? [['todo', 'To do'], ['draft', 'Drafts']] : [['todo', 'To do'], ['draft', 'Drafts'], ['cust', 'Customer'], ['sent', 'Sent']];
+    if (isTeam() && SVC.tab !== 'todo' && SVC.tab !== 'draft') SVC.tab = 'todo';
     var n = {}; tabs.forEach(function (t) { n[t[0]] = svcRows(t[0]).length; });
     var rows = svcRows(SVC.tab), pend = Object.keys(SVC.local).filter(function (k) { return SVC.local[k].dirty; }).length;
-    var h = '<div class="svc-tabs" role="tablist">' + tabs.map(function (t) { return '<button role="tab" class="svc-tab" data-svt="' + t[0] + '" aria-selected="' + (SVC.tab === t[0]) + '">' + t[1] + (t[0] !== 'sent' && n[t[0]] ? ' <i>' + n[t[0]] + '</i>' : '') + '</button>'; }).join('') + '<button class="svc-gear" id="svcSet" aria-label="Report settings">⚙</button></div>';
+    var h = '<div class="svc-tabs" role="tablist">' + tabs.map(function (t) { return '<button role="tab" class="svc-tab" data-svt="' + t[0] + '" aria-selected="' + (SVC.tab === t[0]) + '">' + t[1] + (t[0] !== 'sent' && n[t[0]] ? ' <i>' + n[t[0]] + '</i>' : '') + '</button>'; }).join('') + (isTeam() ? '' : '<button class="svc-gear" id="svcSet" aria-label="Report settings">⚙</button>') + '</div>';
     if (pend) h += '<div class="svc-pend">⬆ ' + pend + ' report' + (pend > 1 ? 's' : '') + ' saved on this phone, waiting for network. <button class="sv-link" id="svcUp" style="padding:0">Upload now</button></div>';
-    if (!(SVC.set && SVC.set.sig_path) || !(SVC.set.techs || []).length) h += '<div class="svc-pend">First time: open <b>⚙ Settings</b> to add your technicians and your signature. They are used in every report.</div>';
+    if (isTeam()) h += '<div class="sv-hint" style="margin:0 0 8px">Prepare the report, then press <b>Send to supervisor</b>. The supervisor checks the report and the photos, signs it and sends it to the customer.</div>';
+    else if (!(SVC.set && SVC.set.sig_path) || !(SVC.set.techs || []).length) h += '<div class="svc-pend">First time: open <b>⚙ Settings</b> to add your technicians and your signature. They are used in every report.</div>';
     if (SVC.tab === 'todo') h += '<div class="sv-hint" style="margin:0 0 8px">Completed works still <b>open in Maximo</b> with no service report. Tap <b>Create report</b>.</div>';
     if (SVC.tab === 'cust') {
       var sel = rows.filter(function (x) { return SVC.sel[x.sr]; }).length;
@@ -2054,20 +2087,23 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       return '<article class="sv-card s-rep" data-id="' + esc(sr) + '"><div class="sv-row"><b class="sv-sr">SR ' + esc(sr) + '</b><span class="pill poor">To do</span><span class="sv-days">' + svDays(r.rd) + ' d</span></div>' +
         '<div class="sv-meta">' + esc(SV_TR[r.tr] || r.tr || '') + ' · Zone ' + esc(r.fz || '?') + ' · ' + esc(svArea(r)) + (r.wo ? ' · WO ' + esc(r.wo) : '') + '</div>' +
         '<div class="sv-loc">' + esc(String(r.locd || '').replace(/_/g, ' · ')) + '</div><div class="sv-sum2">' + esc(r.summary || '') + '</div>' +
-        '<button class="sv-b svc-pri" data-sva="open" style="width:100%;margin-top:8px">📝 Create report</button></article>';
+        '<button class="sv-b svc-pri" data-sva="open" style="width:100%;margin-top:8px">📝 Create report</button>' + (isTeam() ? '' : '<button class="sv-link" data-sva="xfer">⇄ Transfer to Civil / MEP</button>') + '</article>';
     }
     var d = x.d || {}, o = x.o, line = ((d.lines || [])[0] || {}).d || '', ph = o.loc ? o.loc.ph : svcPhIn(o.srv && o.srv.photos);
     var pill = { draft: ['Draft', 'svc-p-acc'], ready: ['Ready', 'svc-p-acc'], sent: ['Link sent', 'svc-p-warn'], signed: ['Signed', 'svc-p-good'] }[o.st];
     h = '<article class="sv-card svc-c-' + o.st + '" data-id="' + esc(sr) + '"><div class="sv-row">' + (SVC.tab === 'cust' ? '<input type="checkbox" class="svc-ck" data-svs="' + esc(sr) + '"' + (SVC.sel[sr] ? ' checked' : '') + ' aria-label="Select SR ' + esc(sr) + '">' : '') +
-      '<b class="sv-sr">SR ' + esc(sr) + '</b><span class="svc-pill ' + pill[1] + '">' + pill[0] + '</span>' + (x.o.pend ? '<span class="svc-pill svc-p-warn">⬆ not uploaded</span>' : '') + '</div>' +
+      '<b class="sv-sr">SR ' + esc(sr) + '</b><span class="svc-pill ' + pill[1] + '">' + pill[0] + '</span>' + (x.o.pend ? '<span class="svc-pill svc-p-warn">⬆ not uploaded</span>' : '') + (o.st === 'draft' && d.teamDone ? '<span class="svc-pill svc-p-team">' + (isTeam() ? '✓ Sent to supervisor' : '👥 From team – review') + '</span>' : '') + '</div>' +
+      (o.st === 'draft' && d.teamDone && !isTeam() && o.srv && o.srv.prepared_name ? '<div class="sv-meta">Prepared by ' + esc(o.srv.prepared_name) + '</div>' : '') +
       '<div class="sv-loc">' + esc(d.loc || '') + '</div><div class="sv-sum2">' + esc(line) + '</div>';
-    if (o.st === 'draft') { var mi = svcMissing(d, ph); h += (mi.length ? '<div class="svc-miss">Missing: ' + esc(mi.join(', ')) + '</div>' : '<div class="sv-meta">Complete — open it and press Ready for customer.</div>') + '<button class="sv-b" data-sva="open" style="width:100%;margin-top:8px">Continue</button>'; }
+    if (o.st === 'draft') { var mi = svcMissing(d, ph); h += (mi.length ? '<div class="svc-miss">Missing: ' + esc(mi.join(', ')) + '</div>' : '<div class="sv-meta">Complete — open it and press ' + (isTeam() ? 'Send to supervisor' : 'Ready for customer') + '.</div>') + '<div class="svc-btn3" style="grid-template-columns:3fr 1fr"><button class="sv-b" data-sva="open">' + (d.teamDone && !isTeam() ? 'Review' : 'Continue') + '</button><button class="sv-b svc-del" data-sva="del" aria-label="Delete the draft of SR ' + esc(sr) + '">🗑</button></div>'; }
     else if (o.st === 'ready' || o.st === 'sent') {
       if (o.st === 'sent') h += '<div class="sv-meta">🔗 Link sent ' + esc(String((o.srv && o.srv.sent_at) || '').slice(0, 16).replace('T', ' ')) + ' to ' + esc(svcCustTxt(d.cust)) + ' — waiting for signature.</div>';
-      h += '<div class="svc-btn3"><button class="sv-b svc-good" data-sva="sign">✍ Sign now</button><button class="sv-b" data-sva="link">🔗 ' + (o.st === 'sent' ? 'Resend' : 'Send link') + '</button><button class="sv-b" data-sva="open">✎ Edit</button></div>';
+      h += '<div class="svc-btn3"><button class="sv-b svc-good" data-sva="sign">✍ Sign now</button><button class="sv-b" data-sva="link">🔗 ' + (o.st === 'sent' ? 'Resend' : 'Send link') + '</button><button class="sv-b" data-sva="open">✎ Edit</button></div><button class="sv-link svc-dell" data-sva="del">🗑 Delete this report (sent by mistake)</button>';
     } else if (o.st === 'signed') {
       var c = (o.srv && o.srv.cust) || {};
       h += '<div class="sv-donel">✓ Signed by ' + esc(c.name || '') + ' · ' + esc(String((o.srv && o.srv.signed_at) || '').slice(0, 16).replace('T', ' ')) + (c.method === 'link' ? ' · by link' : ' · on site') + '</div><div class="sv-meta">Quality: ' + esc(c.quality || '') + ' · Response: ' + esc(c.response || '') + '</div>';
+      var hl = svcHoursLeft(o.srv && o.srv.signed_at);
+      if (hl > 0 && !isTeam()) h += '<div class="svc-btn3" style="grid-template-columns:1fr 1fr"><button class="sv-b" data-sva="reopen">✎ Re-open</button><button class="sv-b svc-del" data-sva="del">🗑 Delete</button></div><div class="sv-meta">Sent by mistake? You can change or delete it for ' + (hl >= 1 ? Math.floor(hl) + ' more hour' + (Math.floor(hl) === 1 ? '' : 's') : 'less than 1 hour') + '.</div>';
     }
     return h + '</article>';
   }
@@ -2080,6 +2116,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       b.onclick = function () {
         var sr = b.closest('.sv-card').getAttribute('data-id'), a = b.getAttribute('data-sva');
         if (a === 'open') svcOpen(sr); else if (a === 'sign') svcSignSession([sr]); else if (a === 'link') svcLinkSheet([sr]);
+        else if (a === 'del') svcWithdraw(sr, 'delete'); else if (a === 'reopen') svcWithdraw(sr, 'edit');
+        else if (a === 'xfer') { var r = (SV.reps || []).filter(function (y) { return y.id === sr; })[0]; if (r) svTransfer(r, async function () { try { SV.reps = await rpcAll('my_reports_needed'); SV.reps.forEach(function (y) { y.rd = +y.rd; }); } catch (e) { } svDraw(); }); }
       };
     });
     var pick = function () { var rows = svcRows('cust').map(function (x) { return x.sr; }), s = rows.filter(function (k) { return SVC.sel[k]; }); return s.length ? s : rows; };
@@ -2112,7 +2150,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function svcForm() {
     var F = SVC.F, names = ['Details', 'Work & photos', 'Materials', 'Team'];
     var foot = F.step < 4 ? (F.step > 1 ? '<button class="sv-b" id="svcBack">‹ Back</button>' : '<button class="sv-b" id="svcDraft">Save draft</button>') + '<button class="sv-b svc-pri" id="svcNext">Next ›</button>'
-      : '<button class="sv-b" id="svcBack">‹ Back</button><button class="sv-b" id="svcDraft">Save draft</button><button class="sv-b svc-gold svc-wide" id="svcReady">Ready for customer ›</button>';
+      : '<button class="sv-b" id="svcBack">‹ Back</button><button class="sv-b" id="svcDraft">Save draft</button>' + (isTeam() ? '<button class="sv-b svc-gold svc-wide" id="svcTeam">Send to supervisor ›</button>' : '<button class="sv-b svc-gold svc-wide" id="svcReady">Ready for customer ›</button>');
     svSheet('<div class="svc-form"><div class="svc-fh"><div><b>SR ' + esc(F.sr) + ' · Service report</b><div class="sv-meta">Step ' + F.step + ' of 4 · ' + names[F.step - 1] + '</div></div><button class="sv-x" id="svcX" aria-label="Close and keep as draft">✕</button></div>' +
       '<div class="svc-prog"><i style="width:' + (F.step * 25) + '%"></i></div><div class="svc-body" id="svcBody">' + [svcS1, svcS2, svcS3, svcS4][F.step - 1](F) + '</div><div class="svc-foot">' + foot + '</div></div>');
     $('#svOv').onclick = null;   // do not close by tapping outside (avoid losing work)
@@ -2121,6 +2159,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var bk = $('#svcBack'); if (bk) bk.onclick = function () { svcRead(); F.step--; svcForm(); };
     var dr = $('#svcDraft'); if (dr) dr.onclick = function () { svcFinish('draft'); };
     var rd = $('#svcReady'); if (rd) rd.onclick = function () { svcFinish('ready'); };
+    var tm = $('#svcTeam'); if (tm) tm.onclick = function () { svcFinish('team'); };
     [svcB1, svcB2, svcB3, svcB4][F.step - 1](F);
   }
   function svcIn(id, label, val, o) { o = o || {}; return '<div class="svc-f' + (o.half ? ' half' : '') + '"><label for="' + id + '">' + label + (o.auto ? ' <span class="svc-auto">AUTO</span>' : '') + '</label>' + (o.area ? '<textarea id="' + id + '" rows="' + (o.rows || 2) + '">' + esc(val || '') + '</textarea>' : '<input id="' + id + '" type="' + (o.type || 'text') + '" value="' + esc(val || '') + '"' + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') + (o.mode ? ' inputmode="' + o.mode + '"' : '') + '>') + '</div>'; }
@@ -2307,10 +2346,10 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function svcS4(F) {
     var d = F.data, T = (SVC.set && SVC.set.techs) || [], mi = svcMissing(d, F.ph);
     return '<section class="svc-card"><h4>Technician ID <span class="svc-opt">choose 1 or 2</span></h4>' + (T.length ? '<div class="svc-chips">' + T.map(function (t) { var on = (d.techs || []).indexOf(t.id) >= 0; return '<button type="button" class="svc-chip' + (on ? ' on' : '') + '" data-tc="' + esc(t.id) + '" aria-pressed="' + on + '">' + esc(t.id) + (t.name ? ' · ' + esc(t.name) : '') + '</button>'; }).join('') + '</div>' : '<p class="sv-hint">No technicians saved yet.</p>') +
-      '<button class="sv-link" id="svcToSet">⚙ Add / change technicians</button></section>' +
+      (isTeam() ? '<p class="sv-hint">The technician list comes from your supervisor.</p>' : '<button class="sv-link" id="svcToSet">⚙ Add / change technicians</button>') + '</section>' +
       '<section class="svc-card"><h4>Completed by team <span class="svc-auto">AUTO</span></h4><div class="svc-grid">' + svcIn('sv4team', 'Name on the report', d.team, {}) + '</div>' +
-      '<div class="svc-lbl">Your signature (saved)</div>' + (SVC.set && SVC.set.sig_path ? '<div class="svc-sigv"><img id="svcMySig" alt="Your signature"></div>' : '<div class="svc-miss">No signature saved. <button class="sv-link" id="svcToSet2" style="padding:0">Open ⚙ Settings</button></div>') + '</section>' +
-      '<section class="svc-card"><h4>Check</h4>' + (mi.length ? '<div class="svc-miss">Missing: ' + esc(mi.join(', ')) + '</div>' : '<div class="sv-donel">✓ Everything is filled. Press <b>Ready for customer</b>.</div>') + (F.ph.before ? '' : '<div class="svc-miss" style="background:#fff7e6;color:#8a5a00">No before picture (recommended). Add it in step 2 from Maximo, the camera or the gallery.</div>') + '</section>';
+      (isTeam() ? '<div class="sv-hint">The supervisor checks the report and signs it.</div>' : '<div class="svc-lbl">Your signature (saved)</div>' + (SVC.set && SVC.set.sig_path ? '<div class="svc-sigv"><img id="svcMySig" alt="Your signature"></div>' : '<div class="svc-miss">No signature saved. <button class="sv-link" id="svcToSet2" style="padding:0">Open ⚙ Settings</button></div>')) + '</section>' +
+      '<section class="svc-card"><h4>Check</h4>' + (mi.length ? '<div class="svc-miss">Missing: ' + esc(mi.join(', ')) + '</div>' : '<div class="sv-donel">✓ Everything is filled. Press <b>' + (isTeam() ? 'Send to supervisor' : 'Ready for customer') + '</b>.</div>') + (F.ph.before ? '' : '<div class="svc-miss" style="background:#fff7e6;color:#8a5a00">No before picture (recommended). Add it in step 2 from Maximo, the camera or the gallery.</div>') + '</section>';
   }
   function svcB4(F) {
     var d = F.data; d.techs = d.techs || [];
@@ -2330,13 +2369,15 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   }
   async function svcFinish(status) {
     var F = SVC.F; if (SVC.busy) return; svcRead();
+    var team = status === 'team';
+    if (team) { var mt = svcMissing(F.data, F.ph); if (mt.length) { if (F.step !== 4) { F.step = 4; svcForm(); } return svToast('Missing: ' + mt.join(', '), true); } F.data.teamDone = true; F.data.teamAt = new Date().toISOString(); status = 'draft'; }
     if (status === 'ready') { var mi = svcMissing(F.data, F.ph); if (mi.length) { if (F.step !== 4) { F.step = 4; svcForm(); } return svToast('Missing: ' + mi.join(', '), true); } }
     if (status === 'ready' && !F.ph.before && !confirm('There is no BEFORE picture. Mark the report ready without it?')) { if (F.step !== 2) { F.step = 2; svcForm(); } return; }
     svcSetBusy(true);
     await svcSaveLocal(status, false);
     if (status === 'ready') { var u = (await svcKv('matuse')) || {}; (F.data.mats || []).forEach(function (m) { if (m.line) u[m.line] = (u[m.line] || 0) + 1; }); svcKv('matuse', u); }
     var msg;
-    try { await svcSync(F.sr); msg = status === 'ready' ? 'Ready — the report is in the Customer tab.' : 'Draft saved.'; }
+    try { await svcSync(F.sr); msg = status === 'ready' ? 'Ready — the report is in the Customer tab.' : team ? 'Sent to the supervisor — he checks it and sends it to the customer.' : 'Draft saved.'; }
     catch (e) { msg = 'Saved on this phone. It will upload when the network is back' + (navigator.onLine === false ? '' : ' (' + (e.message || e) + ')') + '.'; }
     svcSetBusy(false); SVC.F = null; svClose();
     SVC.tab = status === 'ready' ? 'cust' : 'draft'; svRepList(); svToast(msg);
@@ -2488,7 +2529,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     el.innerHTML = '<div class="notice">Loading reports from the phones…</div>';
     try {
       var rows = [];
-      for (var f = 0; ; f += 1000) { var r = await sb.from('svc_reports').select('sr,uid,owner,status,data,photos,sup_sig,cust,sent_at,created_at,updated_at,signed_at,mx_at').order('updated_at', { ascending: false }).range(f, f + 999); if (r.error) throw r.error; rows = rows.concat(r.data || []); if ((r.data || []).length < 1000) break; }
+      for (var f = 0; ; f += 1000) { var r = await sb.from('svc_reports').select('sr,uid,owner,status,data,photos,sup_sig,cust,sent_at,created_at,updated_at,signed_at,mx_at,prepared_name').order('updated_at', { ascending: false }).range(f, f + 999); if (r.error && /prepared_name/.test(r.error.message || '')) r = await sb.from('svc_reports').select('sr,uid,owner,status,data,photos,sup_sig,cust,sent_at,created_at,updated_at,signed_at,mx_at').order('updated_at', { ascending: false }).range(f, f + 999); if (r.error) throw r.error; rows = rows.concat(r.data || []); if ((r.data || []).length < 1000) break; }
       SVO.rows = rows;
       try { var sg = await sb.from('svc_settings').select('uid,sig_path'); SVO.sig = {}; (sg.data || []).forEach(function (x) { if (x.sig_path) SVO.sig[x.uid] = x.sig_path; }); } catch (e) { SVO.sig = {}; }
     } catch (e) { el.innerHTML = '<div class="notice">' + (/svc_reports|schema cache|does not exist/i.test(e.message || '') ? 'Phone service reports are not set up yet: run the update <b>16_SQL_storage_and_service_reports.sql</b> in Supabase.' : 'Could not load: ' + esc(e.message || e)) + '</div>'; return; }
@@ -2521,9 +2562,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="tw" style="max-height:520px"><table class="t"><thead><tr><th><input type="checkbox" id="svoAll" aria-label="Select all"></th><th>SR</th><th>Location</th><th>Supervisor</th><th>Status</th><th>Customer</th><th>Quality / Response</th><th>Signed</th><th>Maximo</th><th></th></tr></thead><tbody>' +
       list.slice(0, 400).map(function (r) {
         var d = r.data || {}, c = r.cust || {}, st = { signed: '<span class="pill good">Signed</span>', sent: '<span class="pill avg">Link sent</span>', ready: '<span class="pill avg">Ready</span>', draft: '<span class="pill na">Draft</span>' }[r.status];
-        return '<tr><td><input type="checkbox" data-svo="' + esc(r.sr) + '"' + (SVO.sel[r.sr] ? ' checked' : '') + ' aria-label="Select SR ' + esc(r.sr) + '"></td><td>' + esc(r.sr) + '</td><td>' + esc(d.loc || '') + '</td><td>' + esc(r.owner || d.team || '') + '</td><td>' + st + '</td><td>' + esc(svcCustTxt(c.name ? c : d.cust)) + '</td><td>' + (c.quality ? esc(c.quality) + ' / ' + esc(c.response) : '—') + '</td>' +
+        return '<tr><td><input type="checkbox" data-svo="' + esc(r.sr) + '"' + (SVO.sel[r.sr] ? ' checked' : '') + ' aria-label="Select SR ' + esc(r.sr) + '"></td><td>' + esc(r.sr) + '</td><td>' + esc(d.loc || '') + '</td><td>' + esc(r.owner || d.team || '') + (r.prepared_name ? '<div class="muted" style="font-size:.72rem">team: ' + esc(r.prepared_name) + '</div>' : '') + '</td><td>' + st + '</td><td>' + esc(svcCustTxt(c.name ? c : d.cust)) + '</td><td>' + (c.quality ? esc(c.quality) + ' / ' + esc(c.response) : '—') + '</td>' +
           '<td>' + (r.signed_at ? esc(String(r.signed_at).slice(0, 16).replace('T', ' ')) + (c.method === 'link' ? ' · link' : ' · on site') : '—') + '</td><td>' + (r.mx_at ? '✓ ' + esc(String(r.mx_at).slice(0, 10)) : '—') + '</td>' +
-          '<td style="white-space:nowrap">' + (r.status === 'signed' ? '<button class="btn xs" data-svp="' + esc(r.sr) + '">PDF</button> <button class="btn xs" data-svx="' + esc(r.sr) + '">Excel</button>' + (profile.role === 'admin' ? ' <button class="btn xs" data-svr="' + esc(r.sr) + '" title="Admin: re-open so the customer can sign again">Re-open</button>' : '') : '<button class="btn xs" data-svp="' + esc(r.sr) + '">Preview PDF</button>') + '</td></tr>';
+          '<td style="white-space:nowrap">' + (r.status === 'signed' ? '<button class="btn xs" data-svp="' + esc(r.sr) + '">PDF</button> <button class="btn xs" data-svx="' + esc(r.sr) + '">Excel</button>' + '' : '<button class="btn xs" data-svp="' + esc(r.sr) + '">Preview PDF</button>') + (apCanEdit() ? (r.status !== 'draft' ? ' <button class="btn xs" data-svr="' + esc(r.sr) + '" title="Back to the supervisor as a draft; the customer signs again">Re-open</button>' : '') + ' <button class="btn xs danger" data-svd="' + esc(r.sr) + '" title="Delete a wrong report">Delete</button>' : '') + '</td></tr>';
       }).join('') + '</tbody></table></div>' + (list.length > 400 ? '<p class="muted">Showing 400 of ' + list.length + '. Use the filters.</p>' : '') + (!list.length ? '<p class="muted">No reports for these filters.</p>' : '');
     var re = function () { SVO.sel = {}; svoDraw(); };
     $('#svoSt').onchange = function (e) { SVO.f.st = e.target.value; re(); }; $('#svoOw').onchange = function (e) { SVO.f.own = e.target.value; re(); }; $('#svoMx').onchange = function (e) { SVO.f.mx = e.target.value; re(); };
@@ -2534,7 +2575,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var row = function (sr) { return SVO.rows.filter(function (r) { return r.sr === sr; })[0]; };
     svcAll('[data-svp]').forEach(function (b) { b.onclick = async function () { b.disabled = true; try { var bl = await svcPdf(row(b.getAttribute('data-svp'))); svcSave(bl, 'Service_Report_SR_' + b.getAttribute('data-svp') + '.pdf'); } catch (e) { setMsg('svoSt2', e.message || String(e), 'err'); } b.disabled = false; }; });
     svcAll('[data-svx]').forEach(function (b) { b.onclick = async function () { b.disabled = true; try { var bl = await svcXlsx(row(b.getAttribute('data-svx'))); svcSave(bl, 'Service_Report_SR_' + b.getAttribute('data-svx') + '.xlsx'); } catch (e) { setMsg('svoSt2', e.message || String(e), 'err'); } b.disabled = false; }; });
-    svcAll('[data-svr]').forEach(function (b) { b.onclick = async function () { if (!confirm('Re-open SR ' + b.getAttribute('data-svr') + '? The customer signature is removed and the report goes back to "Ready".')) return; var r = await sb.rpc('svc_reopen', { p_sr: b.getAttribute('data-svr') }); if (r.error) return setMsg('svoSt2', r.error.message, 'err'); svcOffice(SVO.el); }; });
+    svcAll('[data-svr]').forEach(function (b) { b.onclick = async function () { if (!confirm('Re-open SR ' + b.getAttribute('data-svr') + '? It goes back to the supervisor as a draft; any customer signature is removed and the customer signs again.')) return; var r = await sb.rpc('svc_withdraw', { p_sr: b.getAttribute('data-svr'), p_action: 'edit' }); if (r.error) return setMsg('svoSt2', r.error.message, 'err'); svcOffice(SVO.el); }; });
+    svcAll('[data-svd]').forEach(function (b) { b.onclick = async function () { if (!confirm('Delete the report of SR ' + b.getAttribute('data-svd') + '? This cannot be undone. If it was signed, the SR needs a service report again.')) return; var r = await sb.rpc('svc_withdraw', { p_sr: b.getAttribute('data-svd'), p_action: 'delete' }); if (r.error) return setMsg('svoSt2', r.error.message, 'err'); svcOffice(SVO.el); }; });
     var sel = function () { return list.filter(function (r) { return SVO.sel[r.sr]; }); };
     $('#svoZip').onclick = async function () {
       var b = this, S = sel(); b.disabled = true;
@@ -2657,7 +2699,250 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
 
 
 
-  window.DM_CLOUD = { svcOffice: svcOffice, reportsAdd: reportsAdd, reportsRemove: reportsRemove, reportsReload: reportsReload, syncKeyNew: syncKeyNew, syncKeyRevoke: syncKeyRevoke, syncScript: syncScript, syncCmd: syncCmd, emgList: emgList, emgFlag: emgFlag, emgClear: emgClear, emgPushStatus: emgPushStatus, emgSaveCfg: emgSaveCfg, purgePhotos: purgePhotos, rmActivity: rmActivity, materials: materials, matDecide: matDecide, photoUrls: photoUrls, loadUtil: loadUtil, utilSave: utilSave, utilDropMonth: utilDropMonth, utilZoneSet: utilZoneSet, photoCounts: photoCounts, photoCount: photoCount, loadFlags: loadFlags, flagOf: flagOf, flagLabel: flagLabel, flagPill: flagPill, flagCanSet: flagCanSet, flagFormHTML: flagFormHTML, flagFormBind: flagFormBind, FLAGS: FLAGS, srPhotos: srPhotos, photoStrip: photoStrip, gallery: gallery, mxAllowed: mxAllowed, mxKeyNew: mxKeyNew, mxStatus: mxStatus, mxScript: mxScript, rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
+  /* ===================== v4.27: team account, transfer Civil/MEP, edit/delete within 24 h, after photos ===================== */
+  function isTeam() { return !!(profile && profile.role === 'team'); }
+  function svcHoursLeft(at) { if (!at) return 0; return Math.max(0, 24 - (Date.now() - Date.parse(at)) / 3600e3); }
+
+  // ---------- edit / delete a report (supervisor: before signature, or within 24 h of it; team: own drafts)
+  async function svcWithdraw(sr, action) {
+    var o = svcOf(sr), signed = o.st === 'signed';
+    var q = action === 'delete' ? 'Delete the report of SR ' + sr + '?' + (signed ? ' The customer signature is removed and the SR needs a report again.' : '') : 'Re-open the report of SR ' + sr + ' to edit it? The customer signature is removed; the customer signs again.';
+    if (!confirm(q)) return;
+    if (!o.srv) { delete SVC.local[sr]; await svcLocalDel(sr); svToast('Draft deleted.'); return svRepList(); }
+    try {
+      var r = await sb.rpc('svc_withdraw', { p_sr: sr, p_action: action }); if (r.error) throw r.error;
+      delete SVC.local[sr]; await svcLocalDel(sr);
+      if (action === 'delete') delete SVC.list[sr];
+      else SVC.list[sr] = Object.assign({}, SVC.list[sr], { status: 'draft', cust: null, signed_at: null, sent_at: null });
+      if (signed) { try { SV.reps = await rpcAll('my_reports_needed'); SV.reps.forEach(function (x) { x.rd = +x.rd; }); } catch (e) { } }
+      SVC.tab = action === 'delete' ? 'todo' : 'draft'; svToast(action === 'delete' ? 'Report deleted.' : 'Report re-opened — edit it and send it again.'); svRepList();
+    } catch (e) { svToast(e.message || String(e), true); }
+  }
+
+  // ---------- transfer an SR between MEP and Civil (supervisor phone)
+  var XFER_T = null;
+  async function svXferTargets() { if (XFER_T) return XFER_T; var r = await sb.rpc('sr_xfer_targets'); if (r.error) throw r.error; return (XFER_T = r.data || { civil: {}, mep: [] }); }
+  async function svTransfer(row, after) {
+    var T, cur; try { T = await svXferTargets(); var ik = await sb.rpc('sr_xfer_info', { p_sr: row.id }); if (ik.error) throw ik.error; cur = (ik.data || {}).kind; } catch (e) { return svToast('Transfer is not available yet (' + (e.message || e) + ').', true); }
+    if (!cur) return svToast('SR ' + row.id + ' is not in the portal.', true);
+    if (cur === 'ADHOC') return svToast('AD-HOC works cannot be transferred.', true);
+    var to = cur === 'CIVIL' ? 'MEP' : 'CIVIL', z = row.fz === 'K' ? 'H' : row.fz, civ = (T.civil || {})[z] || 'the civil supervisor of zone ' + (row.fz || '?');
+    svSheet('<div class="sv-shh"><div><b>Transfer SR ' + esc(row.id) + '</b><div class="sv-meta">' + esc(String(row.locd || '').replace(/_/g, ' · ')) + '</div></div><button class="sv-x" id="svX" aria-label="Close">✕</button></div>' +
+      '<p style="margin:12px 0 6px">This SR is now <b>' + (cur === 'CIVIL' ? 'Civil' : 'MEP') + '</b>. Transfer it to <b>' + (to === 'CIVIL' ? 'Civil' : 'MEP') + '</b> if the work belongs to the other team. It leaves your list and appears in the other supervisor\'s list.</p>' +
+      (to === 'CIVIL' ? '<div class="svc-banner">It will go to <b>' + esc(civ) + '</b> (civil supervisor of zone ' + esc(row.fz || '?') + ').</div>'
+        : '<label class="sv-lbl" for="xfSup">MEP supervisor</label><select id="xfSup" class="sv-in"><option value="">Choose…</option>' + (T.mep || []).map(function (n) { return '<option>' + esc(n) + '</option>'; }).join('') + '</select>') +
+      '<label class="sv-lbl" for="xfNote">Reason (optional)</label><input id="xfNote" class="sv-in" maxlength="300" placeholder="e.g. plumbing leak, not civil">' +
+      '<button class="sv-go" id="xfGo">⇄ Transfer to ' + (to === 'CIVIL' ? 'Civil' : 'MEP') + '</button><div class="status" id="xfSt"></div>');
+    $('#svX').onclick = svClose;
+    $('#xfGo').onclick = async function () {
+      var sup = to === 'MEP' ? ($('#xfSup') || {}).value : null; if (to === 'MEP' && !sup) return setMsg('xfSt', 'Choose the MEP supervisor.', 'err');
+      var b = $('#xfGo'); b.disabled = true;
+      var r = await sb.rpc('sr_transfer', { p_sr: row.id, p_kind: to, p_sup: sup || '', p_note: ($('#xfNote') || {}).value || '' });
+      if (r.error) { b.disabled = false; return setMsg('xfSt', r.error.message, 'err'); }
+      svClose(); svToast('SR ' + row.id + ' transferred to ' + r.data.owner + '.');
+      if (after) after(); else supervisorApp();
+    };
+  }
+
+  // ---------- after photos: phone list
+  function apOn() { return Array.isArray(SV.ap); }
+  async function apLoad() { try { var rows = await apRpcAll('ap_my_list'); rows.forEach(function (x) { x.rd = +x.rd; }); SV.ap = rows; } catch (e) { SV.ap = null; } }
+  function apPending() { return (SV.ap || []).filter(function (x) { return x.status !== 'done'; }).length; }
+  function apBefore(x) { return (x.before || []).map(function (b) { return typeof b === 'string' ? b : b.p; }).filter(Boolean); }
+  function apListHTML() {
+    var q = SV.q.trim().toLowerCase(), tab = SV.apTab || 'todo';
+    var list = (SV.ap || []).filter(function (x) {
+      if ((tab === 'todo') === (x.status === 'done')) return false;
+      if (SV.area && svArea(x) !== SV.area) return false;
+      return !q || (x.sr + ' ' + (x.wo || '') + ' ' + (x.summary || '') + ' ' + (x.locd || '') + ' ' + (x.area || '')).toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a, b) { return tab === 'todo' ? a.rd - b.rd : String(b.done_at || '') < String(a.done_at || '') ? -1 : 1; });
+    var nTodo = apPending(), nDone = (SV.ap || []).length - nTodo;
+    var h = '<div class="svc-tabs" role="tablist"><button role="tab" class="svc-tab" data-apt="todo" aria-selected="' + (tab === 'todo') + '">Need after photo' + (nTodo ? ' <i>' + nTodo + '</i>' : '') + '</button><button role="tab" class="svc-tab" data-apt="done" aria-selected="' + (tab === 'done') + '">Sent (' + nDone + ')</button></div>' +
+      '<div class="sv-hint" style="margin:0 0 8px">These works are finished; the customer asked for an <b>after photo</b>. Open each SR, take the photo of the same place as the before photo, and send it.</div>';
+    h += list.slice(0, 200).map(function (x) {
+      var nb = apBefore(x).length, done = x.status === 'done', left = svcHoursLeft(x.done_at);
+      return '<article class="sv-card ' + (done ? 'svc-c-signed' : 's-rep') + '" data-ap="' + esc(x.sr) + '"><div class="sv-row"><b class="sv-sr">SR ' + esc(x.sr) + '</b>' + (done ? '<span class="svc-pill svc-p-good">Sent</span>' : '<span class="pill poor">After photo</span>') + '<span class="sv-days">📷 ' + nb + ' before</span></div>' +
+        '<div class="sv-meta">' + esc(SV_TR[x.tr] || x.tr || '') + ' · Zone ' + esc(x.fz || '?') + ' · ' + esc(svArea(x)) + (x.wo ? ' · WO ' + esc(x.wo) : '') + '</div>' +
+        '<div class="sv-loc">' + esc(String(x.locd || '').replace(/_/g, ' · ')) + '</div><div class="sv-sum2">' + esc(x.summary || '') + '</div>' +
+        (done ? '<div class="sv-donel">✓ Sent by ' + esc(x.done_name || '') + ' · ' + esc(String(x.done_at || '').slice(0, 16).replace('T', ' ')) + '</div>' + (left > 0 ? '<button class="sv-b" data-apa="open" style="width:100%;margin-top:8px">↺ Replace photos (' + Math.ceil(left) + ' h left)</button>' : '')
+          : '<div class="svc-btn3" style="grid-template-columns:2fr 1fr"><button class="sv-b svc-pri" data-apa="open">📷 Add after photo</button>' + (isTeam() ? '<span></span>' : '<button class="sv-b" data-apa="xfer">⇄ Transfer</button>') + '</div>') + '</article>';
+    }).join('');
+    if (!list.length) h += '<p class="sv-empty">' + (tab === 'todo' ? 'No SR is waiting for an after photo. ✓' : 'Nothing sent yet.') + '</p>';
+    else if (list.length > 200) h += '<p class="sv-empty">Showing 200 of ' + list.length + '. Use search.</p>';
+    return h;
+  }
+  function apBindList() {
+    svcAll('[data-apt]').forEach(function (b) { b.onclick = function () { SV.apTab = b.getAttribute('data-apt'); svList(); }; });
+    svcAll('#svList [data-apa]').forEach(function (b) {
+      b.onclick = function () { var sr = b.closest('[data-ap]').getAttribute('data-ap'), x = (SV.ap || []).filter(function (y) { return y.sr === sr; })[0]; if (!x) return; if (b.getAttribute('data-apa') === 'xfer') svTransfer({ id: x.sr, tr: x.tr, fz: x.fz, locd: x.locd }, async function () { await apLoad(); svDraw(); }); else apSheet(x); };
+    });
+  }
+  async function apSheet(x) {
+    var store = [], nb = apBefore(x);
+    svSheet('<div class="sv-shh"><div><b>SR ' + esc(x.sr) + ' · After photo</b><div class="sv-meta">' + esc(String(x.locd || '').replace(/_/g, ' · ')) + '</div><div class="sv-sum2">' + esc(x.summary || '') + '</div></div><button class="sv-x" id="svX" aria-label="Close">✕</button></div>' +
+      '<section class="svc-card"><h4>Before (' + nb.length + ') <span class="svc-opt">tap to enlarge</span></h4><div class="ap-bf">' + nb.map(function (p, i) { return '<img data-apb="' + i + '" alt="Before photo ' + (i + 1) + '">'; }).join('') + (nb.length ? '' : '<p class="sv-hint">No before photo was uploaded for this SR.</p>') + '</div></section>' +
+      '<section class="svc-card"><h4>After photo <span class="svc-opt">1 to 6 · same place as the before photo</span></h4><div class="sv-th" id="apTh"></div><div class="svc-phb" style="margin-top:8px"><label class="sv-b">📷 Camera<input type="file" accept="image/*" capture="environment" data-apf="1" multiple hidden></label><label class="sv-b">🖼 Gallery<input type="file" accept="image/*" data-apf="1" multiple hidden></label></div></section>' +
+      '<label class="sv-lbl" for="apNote">Note (optional)</label><input id="apNote" class="sv-in" maxlength="300" value="' + esc(x.note || '') + '">' +
+      '<div class="svc-foot"><button class="sv-b svc-good svc-wide" id="apGo">Send to office ›</button></div>');
+    $('#svX').onclick = svClose;
+    var urls = await photoUrls(nb); svcAll('[data-apb]').forEach(function (im) { var p = nb[+im.getAttribute('data-apb')]; im.src = urls[p] || ''; im.onclick = function () { apZoom(urls[p]); }; });
+    function draw() { $('#apTh').innerHTML = store.map(function (s, i) { return '<span class="sv-tm"><img src="' + s.u + '" alt="After ' + (i + 1) + '"><button data-apx="' + i + '" aria-label="Remove">✕</button></span>'; }).join(''); svcAll('[data-apx]').forEach(function (b) { b.onclick = function () { store.splice(+b.getAttribute('data-apx'), 1); draw(); }; }); }
+    svcAll('[data-apf]').forEach(function (inp) { inp.onchange = async function () { var fs = Array.prototype.slice.call(inp.files || []); inp.value = ''; for (var i = 0; i < fs.length && store.length < 6; i++) { try { var bl = await svShrink(fs[i]); store.push({ b: bl, u: URL.createObjectURL(bl) }); } catch (e) { svToast(e.message, true); } } draw(); }; });
+    $('#apGo').onclick = async function () {
+      if (!store.length) return svToast('Add the after photo first.', true);
+      if (navigator.onLine === false) return svToast('No network. Try again when connected.', true);
+      var b = $('#apGo'); b.disabled = true; b.textContent = 'Sending…';
+      try {
+        var paths = [];
+        for (var i = 0; i < store.length; i++) { b.textContent = 'Sending photo ' + (i + 1) + ' of ' + store.length + '…'; var up = await phPost('a=apup&kind=after&sr=' + encodeURIComponent(x.sr), store[i].b, 'image/jpeg'); paths.push(up.path); }
+        var r = await sb.rpc('ap_submit', { p_sr: x.sr, p_after: paths, p_note: ($('#apNote') || {}).value || '' }); if (r.error) throw r.error;
+        x.status = 'done'; x.after = paths; x.done_at = new Date().toISOString(); x.done_name = profile.full_name || profile.email; x.note = ($('#apNote') || {}).value || '';
+        svClose(); svToast('SR ' + x.sr + ': after photo sent ✓'); svDraw();
+      } catch (e) { svToast('Not sent: ' + (e.message || e), true); b.disabled = false; b.textContent = 'Send to office ›'; }
+    };
+  }
+  function apZoom(u) { if (!u) return; var ov = document.createElement('div'); ov.className = 'ap-zoom'; ov.innerHTML = '<img alt="Photo" src="' + u + '">'; ov.onclick = function () { ov.remove(); }; document.body.appendChild(ov); }
+
+  // ---------- after photos: office (upload list + before photos, follow-up, A4 PDF)
+  var APO = { rows: null, f: { st: '', own: '', q: '', list: '' }, sel: {}, el: null, files: null, stop: false };
+  function apCanEdit() { return profile && (profile.role === 'admin' || profile.role === 'operator'); }
+  async function apRpcAll(name) { var rows = [], from = 0; for (;;) { var r = await sb.rpc(name).order('sr').range(from, from + 999); if (r.error) throw r.error; rows = rows.concat(r.data || []); if (!r.data || r.data.length < 1000) break; from += 1000; } return rows; }
+  async function apOffice(el) {
+    if (!el) return; APO.el = el; el.innerHTML = '<div class="notice">Loading…</div>';
+    try { APO.rows = await apRpcAll('ap_list'); APO.rows.forEach(function (x) { x.rd = +x.rd; }); }
+    catch (e) { el.innerHTML = '<div class="notice">' + (/ap_list|schema cache|does not exist/i.test(e.message || '') ? 'Not set up yet: run the update <b>18_SQL_team_withdraw_after_photos.sql</b> in Supabase.' : 'Could not load: ' + esc(e.message || e)) + '</div>'; return; }
+    apDraw();
+  }
+  function apFiltered() {
+    var f = APO.f, q = f.q.trim().toLowerCase();
+    return APO.rows.filter(function (x) {
+      if (f.st === 'done' && x.status !== 'done') return false; if (f.st === 'pending' && x.status === 'done') return false;
+      if (f.st === 'nobefore' && apBefore(x).length) return false; if (f.st === 'notrk' && x.in_tracker) return false;
+      if (f.own && x.owner !== f.own) return false; if (f.list && (x.list_name || '') !== f.list) return false;
+      return !q || (x.sr + ' ' + (x.locd || '') + ' ' + (x.summary || '') + ' ' + (x.owner || '')).toLowerCase().indexOf(q) >= 0;
+    });
+  }
+  function apDraw() {
+    var R = APO.rows, el = APO.el, done = R.filter(function (x) { return x.status === 'done'; }).length, nob = R.filter(function (x) { return !apBefore(x).length; }).length, notrk = R.filter(function (x) { return !x.in_tracker; }).length;
+    var owners = R.map(function (x) { return x.owner; }).filter(function (x, i, a) { return x && a.indexOf(x) === i; }).sort(), lists = R.map(function (x) { return x.list_name || ''; }).filter(function (x, i, a) { return x && a.indexOf(x) === i; });
+    var list = apFiltered(), f = APO.f, o = function (v, t, c) { return '<option value="' + esc(v) + '"' + (v === c ? ' selected' : '') + '>' + esc(t) + '</option>'; }, nsel = list.filter(function (x) { return APO.sel[x.sr]; }).length;
+    var byOwn = {}; R.forEach(function (x) { var k = x.owner || (x.in_tracker ? 'Unassigned' : 'Not in tracker'); byOwn[k] = byOwn[k] || [0, 0]; byOwn[k][0]++; if (x.status === 'done') byOwn[k][1]++; });
+    el.innerHTML = '<div class="kpis">' + [['SRs in the list', R.length, lists.length ? lists.join(' · ') : 'temporary list'], ['After photo received', done, R.length ? Math.round(100 * done / R.length) + '% done' : ''], ['Waiting', R.length - done, 'on the supervisors\' phones'], ['No before photo yet', nob, 'upload them below'], ['Not in the tracker', notrk, 'no supervisor can see them']].map(function (x) { return '<div class="kpi"><span class="l">' + x[0] + '</span><span class="v">' + x[1] + '</span><span class="s">' + x[2] + '</span></div>'; }).join('') + '</div>' +
+      (apCanEdit() ? '<div class="grid" style="margin-top:12px"><div class="panel"><h3>1 · SR list<small>Excel (all sheets, first column) or paste numbers</small></h3><div class="form"><div class="f"><label for="apLn">List name</label><input id="apLn" placeholder="e.g. Civil/MEP Oct-2026" maxlength="60"></div><div class="f"><label for="apXl">Excel file</label><input type="file" id="apXl" accept=".xlsx,.xls,.csv"></div><div class="f full"><label for="apPs">Or paste SR numbers</label><textarea id="apPs" rows="2" style="width:100%"></textarea></div><div class="f full"><button class="btn primary" id="apAddL">Add to the list</button></div></div><div class="status" id="apSt1"></div></div>' +
+        '<div class="panel"><h3>2 · Before photos<small>from your PC — the SR number must be in the file or folder name</small></h3><p class="muted" style="margin:0 0 8px">Examples: <code>12345.jpg</code>, <code>12345_2.jpg</code>, <code>SR 12345 (1).jpeg</code> or a folder <code>12345\\photo.jpg</code>. Photos are made smaller (about 200 KB) before upload. Photos already uploaded are skipped, so you can run it again.</p><div class="form"><div class="f"><label for="apDir">Choose a folder</label><input type="file" id="apDir" webkitdirectory multiple></div><div class="f"><label for="apFs">Or choose photos</label><input type="file" id="apFs" accept="image/*" multiple></div></div><div id="apPrev"></div><div class="status" id="apSt2"></div></div></div>' : '') +
+      '<div class="panel" style="margin-top:12px"><h3>By supervisor</h3><div class="tw"><table class="t"><thead><tr><th>Supervisor</th><th class="n">SRs</th><th class="n">After photo received</th><th class="n">Waiting</th><th class="n">Done %</th></tr></thead><tbody>' + Object.keys(byOwn).sort().map(function (k) { var v = byOwn[k]; return '<tr><td>' + esc(k) + '</td><td class="n">' + v[0] + '</td><td class="n">' + v[1] + '</td><td class="n">' + (v[0] - v[1]) + '</td><td class="n">' + Math.round(100 * v[1] / v[0]) + '%</td></tr>'; }).join('') + '</tbody></table></div></div>' +
+      '<div class="filters" style="margin:12px 0 8px;padding:0"><div class="f"><label for="apF1">Status</label><select id="apF1">' + o('', 'All', f.st) + o('done', 'After photo received', f.st) + o('pending', 'Waiting', f.st) + o('nobefore', 'No before photo', f.st) + o('notrk', 'Not in the tracker', f.st) + '</select></div>' +
+      '<div class="f"><label for="apF2">Supervisor</label><select id="apF2">' + o('', 'All supervisors', f.own) + owners.map(function (x) { return o(x, x, f.own); }).join('') + '</select></div>' + (lists.length > 1 ? '<div class="f"><label for="apF3">List</label><select id="apF3">' + o('', 'All lists', f.list) + lists.map(function (x) { return o(x, x, f.list); }).join('') + '</select></div>' : '') +
+      '<div class="f"><label for="apF4">Search</label><input id="apF4" type="search" value="' + esc(f.q) + '" placeholder="SR, location"></div></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn primary" id="apPdf"' + (nsel ? '' : ' disabled') + '>⬇ Before/After PDF (' + nsel + ' selected)</button>' + (apCanEdit() ? '<button class="btn" id="apReset"' + (nsel ? '' : ' disabled') + '>Back to waiting</button><button class="btn" id="apDel"' + (nsel ? '' : ' disabled') + '>Remove from list</button>' : '') + '<span class="status" id="apSt3"></span></div>' +
+      '<div class="tw" style="max-height:520px"><table class="t"><thead><tr><th><input type="checkbox" id="apAll" aria-label="Select all"></th><th>SR</th><th>Location</th><th>Zone</th><th>Supervisor</th><th class="n">Before</th><th class="n">After</th><th>Status</th><th>Sent by</th></tr></thead><tbody>' +
+      list.slice(0, 500).map(function (x) { return '<tr><td><input type="checkbox" data-aps="' + esc(x.sr) + '"' + (APO.sel[x.sr] ? ' checked' : '') + '></td><td>' + esc(x.sr) + '</td><td>' + esc(String(x.locd || (x.in_tracker ? '' : 'Not in the tracker')).replace(/_/g, ' · ')) + '</td><td>' + esc(x.fz || '') + '</td><td>' + esc(x.owner || '') + '</td><td class="n">' + apBefore(x).length + '</td><td class="n">' + (x.after || []).length + '</td><td>' + (x.status === 'done' ? '<span class="pill good">Received</span>' : '<span class="pill avg">Waiting</span>') + '</td><td>' + (x.done_at ? esc(x.done_name || '') + ' · ' + esc(String(x.done_at).slice(0, 16).replace('T', ' ')) : '—') + '</td></tr>'; }).join('') +
+      '</tbody></table></div>' + (list.length > 500 ? '<p class="muted">Showing 500 of ' + list.length + '. Use the filters; "select all" selects all ' + list.length + '.</p>' : '');
+    var re = function () { APO.sel = {}; apDraw(); };
+    $('#apF1').onchange = function (e) { APO.f.st = e.target.value; re(); }; $('#apF2').onchange = function (e) { APO.f.own = e.target.value; re(); }; if ($('#apF3')) $('#apF3').onchange = function (e) { APO.f.list = e.target.value; re(); };
+    var qt; $('#apF4').oninput = function (e) { clearTimeout(qt); qt = setTimeout(function () { APO.f.q = e.target.value; apDraw(); var x = $('#apF4'); x.focus(); x.setSelectionRange(x.value.length, x.value.length); }, 300); };
+    svcAll('[data-aps]').forEach(function (c) { c.onchange = function () { var s = c.getAttribute('data-aps'); if (c.checked) APO.sel[s] = 1; else delete APO.sel[s]; apDraw(); }; });
+    $('#apAll').checked = !!list.length && list.every(function (x) { return APO.sel[x.sr]; });
+    $('#apAll').onchange = function (e) { list.forEach(function (x) { if (e.target.checked) APO.sel[x.sr] = 1; else delete APO.sel[x.sr]; }); apDraw(); };
+    var sel = function () { return list.filter(function (x) { return APO.sel[x.sr]; }); };
+    $('#apPdf').onclick = function () { apPdf(sel()); };
+    if (apCanEdit()) {
+      $('#apReset').onclick = async function () { var S = sel().map(function (x) { return x.sr; }); if (!confirm(S.length + ' SR(s) back to "waiting"? Their after photos are removed from the list.')) return; var r = await sb.rpc('ap_reset', { p_srs: S }); if (r.error) return setMsg('apSt3', r.error.message, 'err'); apOffice(APO.el); };
+      $('#apDel').onclick = async function () { var S = sel().map(function (x) { return x.sr; }); if (!confirm('Remove ' + S.length + ' SR(s) from the after-photos list?')) return; for (var i = 0; i < S.length; i += 1000) { var r = await sb.rpc('ap_remove', { p_srs: S.slice(i, i + 1000) }); if (r.error) return setMsg('apSt3', r.error.message, 'err'); } apOffice(APO.el); };
+      $('#apAddL').onclick = apAddList;
+      $('#apDir').onchange = function (e) { apPick(e.target.files); }; $('#apFs').onchange = function (e) { apPick(e.target.files); };
+    }
+  }
+  async function apAddList() {
+    var nums = [], seen = {}, add = function (v) { v = String(v == null ? '' : v).trim().replace(/\.0+$/, ''); if (/^\d{3,9}$/.test(v) && !seen[v]) { seen[v] = 1; nums.push(v); } };
+    String(($('#apPs') || {}).value || '').split(/[\s,;]+/).forEach(add);
+    var f = ($('#apXl') || {}).files; f = f && f[0];
+    try {
+      if (f) { await svcLib('xlsx', function () { return !!window.XLSX; }); var wb = XLSX.read(await f.arrayBuffer(), { type: 'array' }); wb.SheetNames.forEach(function (n) { XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: null }).forEach(function (row) { if (row) add(typeof row[0] === 'number' ? Math.round(row[0]) : row[0]); }); }); }
+      if (!nums.length) return setMsg('apSt1', 'No SR numbers found.', 'err');
+      var ln = (($('#apLn') || {}).value || '').trim() || (f ? f.name.replace(/\.[^.]+$/, '') : '');
+      for (var i = 0; i < nums.length; i += 1000) { setMsg('apSt1', 'Adding ' + Math.min(i + 1000, nums.length) + ' of ' + nums.length + '…'); var r = await sb.rpc('ap_add', { p_items: nums.slice(i, i + 1000).map(function (s) { return { sr: s }; }), p_list: ln }); if (r.error) throw r.error; }
+      setMsg('apSt1', nums.length + ' SRs added to the list.', 'ok'); await apOffice(APO.el); setMsg('apSt1', nums.length + ' SRs added to the list.', 'ok');
+    } catch (e) { setMsg('apSt1', e.message || String(e), 'err'); }
+  }
+  SVC_LIBS.xlsx = window.DM_LOCAL_LIBS ? 'lib-xlsx.js' : 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  function apSrOf(path, known) {
+    var ms = String(path).match(/\d{3,9}/g) || [];
+    for (var i = 0; i < ms.length; i++) if (known[ms[i]]) return ms[i];
+    return null;
+  }
+  function apPick(fl) {
+    var files = Array.prototype.filter.call(fl || [], function (f) { return /^image\//.test(f.type) || /\.(jpe?g|png|heic|webp)$/i.test(f.name); });
+    var known = {}; APO.rows.forEach(function (x) { known[x.sr] = x; });
+    var have = {}; APO.rows.forEach(function (x) { (x.before || []).forEach(function (b) { if (b && b.n) have[x.sr + '|' + b.n] = 1; }); });
+    var m = [], un = [], dup = 0;
+    files.forEach(function (f) { var rel = f.webkitRelativePath || f.name, sr = apSrOf(rel, known); if (!sr) un.push(rel); else if (have[sr + '|' + rel]) dup++; else m.push({ f: f, sr: sr, n: rel.slice(-120) }); });
+    APO.files = m;
+    var srs = {}; m.forEach(function (x) { srs[x.sr] = 1; });
+    $('#apPrev').innerHTML = '<div class="notice"><b>' + files.length + ' photos</b> · ' + m.length + ' to upload for ' + Object.keys(srs).length + ' SRs · ' + dup + ' already uploaded · ' + un.length + ' with no SR of the list in the name' + (un.length ? ' <details><summary>show</summary><div style="max-height:120px;overflow:auto;font-size:.8rem">' + un.slice(0, 300).map(esc).join('<br>') + '</div></details>' : '') +
+      (m.length ? '<div style="margin-top:8px"><button class="btn primary" id="apUp">Upload ' + m.length + ' photos</button> <button class="btn" id="apStop" disabled>Stop</button></div><div class="bar-p" style="margin-top:8px"><span id="apBar" style="width:0%"></span></div>' : '') + '</div>';
+    var up = $('#apUp'); if (up) up.onclick = apUpload;
+  }
+  async function apUpload() {
+    var m = APO.files || [], done = 0, bad = 0, batch = [], t0 = Date.now(); APO.stop = false;
+    $('#apUp').disabled = true; $('#apStop').disabled = false; $('#apStop').onclick = function () { APO.stop = true; };
+    var flush = async function () { if (!batch.length) return; var g = {}; batch.forEach(function (b) { (g[b.sr] = g[b.sr] || []).push({ p: b.p, n: b.n }); }); var r = await sb.rpc('ap_add', { p_items: Object.keys(g).map(function (k) { return { sr: k, before: g[k] }; }), p_list: null }); if (r.error) throw r.error; batch = []; };
+    var pool = 3, idx = 0;
+    async function worker() {
+      while (idx < m.length && !APO.stop) {
+        var x = m[idx++];
+        try { var bl = await svShrink(x.f); var up = await phPost('a=apup&kind=before&sr=' + encodeURIComponent(x.sr), bl, 'image/jpeg'); batch.push({ sr: x.sr, p: up.path, n: x.n }); done++; if (batch.length >= 25) await flush(); }
+        catch (e) { bad++; }
+        var el = $('#apBar'); if (el) el.style.width = Math.round(100 * (done + bad) / m.length) + '%';
+        var sec = (Date.now() - t0) / 1000, rem = (done + bad) ? Math.round(sec / (done + bad) * (m.length - done - bad) / 60) : 0;
+        setMsg('apSt2', 'Uploaded ' + done + ' of ' + m.length + (bad ? ' · ' + bad + ' failed' : '') + (rem ? ' · about ' + rem + ' min left' : '') + '. Keep this page open.');
+      }
+    }
+    try { await Promise.all(Array.apply(null, Array(pool)).map(worker)); await flush(); }
+    catch (e) { setMsg('apSt2', 'Stopped: ' + (e.message || e), 'err'); return; }
+    var msg = (APO.stop ? 'Stopped. ' : 'Finished. ') + done + ' photos uploaded' + (bad ? ', ' + bad + ' failed (run again to retry)' : '') + '.';
+    await apOffice(APO.el); setMsg('apSt2', msg, bad ? 'err' : 'ok');
+  }
+  // A4 PDF: one SR per page, before (left) and after (right)
+  var APP_CSS = '.app-pg{width:794px;height:1123px;padding:28px 32px;box-sizing:border-box;background:#fff;color:#000;font:12px Arial,Helvetica,sans-serif;display:flex;flex-direction:column}' +
+    '.app-h{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #c09a52;padding-bottom:8px}.app-t{text-align:center}.app-t b{display:block;font-size:17px;color:#1c3b67}.app-t span{font-size:11px;color:#555}' +
+    '.app-d{width:100%;border-collapse:collapse;margin:10px 0}.app-d td{border:1px solid #9aa6b5;padding:4px 7px;vertical-align:top}.app-d td.k{background:#eef2f7;font-weight:700;width:17%;color:#1c3b67}' +
+    '.app-g{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0}.app-c{display:flex;flex-direction:column;gap:8px;min-height:0}.app-c h4{margin:0;text-align:center;color:#fff;padding:5px;font-size:13px}' +
+    '.app-c.b h4{background:#8a5a2b}.app-c.a h4{background:#1f7a4d}.app-c .ph{flex:1;min-height:0;border:1px solid #c9d1db;display:flex;align-items:center;justify-content:center;background:#f7f8fa;overflow:hidden}.app-c img{max-width:100%;max-height:100%;object-fit:contain}' +
+    '.app-c .no{color:#888;font-style:italic}.app-f{display:flex;justify-content:space-between;font-size:9px;color:#666;border-top:1px solid #ddd;padding-top:6px;margin-top:10px}';
+  function apPageHTML(x, I, k, n) {
+    var L = logos(), nb = apBefore(x).slice(0, 3), na = (x.after || []).slice(0, 3);
+    var col = function (cls, title, ps) { return '<div class="app-c ' + cls + '"><h4>' + title + '</h4>' + (ps.length ? ps.map(function (p) { return '<div class="ph">' + (I[p] ? '<img src="' + I[p] + '">' : '<span class="no">photo not available</span>') + '</div>'; }).join('') : '<div class="ph"><span class="no">No photo</span></div>') + '</div>'; };
+    return '<div class="app-pg"><div class="app-h">' + (L.left ? '<img src="' + L.left + '" style="height:52px">' : '<b>Imdaad</b>') + '<div class="app-t"><b>BEFORE / AFTER PHOTOS</b><span>Dubai Municipality – Maintenance Contract 552301</span></div>' + (L.right ? '<img src="' + L.right + '" style="height:42px">' : '<b>Dubai Municipality</b>') + '</div>' +
+      '<table class="app-d"><tr><td class="k">SR No.</td><td>' + esc(x.sr) + (x.wo ? ' / WO ' + esc(x.wo) : '') + '</td><td class="k">Zone</td><td>' + esc(x.fz || '') + (x.zn ? ' (' + esc(x.zn) + ')' : '') + '</td></tr>' +
+      '<tr><td class="k">Location</td><td colspan="3">' + esc(String(x.locd || '').replace(/_/g, ' – ')) + '</td></tr><tr><td class="k">Description</td><td colspan="3">' + esc(x.summary || '') + '</td></tr>' +
+      '<tr><td class="k">Reported</td><td>' + esc(svcDate(x.rd)) + '</td><td class="k">After photo</td><td>' + (x.done_at ? esc(String(x.done_at).slice(0, 10)) + ' · ' + esc(x.done_name || '') : '—') + '</td></tr>' + (x.note ? '<tr><td class="k">Note</td><td colspan="3">' + esc(x.note) + '</td></tr>' : '') + '</table>' +
+      '<div class="app-g">' + col('b', 'BEFORE · قبل', nb) + col('a', 'AFTER · بعد', na) + '</div><div class="app-f"><span>www.imdaad.ae · 800 8200</span><span>Page ' + k + ' of ' + n + '</span></div></div>';
+  }
+  async function apPdf(S) {
+    if (!S.length) return;
+    var b = $('#apPdf'); b.disabled = true;
+    try {
+      await svcLib('h2c', function () { return !!window.html2canvas; }); await svcLib('pdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); });
+      var pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+      var host = document.createElement('div'); host.style.cssText = 'position:fixed;left:-10000px;top:0;z-index:-1'; document.body.appendChild(host);
+      try {
+        for (var i = 0; i < S.length; i++) {
+          setMsg('apSt3', 'Preparing page ' + (i + 1) + ' of ' + S.length + '…');
+          var x = S[i], I = await svcDataUrls(apBefore(x).slice(0, 3).concat((x.after || []).slice(0, 3)));
+          host.innerHTML = '<style>' + APP_CSS + '</style>' + apPageHTML(x, I, i + 1, S.length);
+          await Promise.all(Array.prototype.map.call(host.querySelectorAll('img'), function (im) { return im.complete ? 0 : new Promise(function (res) { im.onload = im.onerror = res; }); }));
+          var cv = await window.html2canvas(host.querySelector('.app-pg'), { scale: 1.6, backgroundColor: '#ffffff', logging: false });
+          if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', 0.82), 'JPEG', 0, 0, 210, 297);
+        }
+      } finally { host.remove(); }
+      pdf.setProperties({ title: 'Before / After photos', author: 'Imdaad FM' });
+      svcSave(pdf.output('blob'), 'Before_After_Photos_' + svcDubaiDay() + '_' + S.length + '_SRs.pdf'); setMsg('apSt3', S.length + ' page(s) downloaded.', 'ok');
+    } catch (e) { setMsg('apSt3', e.message || String(e), 'err'); }
+    b.disabled = false;
+  }
+
+  window.DM_CLOUD = { apOffice: apOffice, svcOffice: svcOffice, reportsAdd: reportsAdd, reportsRemove: reportsRemove, reportsReload: reportsReload, syncKeyNew: syncKeyNew, syncKeyRevoke: syncKeyRevoke, syncScript: syncScript, syncCmd: syncCmd, emgList: emgList, emgFlag: emgFlag, emgClear: emgClear, emgPushStatus: emgPushStatus, emgSaveCfg: emgSaveCfg, purgePhotos: purgePhotos, rmActivity: rmActivity, materials: materials, matDecide: matDecide, photoUrls: photoUrls, loadUtil: loadUtil, utilSave: utilSave, utilDropMonth: utilDropMonth, utilZoneSet: utilZoneSet, photoCounts: photoCounts, photoCount: photoCount, loadFlags: loadFlags, flagOf: flagOf, flagLabel: flagLabel, flagPill: flagPill, flagCanSet: flagCanSet, flagFormHTML: flagFormHTML, flagFormBind: flagFormBind, FLAGS: FLAGS, srPhotos: srPhotos, photoStrip: photoStrip, gallery: gallery, mxAllowed: mxAllowed, mxKeyNew: mxKeyNew, mxStatus: mxStatus, mxScript: mxScript, rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
 
   /* ---------- route: direct to Supabase, or through the relay when supabase.co is blocked (e.g. UAE mobile data) ---------- */
   function probe(base, ms) {
@@ -3428,6 +3713,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (RAW.reports == null) return section('R', 'Service reports', 'تقارير الخدمة', '', '<div class="notice">Service reports are not set up yet. The administrator needs to run the update <b>8_SQL_service_reports.sql</b> in Supabase.</div>');
     var D = reportsCompute(cm), S = reportsSpecs(D), last = syncAge(), stale = !last || Date.now() - last > 3600000;
     var out = section('R0', 'Service reports from the phones', 'تقارير الخدمة من الهاتف', 'Reports prepared by the labour supervisors on the phone and signed by the customer (on site or by private link). A signed report counts as the service report of the SR. Download the PDF (same layout as the FM Service Report form) or the Excel form, upload it to Maximo, then mark it uploaded.', '<div id="svcOff"><div class="notice">Loading…</div></div>');
+    if (['admin', 'operator', 'imdaad_engineer', 'manager'].indexOf(ROLE) >= 0) out += section('RAP', 'After photos (temporary list)', 'صور بعد التنفيذ (قائمة مؤقتة)', 'Finished SRs where the customer asked for an after photo. Upload the SR list and the before photos; each supervisor sees his SRs on the phone (by his area), adds the after photo and sends it here. Select SRs and download one A4 PDF (before | after, one SR per page).', '<div id="apOff"><div class="notice">Loading…</div></div>');
     out += section('R', 'Service reports', 'تقارير الخدمة', 'A completed SR has a service report when its number is in the Outlook group <b>DM - Reports</b> (email subject) or in an uploaded report list. Completed = Final Status closed, excluding not-in-scope / duplicate / cancelled.',
       '<div class="kpis">' +
       kpiTile('Completed SRs', fmt(D.done), 'for the current filters') +
@@ -3475,6 +3761,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   }
   function bindReports(cm) {
     if (window.DM_CLOUD && window.DM_CLOUD.svcOffice) window.DM_CLOUD.svcOffice(document.getElementById('svcOff'));
+    if (window.DM_CLOUD && window.DM_CLOUD.apOffice && document.getElementById('apOff')) window.DM_CLOUD.apOffice(document.getElementById('apOff'));
     var sel = $('#repSup'); if (sel) sel.onchange = function () { REPF.sup = sel.value; render(); };
     function pend(nums, src) {
       var have = (RAW.reports || []).reduce(function (m, r) { m[r.sr] = 1; return m; }, {}), ids = CM.reduce(function (m, o) { m[o.id] = 1; return m; }, {});
@@ -3945,7 +4232,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   var CIVIL_WT = ['Carpentry & Door Hardware', 'Tiling & Flooring', 'Painting', 'Gypsum & False Ceiling', 'Waterproofing', 'Civil & Masonry', 'Metal & Steel Works', 'Interlock & Paving', 'Sports Surfaces & Tracks', 'Furniture & Fit-out'];
   function wtDisc(o) { return CIVIL_WT.indexOf(o.wt) >= 0 ? 'Civil' : 'MEP'; }
   // who does the work, from the tracker Service Type: CIVIL / CARP = civil (supervisor of the zone), AD-HOC = ad-hoc (no supervisor), others = MEP (tracker supervisor)
-  function srKind(o) { var t = String(o.tr || '').toUpperCase(); return t === 'CIVIL' || t === 'CARP' ? 'CIVIL' : t === 'AD-HOC' || t === 'ADHOC' ? 'ADHOC' : 'MEP'; }
+  function srKind(o) { if (o.xk === 'CIVIL' || o.xk === 'MEP') return o.xk; var t = String(o.tr || '').toUpperCase(); return t === 'CIVIL' || t === 'CARP' ? 'CIVIL' : t === 'AD-HOC' || t === 'ADHOC' ? 'ADHOC' : 'MEP'; }
   function labSup(o) { var k = srKind(o); if (k === 'CIVIL') { var m = {}; try { m = rmCivilMap(); } catch (e) { m = RM_CIVIL_DEF; } return m[o.fz] || 'Unassigned (civil)'; } if (k === 'ADHOC') return 'AD-HOC'; return o.sup || 'Unassigned (MEP)'; }
   function regScoped(cm) { return REGF.scope === 'O' ? cm.filter(function (o) { return o.st === 'O'; }) : cm; }
   // same split as RM works: open works marked for a contractor (quotation) are counted under "Contractor works", not under the team
