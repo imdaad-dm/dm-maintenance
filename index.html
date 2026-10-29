@@ -2843,7 +2843,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="filters" style="margin:12px 0 8px;padding:0"><div class="f"><label for="apF1">Status</label><select id="apF1">' + o('', 'All', f.st) + o('done', 'After photo received', f.st) + o('pending', 'Waiting', f.st) + o('nobefore', 'No before photo', f.st) + o('notrk', 'Not in the tracker', f.st) + '</select></div>' +
       '<div class="f"><label for="apF2">Supervisor</label><select id="apF2">' + o('', 'All supervisors', f.own) + owners.map(function (x) { return o(x, x, f.own); }).join('') + '</select></div>' + (lists.length > 1 ? '<div class="f"><label for="apF3">List</label><select id="apF3">' + o('', 'All lists', f.list) + lists.map(function (x) { return o(x, x, f.list); }).join('') + '</select></div>' : '') +
       '<div class="f"><label for="apF4">Search</label><input id="apF4" type="search" value="' + esc(f.q) + '" placeholder="SR, location"></div></div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn primary" id="apPdf"' + (nsel ? '' : ' disabled') + '>⬇ Before/After PDF (' + nsel + ' selected)</button>' + (apCanEdit() ? '<button class="btn" id="apReset"' + (nsel ? '' : ' disabled') + '>Back to waiting</button><button class="btn" id="apDel"' + (nsel ? '' : ' disabled') + '>Remove from list</button>' : '') + '<span class="status" id="apSt3"></span></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn primary" id="apPdf"' + (nsel ? '' : ' disabled') + '>⬇ Before/After PDF (' + nsel + ' selected)</button>' + '<button class="btn" id="apNoB" title="Excel list of the SRs in the list that have no before photo yet">⬇ SRs with no before photo (' + nob + ')</button>' + (apCanEdit() ? '<button class="btn" id="apReset"' + (nsel ? '' : ' disabled') + '>Back to waiting</button><button class="btn" id="apDel"' + (nsel ? '' : ' disabled') + '>Remove from list</button>' : '') + '<span class="status" id="apSt3"></span></div>' +
       '<div class="tw" style="max-height:520px"><table class="t"><thead><tr><th><input type="checkbox" id="apAll" aria-label="Select all"></th><th>SR</th><th>Location</th><th>Zone</th><th>Supervisor</th><th class="n">Before</th><th class="n">After</th><th>Status</th><th>Sent by</th></tr></thead><tbody>' +
       list.slice(0, 500).map(function (x) { return '<tr><td><input type="checkbox" data-aps="' + esc(x.sr) + '"' + (APO.sel[x.sr] ? ' checked' : '') + '></td><td>' + esc(x.sr) + '</td><td>' + esc(String(x.locd || (x.in_tracker ? '' : 'Not in the tracker')).replace(/_/g, ' · ')) + '</td><td>' + esc(x.fz || '') + '</td><td>' + esc(x.owner || '') + '</td><td class="n">' + apBefore(x).length + '</td><td class="n">' + (x.after || []).length + '</td><td>' + (x.status === 'done' ? '<span class="pill good">Received</span>' : '<span class="pill avg">Waiting</span>') + '</td><td>' + (x.done_at ? esc(x.done_name || '') + ' · ' + esc(dmDxb(x.done_at)) : '—') + '</td></tr>'; }).join('') +
       '</tbody></table></div>' + (list.length > 500 ? '<p class="muted">Showing 500 of ' + list.length + '. Use the filters; "select all" selects all ' + list.length + '.</p>' : '');
@@ -2855,12 +2855,30 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     $('#apAll').onchange = function (e) { list.forEach(function (x) { if (e.target.checked) APO.sel[x.sr] = 1; else delete APO.sel[x.sr]; }); apDraw(); };
     var sel = function () { return list.filter(function (x) { return APO.sel[x.sr]; }); };
     $('#apPdf').onclick = function () { apPdf(sel()); };
+    $('#apNoB').onclick = function () { apExportNoBefore(); };
     if (apCanEdit()) {
       $('#apReset').onclick = async function () { var S = sel().map(function (x) { return x.sr; }); if (!confirm(S.length + ' SR(s) back to "waiting"? Their after photos are removed from the list.')) return; var r = await sb.rpc('ap_reset', { p_srs: S }); if (r.error) return setMsg('apSt3', r.error.message, 'err'); apOffice(APO.el); };
       $('#apDel').onclick = async function () { var S = sel().map(function (x) { return x.sr; }); if (!confirm('Remove ' + S.length + ' SR(s) from the after-photos list?')) return; for (var i = 0; i < S.length; i += 1000) { var r = await sb.rpc('ap_remove', { p_srs: S.slice(i, i + 1000) }); if (r.error) return setMsg('apSt3', r.error.message, 'err'); } apOffice(APO.el); };
       $('#apAddL').onclick = apAddList;
       $('#apDir').onchange = function (e) { apPick(e.target.files); }; $('#apFs').onchange = function (e) { apPick(e.target.files); };
     }
+  }
+  async function apExportNoBefore() {
+    var b = $('#apNoB'), rows = APO.rows.filter(function (x) { return !apBefore(x).length; }).sort(function (a, c) { return (a.owner || '~') < (c.owner || '~') ? -1 : (a.owner || '~') > (c.owner || '~') ? 1 : a.sr < c.sr ? -1 : 1; });
+    if (!rows.length) return setMsg('apSt3', 'Every SR in the list has a before photo. ✓', 'ok');
+    b.disabled = true;
+    try {
+      await svcLib('xlsx', function () { return !!window.XLSX; });
+      var aoa = [['SR No.', 'WO', 'Zone', 'Supervisor', 'Location', 'Description', 'In tracker', 'After photo', 'List']].concat(rows.map(function (x) {
+        return [isNaN(+x.sr) ? x.sr : +x.sr, x.wo || '', x.fz || '', x.owner || '', String(x.locd || '').replace(/_/g, ' - '), x.summary || '', x.in_tracker ? 'Yes' : 'No', x.status === 'done' ? 'Received' : 'Waiting', x.list_name || ''];
+      }));
+      var ws = XLSX.utils.aoa_to_sheet(aoa); ws['!cols'] = [10, 10, 6, 24, 40, 50, 10, 11, 18].map(function (w) { return { wch: w }; }); ws['!autofilter'] = { ref: 'A1:I' + aoa.length };
+      var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'No before photo');
+      var out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      svcSave(new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'SRs_without_before_photo_' + svcDubaiDay() + '_' + rows.length + '.xlsx');
+      setMsg('apSt3', rows.length + ' SR numbers downloaded.', 'ok');
+    } catch (e) { setMsg('apSt3', e.message || String(e), 'err'); }
+    b.disabled = false;
   }
   async function apAddList() {
     var nums = [], seen = {}, add = function (v) { v = String(v == null ? '' : v).trim().replace(/\.0+$/, ''); if (/^\d{3,9}$/.test(v) && !seen[v]) { seen[v] = 1; nums.push(v); } };
@@ -2919,14 +2937,21 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     '.app-g{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0}.app-c{display:flex;flex-direction:column;gap:8px;min-height:0}.app-c h4{margin:0;text-align:center;color:#fff;padding:5px;font-size:13px}' +
     '.app-c.b h4{background:#8a5a2b}.app-c.a h4{background:#1f7a4d}.app-c .ph{flex:1;min-height:0;border:1px solid #c9d1db;display:flex;align-items:center;justify-content:center;background:#f7f8fa;overflow:hidden}.app-c img{max-width:100%;max-height:100%;object-fit:contain}' +
     '.app-c .no{color:#888;font-style:italic}.app-f{display:flex;justify-content:space-between;font-size:9px;color:#666;border-top:1px solid #ddd;padding-top:6px;margin-top:10px}';
-  function apPageHTML(x, I, k, n) {
-    var L = logos(), nb = apBefore(x).slice(0, 3), na = (x.after || []).slice(0, 3);
-    var col = function (cls, title, ps) { return '<div class="app-c ' + cls + '"><h4>' + title + '</h4>' + (ps.length ? ps.map(function (p) { return '<div class="ph">' + (I[p] ? '<img src="' + I[p] + '">' : '<span class="no">photo not available</span>') + '</div>'; }).join('') : '<div class="ph"><span class="no">No photo</span></div>') + '</div>'; };
+  // pages of one SR: 3 before + 3 after per page; more photos continue on the next page
+  function apPages(x) {
+    var b = apBefore(x), a = x.after || [], n = Math.max(1, Math.ceil(b.length / 3), Math.ceil(a.length / 3)), out = [];
+    for (var i = 0; i < n; i++) out.push({ b: b.slice(i * 3, i * 3 + 3), a: a.slice(i * 3, i * 3 + 3), part: i + 1, parts: n });
+    return out;
+  }
+  function apPageHTML(x, I, k, n, pg) {
+    pg = pg || apPages(x)[0];
+    var L = logos(), nb = pg.b, na = pg.a, more = pg.parts > 1 ? ' <span style="font-weight:400;font-size:11px">(' + pg.part + ' of ' + pg.parts + ')</span>' : '';
+    var col = function (cls, title, ps) { return '<div class="app-c ' + cls + '"><h4>' + title + '</h4>' + (ps.length ? ps.map(function (p) { return '<div class="ph">' + (I[p] ? '<img src="' + I[p] + '">' : '<span class="no">photo not available</span>') + '</div>'; }).join('') : '<div class="ph"><span class="no">' + (pg.part > 1 ? 'See the previous page' : 'No photo') + '</span></div>') + '</div>'; };
     return '<div class="app-pg"><div class="app-h">' + (L.left ? '<img src="' + L.left + '" style="height:52px">' : '<b>Imdaad</b>') + '<div class="app-t"><b>BEFORE / AFTER PHOTOS</b><span>Dubai Municipality – Maintenance Contract 552301</span></div>' + (L.right ? '<img src="' + L.right + '" style="height:42px">' : '<b>Dubai Municipality</b>') + '</div>' +
       '<table class="app-d"><tr><td class="k">SR No.</td><td>' + esc(x.sr) + (x.wo ? ' / WO ' + esc(x.wo) : '') + '</td><td class="k">Zone</td><td>' + esc(x.fz || '') + (x.zn ? ' (' + esc(x.zn) + ')' : '') + '</td></tr>' +
       '<tr><td class="k">Location</td><td colspan="3">' + esc(String(x.locd || '').replace(/_/g, ' – ')) + '</td></tr><tr><td class="k">Description</td><td colspan="3">' + esc(x.summary || '') + '</td></tr>' +
       '<tr><td class="k">Reported</td><td>' + esc(svcDate(x.rd)) + '</td><td class="k">After photo</td><td>' + (x.done_at ? esc(dmDxb(x.done_at, true)) + ' · ' + esc(x.done_name || '') : '—') + '</td></tr>' + (x.note ? '<tr><td class="k">Note</td><td colspan="3">' + esc(x.note) + '</td></tr>' : '') + '</table>' +
-      '<div class="app-g">' + col('b', 'BEFORE · قبل', nb) + col('a', 'AFTER · بعد', na) + '</div><div class="app-f"><span>www.imdaad.ae · 800 8200</span><span>Page ' + k + ' of ' + n + '</span></div></div>';
+      '<div class="app-g">' + col('b', 'BEFORE · قبل' + more, nb) + col('a', 'AFTER · بعد' + more, na) + '</div><div class="app-f"><span>www.imdaad.ae · 800 8200</span><span>Page ' + k + ' of ' + n + '</span></div></div>';
   }
   async function apPdf(S) {
     if (!S.length) return;
@@ -2934,22 +2959,26 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     try {
       await svcLib('h2c', function () { return !!window.html2canvas; }); await svcLib('pdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); });
       var pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+      var total = S.reduce(function (t, x) { return t + apPages(x).length; }, 0), k = 0;
       var host = document.createElement('div'); host.style.cssText = 'position:fixed;left:-10000px;top:0;z-index:-1'; document.body.appendChild(host);
       try {
         for (var i = 0; i < S.length; i++) {
-          setMsg('apSt3', 'Preparing page ' + (i + 1) + ' of ' + S.length + '…');
-          var x = S[i], I = await svcDataUrls(apBefore(x).slice(0, 3).concat((x.after || []).slice(0, 3)));
-          host.innerHTML = '<style>' + APP_CSS + '</style>' + apPageHTML(x, I, i + 1, S.length);
-          await Promise.all(Array.prototype.map.call(host.querySelectorAll('img'), function (im) { return im.complete ? 0 : new Promise(function (res) { im.onload = im.onerror = res; }); }));
-          var cv = await window.html2canvas(host.querySelector('.app-pg'), { scale: 1.6, backgroundColor: '#ffffff', logging: false });
-          if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', 0.82), 'JPEG', 0, 0, 210, 297);
+          var x = S[i], P = apPages(x), I = await svcDataUrls(apBefore(x).concat(x.after || []));
+          for (var j = 0; j < P.length; j++) {
+            k++; setMsg('apSt3', 'Preparing page ' + k + ' of ' + total + ' (SR ' + (i + 1) + ' of ' + S.length + ')…');
+            host.innerHTML = '<style>' + APP_CSS + '</style>' + apPageHTML(x, I, k, total, P[j]);
+            await Promise.all(Array.prototype.map.call(host.querySelectorAll('img'), function (im) { return im.complete ? 0 : new Promise(function (res) { im.onload = im.onerror = res; }); }));
+            var cv = await window.html2canvas(host.querySelector('.app-pg'), { scale: 1.6, backgroundColor: '#ffffff', logging: false });
+            if (k > 1) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', 0.82), 'JPEG', 0, 0, 210, 297);
+          }
         }
       } finally { host.remove(); }
       pdf.setProperties({ title: 'Before / After photos', author: 'Imdaad FM' });
-      svcSave(pdf.output('blob'), 'Before_After_Photos_' + svcDubaiDay() + '_' + S.length + '_SRs.pdf'); setMsg('apSt3', S.length + ' page(s) downloaded.', 'ok');
+      svcSave(pdf.output('blob'), 'Before_After_Photos_' + svcDubaiDay() + '_' + S.length + '_SRs.pdf'); setMsg('apSt3', S.length + ' SR(s) · ' + total + ' page(s) downloaded.', 'ok');
     } catch (e) { setMsg('apSt3', e.message || String(e), 'err'); }
     b.disabled = false;
   }
+
 
   window.DM_CLOUD = { apOffice: apOffice, svcOffice: svcOffice, reportsAdd: reportsAdd, reportsRemove: reportsRemove, reportsReload: reportsReload, syncKeyNew: syncKeyNew, syncKeyRevoke: syncKeyRevoke, syncScript: syncScript, syncCmd: syncCmd, emgList: emgList, emgFlag: emgFlag, emgClear: emgClear, emgPushStatus: emgPushStatus, emgSaveCfg: emgSaveCfg, purgePhotos: purgePhotos, rmActivity: rmActivity, materials: materials, matDecide: matDecide, photoUrls: photoUrls, loadUtil: loadUtil, utilSave: utilSave, utilDropMonth: utilDropMonth, utilZoneSet: utilZoneSet, photoCounts: photoCounts, photoCount: photoCount, loadFlags: loadFlags, flagOf: flagOf, flagLabel: flagLabel, flagPill: flagPill, flagCanSet: flagCanSet, flagFormHTML: flagFormHTML, flagFormBind: flagFormBind, FLAGS: FLAGS, srPhotos: srPhotos, photoStrip: photoStrip, gallery: gallery, mxAllowed: mxAllowed, mxKeyNew: mxKeyNew, mxStatus: mxStatus, mxScript: mxScript, rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
 
