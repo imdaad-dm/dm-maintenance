@@ -41,6 +41,7 @@ input,textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding
 .done .ok{width:86px;height:86px;border-radius:50%;background:var(--goodbg);color:var(--good);font-size:2.8rem;display:flex;align-items:center;justify-content:center;margin:0 auto}
 .done h2{color:var(--navy)}
 .foot{text-align:center;font-size:.78rem;color:var(--ink2);margin-top:22px}
+.ba3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.ba3 figure{margin:0}.ba3 img{width:100%;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#e9edf2;cursor:zoom-in}.ba3 figcaption{font-size:.72rem;color:var(--ink2);text-align:center;margin-top:3px}
 #zoom{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:9}
 #zoom img{max-width:96vw;max-height:92vh}
 </style>
@@ -54,12 +55,13 @@ input,textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding
 (function () {
   var URL0 = 'https://evxjxosysatoyqrlmwdt.supabase.co'.replace(/\/$/, ''), KEY = 'sb_publishable_LY7zzDizxgWGea9Xr6WgOQ_4bCRNLh8';
   var FN = URL0 + '/functions/v1/photos';
-  var tok = (/[#&]t=([0-9a-f]{64})/.exec(location.hash) || [])[1] || '';
+  var tok = (/[#&]t=([0-9a-f]{64})/.exec(location.hash) || [])[1] || '', ptok = (/[#&]p=([0-9a-f]{64})/.exec(location.hash) || [])[1] || '';
   var Q = [['Extremely Satisfied', 'راضٍ جداً'], ['Good', 'جيد'], ['Satisfied', 'راضٍ'], ['Poor', 'سيء']];
   var A = {}, m = document.getElementById('m');
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function fmt(s) { var x = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s || ''); if (!x) return s || ''; var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+x[2] - 1], h = +x[4]; return x[3] + '-' + mo + '-' + x[1] + ' ' + (((h + 11) % 12) + 1) + ':' + x[5] + (h < 12 ? ' AM' : ' PM'); }
   function stop(en, ar) { m.innerHTML = '<div class="done"><div class="ok" style="background:#fdecec;color:#b42318">!</div><h2>' + esc(en) + '</h2><p class="ar">' + esc(ar) + '</p><p class="foot">24/7 Customer Response Centre · 800 8200</p></div>'; }
+  if (ptok) { ppmOpen(); return; }
   if (!tok) { stop('This link is not complete.', 'الرابط غير مكتمل.'); return; }
   fetch(FN + '?a=pubget&t=' + tok, { headers: { apikey: KEY } }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); }).then(function (x) {
     var j = x.j;
@@ -99,6 +101,46 @@ input,textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding
           history.replaceState(null, '', location.pathname);
           m.innerHTML = '<div class="done"><div class="ok">✓</div><h2>Thank you</h2><p>Your feedback for <b>SR ' + esc(j.sr) + '</b> has been received.</p><p class="ar">شكراً لك، تم استلام تقييمك للبلاغ رقم <b>' + esc(j.sr) + '</b>.</p><p class="foot">This link is now closed. · تم إغلاق هذا الرابط.<br>24/7 Customer Response Centre · 800 8200</p></div>';
         }).catch(function () { e.textContent = 'No connection. Please try again. · لا يوجد اتصال، أعد المحاولة.'; b.disabled = false; b.textContent = 'Submit · إرسال'; });
+    };
+  }
+  // ---------- PPM report: work order, description, categories, before / during / after photos; signature and comment
+  function ppmOpen() {
+    document.title = 'Imdaad · PPM report';
+    fetch(FN + '?a=ppmget&t=' + ptok, { headers: { apikey: KEY } }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); }).then(function (x) {
+      var j = x.j;
+      if (!x.ok) { if (j.expired) return stop('This link has expired.', 'انتهت صلاحية هذا الرابط. يرجى طلب رابط جديد من المشرف.'); if (j.closed) return stop(j.error || 'This report is already signed.', 'تم التوقيع على هذا التقرير مسبقاً.'); return stop(j.error || 'This link is not valid.', 'هذا الرابط غير صالح.'); }
+      ppmShow(j);
+    }).catch(function () { stop('Could not open the report. Check the internet connection and try again.', 'تعذر فتح التقرير. تحقق من الاتصال وأعد المحاولة.'); });
+  }
+  function ppmShow(j) {
+    document.getElementById('band').innerHTML = '<b>PPM Work Order ' + esc(j.wo) + '</b><div>أمر عمل الصيانة الوقائية رقم ' + esc(j.wo) + '</div>';
+    var ph = function (u, cap) { return '<figure><img alt="' + cap + '"' + (u ? ' src="' + esc(u) + '"' : '') + '><figcaption>' + cap + '</figcaption></figure>'; };
+    m.innerHTML = '<div class="note"><b>Preventive maintenance (PPM) report for Work Order ' + esc(j.wo) + '.</b><div class="ar">تقرير الصيانة الوقائية لأمر العمل رقم ' + esc(j.wo) + '.</div></div>' +
+      '<div class="card"><h3>Work done · العمل المنجز</h3><div class="kv">' + kv('Work order', 'أمر العمل', esc(j.wo)) + kv('Description', 'الوصف', esc(j.descr)) + (j.site ? kv('Site', 'الموقع', esc(j.site)) : '') + (j.month ? kv('PPM date', 'تاريخ الصيانة', esc(j.month)) : '') +
+      ((j.cats || []).length ? kv('Equipment', 'الأجهزة', (j.cats || []).map(function (c) { return esc(c.name) + ' × ' + esc(c.n); }).join(' · ')) : '') + '</div>' +
+      (j.rows || []).map(function (r) { return '<div class="ba3">' + ph(r.b, 'Before · قبل') + ph(r.d, 'During · أثناء') + ph(r.a, 'After · بعد') + '</div>'; }).join('') + '</div>' +
+      '<div class="card"><h3>Approval · الاعتماد</h3>' +
+      '<label class="f" for="cm">Comments · تعليقات (optional)</label><textarea id="cm" rows="2" maxlength="600"></textarea>' +
+      '<label class="f" for="nm">Your name · الاسم</label><input id="nm" maxlength="120">' +
+      '<label class="f" for="ds">Designation · الوظيفة</label><input id="ds" maxlength="120">' +
+      '<div class="lbl">Signature · التوقيع</div><div class="pad"><canvas id="pad"></canvas></div><button class="link" id="clr" type="button">Clear · مسح</button>' +
+      '<button class="go" id="go">Approve and sign · اعتماد وتوقيع</button><div class="err" id="err"></div></div>' +
+      '<p class="foot">Imdaad FM · 24/7 Customer Response Centre 800 8200<br>This link works once and expires on ' + esc(String(j.exp || '').slice(0, 10)) + '.</p>';
+    Array.prototype.forEach.call(document.querySelectorAll('.ba3 img'), function (im) { im.onclick = function () { if (!im.src) return; var z = document.getElementById('zoom'); z.querySelector('img').src = im.src; z.style.display = 'flex'; }; });
+    document.getElementById('zoom').onclick = function () { this.style.display = 'none'; };
+    var pad = makePad(document.getElementById('pad')); document.getElementById('clr').onclick = pad.clear;
+    document.getElementById('go').onclick = function () {
+      var e = document.getElementById('err'), b = this, nm = document.getElementById('nm').value.trim();
+      if (!nm) { e.textContent = 'Please write your name. · يرجى كتابة الاسم.'; return; }
+      if (pad.empty()) { e.textContent = 'Please sign in the box. · يرجى التوقيع في المربع.'; return; }
+      e.textContent = ''; b.disabled = true; b.textContent = 'Sending… · جاري الإرسال…';
+      fetch(FN + '?a=ppmsign', { method: 'POST', headers: { 'content-type': 'application/json', apikey: KEY }, body: JSON.stringify({ t: ptok, comments: document.getElementById('cm').value, name: nm, designation: document.getElementById('ds').value, sig: pad.jpeg() }) })
+        .then(function (r) { return r.json().then(function (k) { return { ok: r.ok, k: k }; }); })
+        .then(function (x) {
+          if (!x.ok) { if (x.k.closed || x.k.expired) return stop(x.k.error || 'This link is closed.', 'تم إغلاق هذا الرابط.'); e.textContent = x.k.error || 'Not sent, please try again.'; b.disabled = false; b.textContent = 'Approve and sign · اعتماد وتوقيع'; return; }
+          history.replaceState(null, '', location.pathname);
+          m.innerHTML = '<div class="done"><div class="ok">✓</div><h2>Thank you</h2><p>The PPM report of <b>Work Order ' + esc(j.wo) + '</b> is approved and signed.</p><p class="ar">شكراً لك، تم اعتماد وتوقيع تقرير الصيانة الوقائية لأمر العمل رقم <b>' + esc(j.wo) + '</b>.</p><p class="foot">This link is now closed. · تم إغلاق هذا الرابط.<br>24/7 Customer Response Centre · 800 8200</p></div>';
+        }).catch(function () { e.textContent = 'No connection. Please try again. · لا يوجد اتصال، أعد المحاولة.'; b.disabled = false; b.textContent = 'Approve and sign · اعتماد وتوقيع'; });
     };
   }
   function kv(en, ar, v) { return '<div><b>' + en + ' · <bdi>' + ar + '</bdi>:</b> <bdi dir="ltr">' + v + '</bdi></div>'; }

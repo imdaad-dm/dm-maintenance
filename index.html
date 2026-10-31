@@ -519,6 +519,30 @@ a.sv-b{text-decoration:none;justify-content:center}
 .ap-zoom{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;padding:12px;cursor:zoom-out}
 .ap-zoom img{max-width:100%;max-height:100%;object-fit:contain}
 .bar-p{height:8px;border-radius:4px;background:#e6e9ee;overflow:hidden}.bar-p span{display:block;height:100%;background:#1f7a4d;transition:width .3s}
+/* v4.30 SR status to the office */
+.pill.flag.f-out_scope{background:#f1f3f5;color:#374151;border-color:#d1d5db}
+.pill.flag.f-ret{background:#eef5fc;color:#0a4f96;border-color:#b9d3ee}
+.flag-ret{background:#eef5fc;border:1px solid #b9d3ee;border-radius:8px;padding:8px 10px;font-size:.85rem;color:#0a3a6e}
+.sf-act{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.sf-ret{display:inline-flex;gap:6px;flex:1 1 360px;min-width:0}.sf-ret input{flex:1;min-width:0}
+/* v4.32 upload history inside Data update */
+details.hist{margin-top:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+details.hist>summary{cursor:pointer;padding:12px 14px}
+details.hist[open]>summary{border-bottom:1px solid var(--line)}
+details.hist .tw{max-height:420px;margin:0;border:0}
+/* v4.32 PPM */
+.pp-ty{display:flex;gap:6px;flex-wrap:wrap;margin:8px 12px 0}
+.pp-cat{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}.pp-cat label{font-weight:600;font-size:.9rem}.pp-cat input{width:88px;padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit;text-align:center}
+.pp-add{display:flex;gap:6px;margin-top:8px}.pp-add input{flex:1;min-width:0;padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit}
+.pp-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.pp-cell{min-width:0}.pp-cap{font-size:.72rem;font-weight:700;text-align:center;color:var(--ink-2);margin-bottom:3px}
+.pp-img{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#e9edf2;display:flex;align-items:center;justify-content:center;font-size:.72rem;color:var(--ink-2)}.pp-img img{width:100%;height:100%;object-fit:cover}.pp-img .svc-x{position:absolute;top:3px;right:3px}
+.pp-btn{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px}.pp-btn .sv-b{padding:6px 0;min-height:36px;text-align:center}
+.pp-sh{font-weight:700;font-size:.82rem;margin:12px 0 4px;color:#1c3b67}
+.pp-it{padding:7px 0;border-bottom:1px solid var(--line)}.pp-q{font-size:.85rem;margin-bottom:5px}
+.pp-vals{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.pp-v{padding:5px 9px;border-radius:14px;border:1px solid var(--line);background:var(--surface);font:inherit;font-size:.78rem;font-weight:600;color:var(--ink);cursor:pointer}.pp-v.on{background:#1c3b67;border-color:#1c3b67;color:#fff}
+.pp-cy{font-size:.72rem;color:var(--ink-2);margin:0 2px 0 4px}
+.pp-units{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.pp-u{padding:4px 8px;border-radius:8px;border:1px dashed #9aa6b5;background:#fff;font:inherit;font-size:.75rem;cursor:pointer}
+.pp-recs{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:4px}.pp-recs input{width:100%;padding:6px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:.8rem}.pp-e2{grid-template-columns:1fr 2fr;margin-top:5px}
 </style></head><body><div id="app"></div><script>
 /* ==== PORTAL CONNECTION — fill in from Supabase: Project Settings > API ==== */
 window.DM_CLOUD_CONFIG = {
@@ -803,7 +827,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
 (function () {
   'use strict';
   var CONF = window.DM_CLOUD_CONFIG || {};
-  var ROLES = [['admin', 'Admin'], ['operator', 'CAFM operator'], ['manager', 'Manager'], ['dm_engineer', 'DM engineer'], ['imdaad_engineer', 'Imdaad engineer'], ['supervisor', 'Labour supervisor'], ['team', 'Labour team (shared)']];
+  var ROLES = [['admin', 'Admin'], ['operator', 'CAFM operator'], ['manager', 'Manager'], ['dm_engineer', 'DM engineer'], ['imdaad_engineer', 'Imdaad engineer'], ['supervisor', 'Labour supervisor'], ['team', 'Labour team (shared)'], ['ppm_supervisor', 'PPM supervisor'], ['ppm_team', 'PPM team (shared)']];
   var ALL_TABS = ['summary', 'cm', 'backlog', 'sla', 'ppm', 'site', 'loc', 'maximo', 'weekly', 'reports', 'register'];
   var REP_ROLES = ['admin', 'operator', 'imdaad_engineer', 'manager']; // service reports: never DM engineers
   var DEFAULT_PERMS = {
@@ -1047,6 +1071,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       $('#soBtn').onclick = signOut; return;
     }
     if (profile.role === 'supervisor' || profile.role === 'team') return supervisorApp();
+    if (profile.role === 'ppm_supervisor' || profile.role === 'ppm_team') return ppmApp();
     try { RAWC = await loadData(); } catch (e) { screen('<div class="auth-f"><p class="status err">Could not load data: ' + esc(e.message) + '</p><button class="btn" id="rtBtn">Try again</button> <button class="btn" id="soBtn">Sign out</button></div>'); $('#rtBtn').onclick = enter; $('#soBtn').onclick = signOut; return; }
     start();
   }
@@ -1139,7 +1164,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function svArea(r) { var a = String(r.area || '').trim(); if (a) return a; var c = String(r.locd || '').split(/_| - /)[0].trim(); return c || 'No area'; }
   function svInArea(r) { return !SV.area || svArea(r) === SV.area; }
   function svDraw() {
-    var L = logos(), rows = SV.rows.filter(svInArea);
+    var L = logos(), rows = SV.rows.filter(function (r) { return svInArea(r) && !flagActive(r.id); });
     var n = { todo: 0, work: 0, done: 0, sub: 0 }; rows.forEach(function (r) { n[svState(r)]++; });
     var names = (profile.sup_names || []).filter(function (x) { return x.toUpperCase() !== String(profile.full_name || '').toUpperCase(); }).join(' · ');
     $('#app').innerHTML = '<div class="sv">' +
@@ -1200,7 +1225,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     }, 60000);
   }
   function svAreaSel() {
-    var cnt = {}; SV.rows.forEach(function (r) { if (svState(r) === 'done') return; var a = svArea(r); cnt[a] = (cnt[a] || 0) + 1; });
+    var cnt = {}; SV.rows.forEach(function (r) { if (svState(r) === 'done' || flagActive(r.id)) return; var a = svArea(r); cnt[a] = (cnt[a] || 0) + 1; });
     var keys = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a] || (a < b ? -1 : 1); });
     if (SV.area && keys.indexOf(SV.area) < 0) keys.unshift(SV.area);
     if (keys.length < 2 && !SV.area) return '';
@@ -1228,10 +1253,10 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         '<div class="sv-row"><b class="sv-sr">SR ' + esc(r.id) + '</b><span class="pill ' + p[2] + '">' + p[0] + '</span><span class="sv-days' + (days > 30 ? ' old' : '') + '">' + days + ' d</span></div>' +
         '<div class="sv-meta">' + esc(SV_TR[r.tr] || r.tr || '') + ' · Zone ' + esc(r.fz || '?') + ' · ' + esc(svArea(r)) + (r.wo ? ' · WO ' + esc(r.wo) : '') + '</div>' +
         '<div class="sv-loc">' + esc(loc) + '</div><div class="sv-sum2">' + esc(r.summary || '') + '</div>' + svTr(r.summary) + (mat ? '<div style="margin-top:6px">' + mat + '</div>' : '') +
-        (flagOf(r.id) ? '<div style="margin-top:6px">' + flagPill(r.id) + (flagOf(r.id).note ? ' <span class="sv-meta">' + esc(flagOf(r.id).note) + '</span>' : '') + '</div>' : '') +
+        (flagOf(r.id) ? '<div style="margin-top:6px">' + flagPill(r.id) + (flagOf(r.id).state === 'returned' ? (flagOf(r.id).ret_note ? ' <span class="sv-meta">' + esc(flagOf(r.id).ret_note) + '</span>' : '') : (flagOf(r.id).note ? ' <span class="sv-meta">' + esc(flagOf(r.id).note) + '</span>' : '')) + '</div>' : '') +
         (photoCount(r.id) ? '<button class="sv-ph" data-a="photos">📷 ' + photoCount(r.id) + ' photo' + (photoCount(r.id) > 1 ? 's' : '') + ' from Maximo</button>' : '') + acts +
         (st !== 'done' ? '<button class="sv-link" data-a="xfer">⇄ Transfer to Civil / MEP</button>' : '') +
-        '<button class="sv-link" data-a="flag">🏷 ' + (flagOf(r.id) ? 'Change status' : 'Done by DM / Canceled / Adhoc') + '</button></article>';
+        '<button class="sv-link" data-a="flag">🏷 ' + (flagOf(r.id) ? 'Change status' : 'Out of scope / Canceled / Done by DM / Adhoc') + '</button></article>';
   }
   async function svShowJob(sr) {
     SV.deep = null;
@@ -1268,6 +1293,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var q = SV.q.trim().toLowerCase();
     var list = SV.rows.filter(function (r) {
       if (svState(r) !== (SV.f === 'emg' ? 'todo' : SV.f)) return false;
+      if (flagActive(r.id)) return false;
       if (!svInArea(r)) return false;
       if (q && (r.id + ' ' + (r.wo || '') + ' ' + (r.summary || '') + ' ' + (r.locd || '') + ' ' + (r.area || '')).toLowerCase().indexOf(q) < 0) return false;
       return true;
@@ -1304,9 +1330,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (a === 'flag') return svSheetFlag(row);
   }
   function svSheetFlag(row) {
-    svSheet(svHead(row) + '<h3>SR status</h3>' + flagFormHTML(row.id, 'svFl'));
+    svSheet(svHead(row) + '<h3>SR status</h3><p class="sv-hint" style="margin:0 0 8px">The SR goes to the <b>CAFM operator and the manager</b> and leaves your list. If the office returns it, it comes back here with their note.</p>' + flagFormHTML(row.id, 'svFl'));
     $('#svX').onclick = svClose;
-    flagFormBind(row.id, 'svFl', function (on) { setTimeout(function () { svClose(); var y = window.scrollY; svDraw(); window.scrollTo(0, y); svToast((on ? 'Status saved' : 'Status removed') + ' — SR ' + row.id); }, 400); });
+    flagFormBind(row.id, 'svFl', function (on) { setTimeout(function () { svClose(); var y = window.scrollY; svDraw(); window.scrollTo(0, y); svToast((on ? 'Sent to the office' : 'Status removed') + ' — SR ' + row.id); }, 400); });
   }
   function svSheetPhotos(row) {
     svSheet(svHead(row) + '<h3>Photos from Maximo</h3><div id="svPh"></div>');
@@ -1458,7 +1484,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       h.panel('C · PPM report', 'Maximo PM work orders (PM-All export)', '<p>Upload the latest Maximo PM work-order export (e.g. PM-All). It replaces the current PPM data. Current: ' + h.fmt(((RAWC && RAWC.ppm) || []).length) + ' work orders' + (RAWC.config.ppmUpload ? ' · ' + esc(RAWC.config.ppmUpload.file) + ' · ' + esc(RAWC.config.ppmUpload.at) : (RAWC.config.ppmFile ? ' · ' + esc(RAWC.config.ppmFile) : '')) + '.</p><div class="drop" id="dropC" tabindex="0">Drop the PPM report here, or click to choose<input type="file" id="fileC" accept=".xlsx,.xlsm,.xls" hidden></div><div id="pendC"></div><div class="status" id="stC"></div>') +
       h.panel('D · Maximo photos', 'pulled from Maximo by the CAFM PC', '<p>After you upload the tracker, the PC pulls the photos of the new open SRs by itself (it checks every 30 minutes, 07:00–19:00). Press the button to start it now.</p><div id="mxDataSt"><span class="muted">Loading…</span></div><div style="margin-top:8px"><button class="btn" id="mxRun2">⟳ Pull photos now</button></div><div class="status" id="stMx2"></div>') +
       h.panel('Current data', '', '<dl class="kv"><dt>SRs in the portal</dt><dd>' + h.fmt(h.cm().length) + '</dd><dt>Cut-off date</dt><dd>' + h.dstr(h.cut()) + '</dd><dt>Last upload</dt><dd>' + (L ? esc(L.file) + ' · ' + esc(L.at) + ' (' + (L.kind === 'full' ? 'full tracker' : 'daily additions') + ')' : '—') + '</dd></dl>') +
-      '</div>');
+      '</div>' +
+      '<details class="hist" id="histD"><summary><b>Upload history</b> <span class="muted">' + (L ? 'last: ' + esc(L.file) + ' · ' + esc(L.at) : 'every data upload, newest first') + '</span></summary><div class="tw" id="logT"><div class="notice">Loading…</div></div></details>');
   }
   function bindDrop(dropId, fileId, fn) {
     var d = document.getElementById(dropId), f = document.getElementById(fileId); if (!d) return;
@@ -1502,6 +1529,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   }
   function bindData() {
     bindPPM();
+    var hd = $('#histD'); if (hd) hd.ontoggle = function () { if (hd.open && !hd.loaded) { hd.loaded = 1; bindLog(); } };
     (async function drawMx2() {
       var el = $('#mxDataSt'); if (!el) return;
       try { var st = await mxStatus(), keys = st.keys || []; el.innerHTML = keys.length ? keys.map(function (k) { return '<div style="margin:3px 0"><b>' + esc(k.label) + '</b>: ' + mxStateHTML(k) + (k.last_note ? '<div class="muted" style="font-size:.8rem">' + esc(k.last_note) + '</div>' : '') + '</div>'; }).join('') + '<div class="muted" style="font-size:.8rem">' + H().fmt(+st.photos || 0) + ' photos for ' + H().fmt(+st.with_photos || 0) + ' open SRs · ' + H().fmt(+st.checked || 0) + ' of ' + H().fmt(+st.open || 0) + ' open SRs checked</div>' : '<span class="muted">No PC connected yet (Admin > Maximo photos).</span>'; }
@@ -1559,7 +1587,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     try {
       LOG = chk(await sb.from('upload_log').select('*').order('at', { ascending: false }).limit(300));
       el.innerHTML = '<table class="t"><thead><tr><th>When</th><th>By</th><th>Type</th><th>File</th><th class="n">Rows</th><th class="n">Added</th><th class="n">Updated</th><th class="n">Removed</th><th>Cut-off</th></tr></thead><tbody>' +
-        LOG.map(function (r) { return '<tr><td>' + esc(new Date(r.at).toLocaleString('en-GB', { timeZone: 'Asia/Dubai' })) + '</td><td>' + esc(r.email) + '</td><td>' + (r.kind === 'full' ? 'Full tracker' : r.kind === 'daily' ? 'Daily additions' : r.kind === 'ppm' ? 'PPM report' : esc(r.kind)) + '</td><td>' + esc(r.file) + '</td><td class="n">' + h.fmt(r.rows_in) + '</td><td class="n">' + h.fmt(r.added) + '</td><td class="n">' + h.fmt(r.updated) + '</td><td class="n">' + h.fmt(r.removed) + '</td><td>' + (r.cutoff ? h.dstr(+r.cutoff) : '') + '</td></tr>'; }).join('') + '</tbody></table>';
+        LOG.map(function (r) { return '<tr><td>' + esc(new Date(r.at).toLocaleString('en-GB', { timeZone: 'Asia/Dubai' })) + '</td><td>' + esc(r.email) + '</td><td>' + (r.kind === 'full' ? 'Full tracker' : r.kind === 'daily' ? 'Daily additions' : r.kind === 'ppm' ? 'PPM report' : r.kind === 'ppm_works' ? 'PPM works list' : esc(r.kind)) + '</td><td>' + esc(r.file) + '</td><td class="n">' + h.fmt(r.rows_in) + '</td><td class="n">' + h.fmt(r.added) + '</td><td class="n">' + h.fmt(r.updated) + '</td><td class="n">' + h.fmt(r.removed) + '</td><td>' + (r.cutoff ? h.dstr(+r.cutoff) : '') + '</td></tr>'; }).join('') + '</tbody></table>';
       if (!LOG.length) el.innerHTML = '<div class="notice">No uploads yet.</div>';
     } catch (e) { el.innerHTML = '<div class="notice">Could not load history: ' + esc(e.message) + '</div>'; }
   }
@@ -1568,7 +1596,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function adminPanels() {
     var h = H(), cfg = RAWC.config, TABS = h.tabs();
     var perm = '<div class="tw"><table class="t"><thead><tr><th>Role</th>' + TABS.map(function (t) { return '<th>' + esc(t[1]) + '</th>'; }).join('') + '<th>Excel export</th><th>Print</th><th>Weekly deck (PPTX)</th><th>RM works</th></tr></thead><tbody>' +
-      ROLES.filter(function (r) { return r[0] !== 'admin' && r[0] !== 'supervisor'; }).map(function (r) {
+      ROLES.filter(function (r) { return ['admin', 'supervisor', 'team', 'ppm_supervisor', 'ppm_team'].indexOf(r[0]) < 0; }).map(function (r) {
         var p = permsFor(r[0], cfg);
         return '<tr><td>' + esc(r[1]) + '</td>' + TABS.map(function (t) { if (t[0] === 'reports' && REP_ROLES.indexOf(r[0]) < 0) return '<td><span class="muted" title="Not available for this role">—</span></td>'; return '<td><input type="checkbox" data-pr="' + r[0] + '" data-pt="' + t[0] + '"' + (p.tabs.indexOf(t[0]) >= 0 ? ' checked' : '') + ' aria-label="' + esc(r[1] + ' ' + t[1]) + '"></td>'; }).join('') +
           '<td><input type="checkbox" data-pr="' + r[0] + '" data-pt="_export"' + (p.export ? ' checked' : '') + '></td><td><input type="checkbox" data-pr="' + r[0] + '" data-pt="_print"' + (p.print ? ' checked' : '') + '></td>' +
@@ -1598,13 +1626,13 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         var SUPN = (h.supNames ? h.supNames() : []);
         el.innerHTML = '<div class="tw"><table class="t"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Supervisor name (labour supervisors)</th><th>Status</th><th>Active</th><th></th></tr></thead><tbody>' + USERS.map(function (u) {
           var me = u.id === profile.id;
-          return '<tr><td><input data-un="' + u.id + '" value="' + esc(u.full_name || '') + '" style="width:150px"></td><td>' + esc(u.email) + '</td><td><select data-ur="' + u.id + '"' + (me ? ' disabled' : '') + '><option value="">No access</option>' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></td><td>' + (u.role === 'supervisor' ? '<select multiple size="4" data-usn="' + u.id + '" aria-label="Supervisor names" style="min-width:190px">' + SUPN.concat((u.sup_names || []).filter(function (x) { return SUPN.indexOf(x) < 0; })).map(function (n) { return '<option value="' + esc(n) + '"' + ((u.sup_names || []).indexOf(n) >= 0 ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Ctrl+click for more than one</div>' : u.role === 'team' ? '<label class="muted" style="font-size:.72rem;display:block" for="utf' + u.id + '">Team of supervisor</label><select id="utf' + u.id + '" data-utf="' + u.id + '" style="min-width:190px"><option value="">Choose the supervisor…</option>' + USERS.filter(function (x) { return x.role === 'supervisor'; }).map(function (x) { return '<option value="' + x.id + '"' + (u.team_of === x.id ? ' selected' : '') + '>' + esc(x.full_name || x.email) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Prepares reports only; the supervisor sends them</div>' : '<span class="muted">—</span>') + '</td><td>' + (u.must_set_password ? '<span class="pill avg">Invited, password not set</span>' : '<span class="pill good">Active account</span>') + '</td><td><input type="checkbox" data-ua="' + u.id + '"' + (u.active ? ' checked' : '') + (me ? ' disabled' : '') + '></td><td><button class="btn xs" data-us="' + u.id + '">Save</button> ' + (u.must_set_password ? '<button class="btn xs" data-ri="' + esc(u.email) + '" data-rn="' + esc(u.full_name || '') + '">Resend invitation</button>' : '<button class="btn xs" data-rs="' + esc(u.email) + '" title="Email this user a link to set a new password">Reset password</button>') + '</td></tr>';
+          return '<tr><td><input data-un="' + u.id + '" value="' + esc(u.full_name || '') + '" style="width:150px"></td><td>' + esc(u.email) + '</td><td><select data-ur="' + u.id + '"' + (me ? ' disabled' : '') + '><option value="">No access</option>' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></td><td>' + (u.role === 'supervisor' ? '<select multiple size="4" data-usn="' + u.id + '" aria-label="Supervisor names" style="min-width:190px">' + SUPN.concat((u.sup_names || []).filter(function (x) { return SUPN.indexOf(x) < 0; })).map(function (n) { return '<option value="' + esc(n) + '"' + ((u.sup_names || []).indexOf(n) >= 0 ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Ctrl+click for more than one</div>' : (u.role === 'team' || u.role === 'ppm_team') ? '<label class="muted" style="font-size:.72rem;display:block" for="utf' + u.id + '">Team of ' + (u.role === 'ppm_team' ? 'PPM supervisor' : 'supervisor') + '</label><select id="utf' + u.id + '" data-utf="' + u.id + '" style="min-width:190px"><option value="">Choose the supervisor…</option>' + USERS.filter(function (x) { return x.role === (u.role === 'ppm_team' ? 'ppm_supervisor' : 'supervisor'); }).map(function (x) { return '<option value="' + x.id + '"' + (u.team_of === x.id ? ' selected' : '') + '>' + esc(x.full_name || x.email) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Prepares reports only; the supervisor sends them</div>' : '<span class="muted">—</span>') + '</td><td>' + (u.must_set_password ? '<span class="pill avg">Invited, password not set</span>' : '<span class="pill good">Active account</span>') + '</td><td><input type="checkbox" data-ua="' + u.id + '"' + (u.active ? ' checked' : '') + (me ? ' disabled' : '') + '></td><td><button class="btn xs" data-us="' + u.id + '">Save</button> ' + (u.must_set_password ? '<button class="btn xs" data-ri="' + esc(u.email) + '" data-rn="' + esc(u.full_name || '') + '">Resend invitation</button>' : '<button class="btn xs" data-rs="' + esc(u.email) + '" title="Email this user a link to set a new password">Reset password</button>') + '</td></tr>';
         }).join('') + '</tbody></table></div>';
         Array.prototype.forEach.call(document.querySelectorAll('[data-us]'), function (b) {
           b.onclick = async function () {
             var id = b.getAttribute('data-us'), q = function (a) { return document.querySelector('[' + a + '="' + id + '"]'); };
             var upd = { full_name: q('data-un').value.trim() }; if (!q('data-ur').disabled) { upd.role = q('data-ur').value || null; upd.active = q('data-ua').checked; } var sn = q('data-usn'); if (sn) upd.sup_names = Array.prototype.filter.call(sn.options, function (o) { return o.selected; }).map(function (o) { return o.value; }); var tf = q('data-utf'); if (tf) upd.team_of = tf.value || null;
-            try { var was = (USERS.filter(function (x) { return x.id === id; })[0] || {}).role; chk(await sb.from('profiles').update(upd).eq('id', id)); b.textContent = 'Saved'; setTimeout(function () { b.textContent = 'Save'; }, 1500); if ((upd.role === 'supervisor') !== (was === 'supervisor') || (upd.role === 'team') !== (was === 'team')) drawUsers(); } catch (e) { h.setSt('stU', e.message, 'err'); }
+            try { var was = (USERS.filter(function (x) { return x.id === id; })[0] || {}).role; chk(await sb.from('profiles').update(upd).eq('id', id)); b.textContent = 'Saved'; setTimeout(function () { b.textContent = 'Save'; }, 1500); if ((upd.role === 'supervisor') !== (was === 'supervisor') || (upd.role === 'team') !== (was === 'team') || (upd.role === 'ppm_team') !== (was === 'ppm_team')) drawUsers(); } catch (e) { h.setSt('stU', e.message, 'err'); }
           };
         });
         Array.prototype.forEach.call(document.querySelectorAll('[data-ri]'), function (b) {
@@ -1634,8 +1662,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       } catch (e) { rows.push(['Database (Supabase)', '—', '500 MB', /admin_storage_usage|function/i.test(e.message || '') ? '<span class="muted">Run the update 16_SQL_storage_usage.sql in Supabase first.</span>' : esc(e.message), '—']); }
       try {
         var b = await phPost('a=usage', '{}'), B2L = 10 * GB; b2Free = B2L - (+b.bytes || 0);
-        rows.push(['Maximo photos (Backblaze B2)', sz(b.bytes) + ' · ' + (+b.files || 0).toLocaleString() + ' files', '10 GB', bar(b.bytes, B2L), sz(B2L - b.bytes)]);
-      } catch (e) { rows.push(['Maximo photos (Backblaze B2)', '—', '10 GB', /Unknown action/i.test(e.message || '') ? '<span class="muted">Upload the new photos server (function photos) first.</span>' : esc(e.message), '—']); }
+        rows.push(['Photo storage (Backblaze B2) — all photos' + (b.maximo != null ? '<div class="muted" style="font-size:.78rem;margin-top:2px">Maximo photos (with thumbnails): ' + sz(+b.maximo || 0) + '<br>Service reports, signatures, before/after photos: ' + sz(+b.other || 0) + '</div>' : ''), sz(b.bytes) + ' · ' + (+b.files || 0).toLocaleString() + ' files' + (b.at ? '<div class="muted" style="font-size:.72rem">counted ' + esc(dmDxb(b.at)) + (b.cached ? ' (once an hour)' : '') + '</div>' : ''), '10 GB', bar(b.bytes, B2L), sz(B2L - b.bytes)]);
+      } catch (e) { rows.push(['Photo storage (Backblaze B2) — all photos', '—', '10 GB', /Unknown action/i.test(e.message || '') ? '<span class="muted">Upload the new photos server (function photos) first.</span>' : esc(e.message), '—']); }
       var est = '';
       if (dbFree != null || b2Free != null) {
         var n1 = dbFree != null ? Math.floor(Math.max(0, dbFree - 50 * MB) / (10 * 1024)) : null, n2 = b2Free != null ? Math.floor(Math.max(0, b2Free) / (0.6 * MB)) : null;
@@ -1820,8 +1848,10 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   async function mxKeyNew(label) { return chk(await sb.rpc('sync_key_new', { p_label: label || 'Maximo photos', p_kind: 'maximo' })); }
   async function mxStatus() { return chk(await sb.rpc('mx_status')); }
   /* ---------- SR status flags: Done by DM team / Canceled by end user / Adhoc scope ---------- */
-  var FLAGS = { dm_done: 'Done by DM team', cancelled: 'Canceled by end user', adhoc: 'Adhoc scope' };
-  var FLAG_SET_ROLES = ['admin', 'imdaad_engineer', 'operator', 'supervisor'];
+  var FLAGS = { out_scope: 'Out of scope', cancelled: 'Canceled by end user', dm_done: 'Done by DM team', adhoc: 'Adhoc scope' };
+  var FLAG_SET_ROLES = ['admin', 'imdaad_engineer', 'operator', 'manager', 'supervisor'];
+  // a status sends the SR to the CAFM operator / manager; "returned" gives it back to the supervisor
+  function flagActive(sr) { var f = flagOf(sr); return !!(f && f.state !== 'returned'); }
   var SRF = null;
   function flagsAllowed() { return !!(profile && MX_ROLES.indexOf(profile.role) >= 0); }
   function flagCanSet() { return !!(profile && FLAG_SET_ROLES.indexOf(profile.role) >= 0); }
@@ -1835,7 +1865,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   }
   function flagOf(sr) { return SRF ? SRF[sr] || null : null; }
   function flagLabel(sr) { var f = flagOf(sr); return f ? FLAGS[f.flag] || f.flag : ''; }
-  function flagPill(sr) { var f = flagOf(sr); if (!f) return ''; return '<span class="pill flag f-' + esc(f.flag) + '" title="' + esc((f.note ? f.note + ' · ' : '') + (f.by_name || '') + ' ' + dmDxb(f.at, true)) + '">🏷 ' + esc(FLAGS[f.flag] || f.flag) + '</span>'; }
+  function flagPill(sr) { var f = flagOf(sr); if (!f) return ''; if (f.state === 'returned') return '<span class="pill flag f-ret" title="' + esc((f.ret_name || '') + ' ' + dmDxb(f.ret_at)) + '">↩ Returned by office</span>'; return '<span class="pill flag f-' + esc(f.flag) + '" title="' + esc((f.note ? f.note + ' · ' : '') + (f.by_name || '') + ' ' + dmDxb(f.at, true)) + '">🏷 ' + esc(FLAGS[f.flag] || f.flag) + '</span>'; }
   async function flagSet(sr, flag, note) {
     var r = await sb.rpc('sr_flag_set', { p_sr: String(sr), p_flag: flag || null, p_note: note || null });
     if (r.error) throw new Error(/sr_flag_set/.test(r.error.message || '') ? 'The admin needs to run update 11 in Supabase first.' : String(r.error.message).replace(/^RM:\s*/, ''));
@@ -1846,8 +1876,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function flagFormHTML(sr, idp) {
     var f = flagOf(sr) || {};
     return '<div class="flagf" id="' + idp + '"><div class="flag-opts" role="radiogroup" aria-label="SR status">' + Object.keys(FLAGS).map(function (k) { return '<label class="flag-o"><input type="radio" name="' + idp + 'R" value="' + k + '"' + (f.flag === k ? ' checked' : '') + '><span>' + esc(FLAGS[k]) + '</span></label>'; }).join('') + '</div>' +
-      '<label class="sr-only" for="' + idp + 'N">Note</label><input id="' + idp + 'N" class="sv-in" maxlength="300" placeholder="Note (optional)" value="' + esc(f.note || '') + '">' +
-      '<div class="flag-b"><button class="btn primary" type="button" id="' + idp + 'S">Save status</button>' + (f.flag ? '<button class="btn" type="button" id="' + idp + 'U">Remove status</button>' : '') + '</div>' +
+      (f.state === 'returned' ? '<div class="flag-ret">↩ <b>Returned by ' + esc(f.ret_name || 'the office') + '</b> · ' + esc(dmDxb(f.ret_at)) + (f.ret_note ? '<br>' + esc(f.ret_note) : '') + '</div>' : '') +
+      '<label class="sr-only" for="' + idp + 'N">Reason</label><input id="' + idp + 'N" class="sv-in" maxlength="300" placeholder="Reason (required) — e.g. asset of RTA, customer canceled" value="' + esc(f.state === 'returned' ? '' : (f.note || '')) + '">' +
+      '<div class="flag-b"><button class="btn primary" type="button" id="' + idp + 'S">' + (profile && profile.role === 'supervisor' ? 'Send to office' : 'Save status') + '</button>' + (f.flag ? '<button class="btn" type="button" id="' + idp + 'U">Remove status</button>' : '') + '</div>' +
       (f.flag ? '<div class="muted" style="font-size:.78rem">Set by ' + esc(f.by_name || '?') + ' · ' + esc(mxWhen(f.at)) + '</div>' : '') + '<div class="status" id="' + idp + 'St"></div></div>';
   }
   function flagFormBind(sr, idp, done) {
@@ -1856,6 +1887,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     box.addEventListener('change', function () { st(''); });
     $('#' + idp + 'S').onclick = async function () {
       var c = box.querySelector('input[type=radio]:checked'); if (!c) return st('Choose a status first.', 'err');
+      if (!String($('#' + idp + 'N').value || '').trim()) { $('#' + idp + 'N').focus(); return st('Write the reason first.', 'err'); }
       this.disabled = true; st('Saving…');
       try { await flagSet(sr, c.value, $('#' + idp + 'N').value); st('Saved.', 'ok'); if (done) done(true); } catch (e) { st('Not saved: ' + e.message, 'err'); this.disabled = false; }
     };
@@ -2053,7 +2085,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var q = SV.q.trim().toLowerCase(), out = [];
     var hit = function (sr, txt) { return !q || (sr + ' ' + txt).toLowerCase().indexOf(q) >= 0; };
     if (tab === 'todo') {
-      (SV.reps || []).forEach(function (r) { if (svcOf(r.id).st !== 'todo') return; if (SV.area && svArea(r) !== SV.area) return; if (!hit(r.id, (r.wo || '') + ' ' + (r.summary || '') + ' ' + (r.locd || ''))) return; out.push({ sr: r.id, r: r }); });
+      (SV.reps || []).forEach(function (r) { if (svcOf(r.id).st !== 'todo' || flagActive(r.id)) return; if (SV.area && svArea(r) !== SV.area) return; if (!hit(r.id, (r.wo || '') + ' ' + (r.summary || '') + ' ' + (r.locd || ''))) return; out.push({ sr: r.id, r: r }); });
       return out.sort(function (a, b) { return a.r.rd - b.r.rd; });
     }
     var want = { draft: ['draft'], cust: ['ready', 'sent'], sent: ['signed'] }[tab];
@@ -2136,11 +2168,30 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   // ---------- open a report (new = pre-filled from the tracker)
   async function svcInfo(sr) { var r = await sb.rpc('svc_sr_info', { p_sr: sr }); if (r.error) throw r.error; SVC.info[sr] = r.data; return r.data; }
   function svcClone(o) { return JSON.parse(JSON.stringify(o || {})); }
+  // reported day (as shown on the report) as 'YYYY-MM-DDT00:00' — the work cannot start before it
+  function svcRdDay(rd) { return rd ? new Date(+rd).toISOString().slice(0, 10) + 'T00:00' : ''; }
+  function svcFromDefault(info, now) { var f = svcDT(new Date(now.getTime() - 3 * 3600e3)), d = svcRdDay(info.rd), t = svcDT(now); return d && f < d && d < t ? d : f; }
+  // the dates must make sense: returns the problem, or '' when fine
+  function svcDateErr(d, info) {
+    var f = String(d.from || '').slice(0, 16), t = String(d.to || '').slice(0, 16), rd = svcRdDay((info || {}).rd), nowMax = svcDT(new Date(Date.now() + 15 * 60e3));
+    if (!f || !t) return 'Fill in "Attended from" and "Attended to".';
+    if (t === f) return '"Attended to" cannot be the same date and time as "Attended from".';
+    if (t < f) return '"Attended to" cannot be before "Attended from".';
+    if (rd && f < rd) return '"Attended from" cannot be before the day the SR was reported (' + svcDate((info || {}).rd) + ').';
+    if (t > nowMax) return '"Attended to" cannot be in the future.';
+    return '';
+  }
+  function svcDateLong(d) { var a = Date.parse(String(d.from || '').slice(0, 16) + ':00Z'), b = Date.parse(String(d.to || '').slice(0, 16) + ':00Z'); return a && b && b - a > 24 * 3600e3 ? Math.round((b - a) / 3600e3) : 0; }
+  function svcDatesOk(F) {
+    var e = svcDateErr(F.data, F.info); if (e) { if (F.step !== 1) { F.step = 1; svcForm(); } svToast(e, true); return false; }
+    var h = svcDateLong(F.data); if (h && F.longOk !== F.data.from + F.data.to) { if (!confirm('The work took ' + h + ' hours (more than 24 hours). Is this correct?')) { if (F.step !== 1) { F.step = 1; svcForm(); } return false; } F.longOk = F.data.from + F.data.to; }
+    return true;
+  }
   function svcNew(info) {
     var now = new Date(), c = info.cust || {};
     return { v: 1, wo: info.wo || '', facility: 'DM / FMC', zone: info.fz || info.zn || '', loc: svcLocTxt(info), lockey: info.lockey || '',
       rdate: svcDate(info.rd), rtime: svcTimeOf(info.rd), cat: svcCatOf(info), pri: svcPriOf(info.pr), rby: info.rbn || '', phone: c.phone || '',
-      from: svcDT(new Date(now.getTime() - 3 * 3600e3)), to: svcDT(now), lines: [{ d: info.sum || '' }], mats: [], techs: [],
+      from: svcFromDefault(info, now), to: svcDT(now), lines: [{ d: info.sum || '' }], mats: [], techs: [],
       team: (SVC.set && SVC.set.sig_name) || profile.full_name || '',
       cust: { name: c.name || info.rbn || '', designation: c.designation || '', phone: c.phone || '', email: c.email || '' } };
   }
@@ -2164,7 +2215,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="svc-prog"><i style="width:' + (F.step * 25) + '%"></i></div><div class="svc-body" id="svcBody">' + [svcS1, svcS2, svcS3, svcS4][F.step - 1](F) + '</div><div class="svc-foot">' + foot + '</div></div>');
     $('#svOv').onclick = null;   // do not close by tapping outside (avoid losing work)
     $('#svcX').onclick = async function () { svcRead(); await svcSaveLocal(F.status === 'ready' ? 'ready' : 'draft', true); svClose(); svRepList(); };
-    var nx = $('#svcNext'); if (nx) nx.onclick = function () { svcRead(); F.step++; svcSaveLocal(F.status, false); svcForm(); var b = $('#svcBody'); if (b) b.scrollTop = 0; };
+    var nx = $('#svcNext'); if (nx) nx.onclick = function () { svcRead(); if (F.step === 1 && !svcDatesOk(F)) return; F.step++; svcSaveLocal(F.status, false); svcForm(); var b = $('#svcBody'); if (b) b.scrollTop = 0; };
     var bk = $('#svcBack'); if (bk) bk.onclick = function () { svcRead(); F.step--; svcForm(); };
     var dr = $('#svcDraft'); if (dr) dr.onclick = function () { svcFinish('draft'); };
     var rd = $('#svcReady'); if (rd) rd.onclick = function () { svcFinish('ready'); };
@@ -2381,6 +2432,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var team = status === 'team';
     if (team) { var mt = svcMissing(F.data, F.ph); if (mt.length) { if (F.step !== 4) { F.step = 4; svcForm(); } return svToast('Missing: ' + mt.join(', '), true); } F.data.teamDone = true; F.data.teamAt = new Date().toISOString(); status = 'draft'; }
     if (status === 'ready') { var mi = svcMissing(F.data, F.ph); if (mi.length) { if (F.step !== 4) { F.step = 4; svcForm(); } return svToast('Missing: ' + mi.join(', '), true); } }
+    if ((status === 'ready' || team) && !svcDatesOk(F)) return;
     if (status === 'ready' && !F.ph.before && !confirm('There is no BEFORE picture. Mark the report ready without it?')) { if (F.step !== 2) { F.step = 2; svcForm(); } return; }
     svcSetBusy(true);
     await svcSaveLocal(status, false);
@@ -2762,6 +2814,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var q = SV.q.trim().toLowerCase(), tab = SV.apTab || 'todo';
     var list = (SV.ap || []).filter(function (x) {
       if ((tab === 'todo') === (x.status === 'done')) return false;
+      if (flagActive(x.sr)) return false;
       if (SV.area && svArea(x) !== SV.area) return false;
       return !q || (x.sr + ' ' + (x.wo || '') + ' ' + (x.summary || '') + ' ' + (x.locd || '') + ' ' + (x.area || '')).toLowerCase().indexOf(q) >= 0;
     }).sort(function (a, b) { return tab === 'todo' ? a.rd - b.rd : String(b.done_at || '') < String(a.done_at || '') ? -1 : 1; });
@@ -2980,7 +3033,634 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   }
 
 
-  window.DM_CLOUD = { apOffice: apOffice, svcOffice: svcOffice, reportsAdd: reportsAdd, reportsRemove: reportsRemove, reportsReload: reportsReload, syncKeyNew: syncKeyNew, syncKeyRevoke: syncKeyRevoke, syncScript: syncScript, syncCmd: syncCmd, emgList: emgList, emgFlag: emgFlag, emgClear: emgClear, emgPushStatus: emgPushStatus, emgSaveCfg: emgSaveCfg, purgePhotos: purgePhotos, rmActivity: rmActivity, materials: materials, matDecide: matDecide, photoUrls: photoUrls, loadUtil: loadUtil, utilSave: utilSave, utilDropMonth: utilDropMonth, utilZoneSet: utilZoneSet, photoCounts: photoCounts, photoCount: photoCount, loadFlags: loadFlags, flagOf: flagOf, flagLabel: flagLabel, flagPill: flagPill, flagCanSet: flagCanSet, flagFormHTML: flagFormHTML, flagFormBind: flagFormBind, FLAGS: FLAGS, srPhotos: srPhotos, photoStrip: photoStrip, gallery: gallery, mxAllowed: mxAllowed, mxKeyNew: mxKeyNew, mxStatus: mxStatus, mxScript: mxScript, rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
+  /* ---------- SR status sent by the supervisors: handled by the CAFM operator / manager ---------- */
+  var SFO = { rows: null, f: { st: 'open', fl: '', own: '', q: '' }, sel: {}, el: null };
+  function sfCan() { return !!(profile && ['admin', 'operator', 'manager'].indexOf(profile.role) >= 0); }
+  async function sfOffice(el) {
+    if (!el) return; SFO.el = el; el.innerHTML = '<div class="notice">Loading…</div>';
+    try { var rows = [], from = 0; for (;;) { var r = await sb.rpc('sr_flags_office').order('sr').range(from, from + 999); if (r.error) throw r.error; rows = rows.concat(r.data || []); if (!r.data || r.data.length < 1000) break; from += 1000; } SFO.rows = rows; }
+    catch (e) { el.innerHTML = '<div class="notice">' + (/sr_flags_office|schema cache|does not exist/i.test(e.message || '') ? 'Not set up yet: run the update <b>19_SQL_status_office_dates.sql</b> in Supabase.' : 'Could not load: ' + esc(e.message || e)) + '</div>'; return; }
+    sfDraw();
+  }
+  function sfStateOf(x) { return x.state || 'open'; }
+  function sfList() {
+    var f = SFO.f, q = f.q.trim().toLowerCase();
+    return SFO.rows.filter(function (x) {
+      if (f.st && sfStateOf(x) !== f.st) return false; if (f.fl && x.flag !== f.fl) return false; if (f.own && (x.owner || '') !== f.own) return false;
+      return !q || (x.sr + ' ' + (x.locd || '') + ' ' + (x.summary || '') + ' ' + (x.note || '') + ' ' + (x.by_name || '')).toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a, b) { return String(b.at || '') < String(a.at || '') ? -1 : 1; });
+  }
+  function sfDraw() {
+    var R = SFO.rows, el = SFO.el, f = SFO.f, open = R.filter(function (x) { return sfStateOf(x) === 'open'; });
+    var o = function (v, t, c) { return '<option value="' + esc(v) + '"' + (v === c ? ' selected' : '') + '>' + esc(t) + '</option>'; };
+    var owners = R.map(function (x) { return x.owner || ''; }).filter(function (x, i, a) { return x && a.indexOf(x) === i; }).sort();
+    var list = sfList(), nsel = list.filter(function (x) { return SFO.sel[x.sr]; }).length, stl = { open: '<span class="pill avg">Waiting</span>', handled: '<span class="pill good">Handled</span>', returned: '<span class="pill na">Returned</span>' };
+    el.innerHTML = '<div class="kpis">' + [['Waiting for the office', open.length, 'sent by the supervisors']].concat(Object.keys(FLAGS).map(function (k) { return [FLAGS[k], open.filter(function (x) { return x.flag === k; }).length, 'waiting']; })).concat([['Handled', R.filter(function (x) { return sfStateOf(x) === 'handled'; }).length, 'by the office'], ['Returned', R.filter(function (x) { return sfStateOf(x) === 'returned'; }).length, 'back to the supervisor']]).map(function (x) { return '<div class="kpi"><span class="l">' + esc(x[0]) + '</span><span class="v">' + x[1] + '</span><span class="s">' + x[2] + '</span></div>'; }).join('') + '</div>' +
+      '<div class="filters" style="margin:12px 0 8px;padding:0"><div class="f"><label for="sfF1">State</label><select id="sfF1">' + o('open', 'Waiting', f.st) + o('handled', 'Handled', f.st) + o('returned', 'Returned to supervisor', f.st) + o('', 'All', f.st) + '</select></div>' +
+      '<div class="f"><label for="sfF2">Status</label><select id="sfF2">' + o('', 'All statuses', f.fl) + Object.keys(FLAGS).map(function (k) { return o(k, FLAGS[k], f.fl); }).join('') + '</select></div>' +
+      '<div class="f"><label for="sfF3">Supervisor</label><select id="sfF3">' + o('', 'All supervisors', f.own) + owners.map(function (x) { return o(x, x, f.own); }).join('') + '</select></div>' +
+      '<div class="f"><label for="sfF4">Search</label><input id="sfF4" type="search" value="' + esc(f.q) + '" placeholder="SR, location, reason"></div></div>' +
+      '<div class="sf-act">' + (sfCan() ? '<button class="btn primary" id="sfOk"' + (nsel ? '' : ' disabled') + '>✓ Mark handled (' + nsel + ')</button><button class="btn" id="sfUn"' + (nsel ? '' : ' disabled') + '>Undo handled</button>' +
+        '<span class="sf-ret"><label class="sr-only" for="sfRn">Note for the supervisor</label><input id="sfRn" maxlength="300" placeholder="Note for the supervisor (required to return)"><button class="btn" id="sfRet"' + (nsel ? '' : ' disabled') + '>↩ Return to supervisor</button></span>' : '') +
+        '<button class="btn" id="sfXl"' + (list.length ? '' : ' disabled') + '>⬇ Excel (' + list.length + ')</button><span class="status" id="sfSt"></span></div>' +
+      '<div class="tw" style="max-height:560px"><table class="t"><thead><tr><th><input type="checkbox" id="sfAll" aria-label="Select all"></th><th>SR</th><th>Status</th><th>Reason</th><th>Sent by</th><th>Zone</th><th>Location</th><th>Description</th><th>Maximo</th><th>State</th></tr></thead><tbody>' +
+      list.slice(0, 500).map(function (x) {
+        var stt = sfStateOf(x), info = stt === 'handled' ? esc(x.handled_name || '') + ' · ' + esc(dmDxb(x.handled_at)) : stt === 'returned' ? esc(x.ret_name || '') + ' · ' + esc(dmDxb(x.ret_at)) + (x.ret_note ? '<br>' + esc(x.ret_note) : '') : '';
+        return '<tr><td><input type="checkbox" data-sfs="' + esc(x.sr) + '"' + (SFO.sel[x.sr] ? ' checked' : '') + ' aria-label="Select SR ' + esc(x.sr) + '"></td><td>' + esc(x.sr) + (x.wo ? '<div class="muted" style="font-size:.72rem">WO ' + esc(x.wo) + '</div>' : '') + '</td><td><span class="pill flag f-' + esc(x.flag) + '">' + esc(FLAGS[x.flag] || x.flag) + '</span></td><td>' + esc(x.note || '') + '</td><td>' + esc(x.by_name || '') + '<div class="muted" style="font-size:.72rem">' + esc(dmDxb(x.at)) + '</div></td><td>' + esc(x.fz || '') + '</td><td>' + esc(String(x.locd || (x.in_tracker ? '' : 'Not in the tracker')).replace(/_/g, ' · ')) + '</td><td>' + esc(x.summary || '') + '</td><td>' + esc(x.mx || '') + '</td><td>' + stl[stt] + (info ? '<div class="muted" style="font-size:.72rem">' + info + '</div>' : '') + '</td></tr>';
+      }).join('') + '</tbody></table></div>' + (list.length > 500 ? '<p class="muted">Showing 500 of ' + list.length + '. Use the filters.</p>' : '') + (!list.length ? '<p class="muted">Nothing here for these filters.</p>' : '');
+    var re = function () { SFO.sel = {}; sfDraw(); };
+    $('#sfF1').onchange = function (e) { SFO.f.st = e.target.value; re(); }; $('#sfF2').onchange = function (e) { SFO.f.fl = e.target.value; re(); }; $('#sfF3').onchange = function (e) { SFO.f.own = e.target.value; re(); };
+    var qt; $('#sfF4').oninput = function (e) { clearTimeout(qt); qt = setTimeout(function () { SFO.f.q = e.target.value; sfDraw(); var x = $('#sfF4'); x.focus(); x.setSelectionRange(x.value.length, x.value.length); }, 300); };
+    svcAll('[data-sfs]').forEach(function (c) { c.onchange = function () { var k = c.getAttribute('data-sfs'); if (c.checked) SFO.sel[k] = 1; else delete SFO.sel[k]; sfDraw(); }; });
+    var shown = list.slice(0, 500); $('#sfAll').checked = !!shown.length && shown.every(function (x) { return SFO.sel[x.sr]; });
+    $('#sfAll').onchange = function (e) { shown.forEach(function (x) { if (e.target.checked) SFO.sel[x.sr] = 1; else delete SFO.sel[x.sr]; }); sfDraw(); };
+    var sel = function () { return list.filter(function (x) { return SFO.sel[x.sr]; }).map(function (x) { return x.sr; }); };
+    if (sfCan()) {
+      var hand = async function (on) { var S = sel(); var r = await sb.rpc('sr_flag_handle', { p_srs: S, p_on: on }); if (r.error) return setMsg('sfSt', r.error.message, 'err'); SFO.sel = {}; await sfOffice(SFO.el); setMsg('sfSt', r.data + ' SR(s) ' + (on ? 'marked handled.' : 'back to waiting.'), 'ok'); };
+      $('#sfOk').onclick = function () { hand(true); }; $('#sfUn').onclick = function () { hand(false); };
+      $('#sfRet').onclick = async function () { var S = sel(), note = ($('#sfRn').value || '').trim(); if (!note) { $('#sfRn').focus(); return setMsg('sfSt', 'Write a note for the supervisor first.', 'err'); } if (!confirm('Return ' + S.length + ' SR(s) to the supervisor? They come back to his list with your note.')) return; var r = await sb.rpc('sr_flag_return', { p_srs: S, p_note: note }); if (r.error) return setMsg('sfSt', r.error.message, 'err'); SFO.sel = {}; await sfOffice(SFO.el); setMsg('sfSt', r.data + ' SR(s) returned to the supervisor.', 'ok'); };
+    }
+    $('#sfXl').onclick = async function () {
+      var b = this; b.disabled = true;
+      try {
+        await svcLib('xlsx', function () { return !!window.XLSX; });
+        var aoa = [['SR No.', 'WO', 'Status', 'Reason', 'Sent by', 'Sent at', 'Supervisor', 'Zone', 'Location', 'Description', 'Maximo', 'Tracker', 'State', 'Handled / returned by', 'At', 'Note to supervisor']].concat(list.map(function (x) { var stt = sfStateOf(x); return [isNaN(+x.sr) ? x.sr : +x.sr, x.wo || '', FLAGS[x.flag] || x.flag, x.note || '', x.by_name || '', dmDxb(x.at), x.owner || '', x.fz || '', String(x.locd || '').replace(/_/g, ' - '), x.summary || '', x.mx || '', x.st === 'O' ? 'Open' : x.st === 'C' ? 'Closed' : '', { open: 'Waiting', handled: 'Handled', returned: 'Returned' }[stt], stt === 'handled' ? x.handled_name || '' : stt === 'returned' ? x.ret_name || '' : '', stt === 'handled' ? dmDxb(x.handled_at) : stt === 'returned' ? dmDxb(x.ret_at) : '', x.ret_note || '']; }));
+        var ws = XLSX.utils.aoa_to_sheet(aoa); ws['!cols'] = [10, 10, 18, 36, 16, 17, 20, 6, 36, 44, 10, 8, 10, 18, 17, 30].map(function (w) { return { wch: w }; }); ws['!autofilter'] = { ref: 'A1:P' + aoa.length };
+        var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'SR status');
+        svcSave(new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'SR_status_' + svcDubaiDay() + '_' + list.length + '.xlsx');
+      } catch (e) { setMsg('sfSt', e.message || String(e), 'err'); }
+      b.disabled = false;
+    };
+  }
+
+  /* ===================== v4.32 PPM: work types, categories and the DM checklists (same text as the DM-GMD forms) ===================== */
+  var PPM_TYPES = {   // Route code -> work type; categories in groups, each group has its own DM checklist
+    CAC: { label: 'CAC', groups: [{ g: 'A', name: 'CAC', cl: 'cac', cats: ['FAHU', 'AHU', 'FCU', 'Chiller'] }, { g: 'B', name: 'Package', cl: 'pkg', cats: ['Package Unit'] }] },
+    WC: { label: 'Water coolers', groups: [{ g: 'A', name: 'WC', cl: 'wc', cats: ['Water Cooler'] }] },
+    WAC: { label: 'Window AC', groups: [{ g: 'A', name: 'WAC', cl: 'wac', cats: ['Window AC'] }] },
+    SAC: { label: 'Split AC', groups: [{ g: 'A', name: 'SAC', cl: 'sac', cats: ['Split AC'] }] },
+    LIGHT: { label: 'Lights', groups: [{ g: 'A', name: 'Light', cl: 'light', cats: ['Light'] }] },
+    DB: { label: 'Electrical DB', groups: [{ g: 'A', name: 'DB', cl: 'db', cats: ['SMDB', 'MDB', 'Feeder Pillar', 'Meter Cabinet', 'DB Panel', 'DDC'] }, { g: 'B', name: 'LV', cl: 'lv', cats: ['LV Panel', 'Capacitor Bank'] }] }
+  };
+  // Route: R-<zone><area><no>-[NN-]<code>  e.g. R-HC28-CAC, R-AC07-01-CAC, R-BC10-WCSYST
+  var PPM_CODES = [['ELECT-LIGHT', 'LIGHT'], ['ELECT-DB', 'DB'], ['CAC', 'CAC'], ['WAC', 'WAC'], ['SAC', 'SAC'], ['WC', 'WC']];
+  function ppmRouteType(route) {
+    var s = String(route || '').toUpperCase().trim().replace(/^R-[A-Z]{2}\d+-/, '').replace(/^(\d+-)+/, '');
+    for (var i = 0; i < PPM_CODES.length; i++) if (s.indexOf(PPM_CODES[i][0]) === 0) return PPM_CODES[i][1];
+    return null;
+  }
+  function ppmRouteZone(route) { var m = /^R-([A-Z])/.exec(String(route || '').toUpperCase()); return m ? (m[1] === 'K' ? 'H' : m[1]) : ''; }
+  var OPER = 'Operate the unit for normal and safe condition and keep the unit area clean';
+  // kind 'grid': Location / Date, items x unit numbers;  kind 'elec': E.Area ... 1st / 2nd cycle, efficiency, remarks
+  var PPM_CL = {
+    wac: { kind: 'grid', units: 10, title: 'Window Type A/C Unit Quarterly Maintenance Checklist', ref: 'DM-GMD-F28-WTACUQMC', note: OPER, remarks: ["Contractor's Remarks", 'DM Remarks'],
+      sign: ["Name of Contractor's Engineer/Foreman", 'Name of DM Incharge/Occupant'],
+      sec: [{ h: '', items: ['Complete service with water pressure', 'Check unusual knocks, noises and vibrations', 'Check operation of compressor', 'Check operation of fan motor, fan blade and replace if required.', 'Check operation of thermostat, selector switch and replace if required', 'Check condition of condenser coil and comb', 'Check any leakage of refrigerant gas, repair and refill', 'Clear and clean drain tray and drain pipeline', 'Lubricate bearings, bushes and moving parts', 'Clean and wash air filter', 'Check power plug, cord wire, socket and replace if required', 'Check operation of air swing motor and do adjustment of grill louvers if required', 'Clean and paint complete unit, including condenser coil'] }] },
+    wc: { kind: 'grid', units: 10, title: 'Water Coolers Monthly Maintenance Checklist', ref: 'DM-GMD-F27-WCAMC', note: OPER, remarks: ['Contractors Remarks', 'DM Remarks'],
+      sign: ["Contractor's Engineer/Foreman", 'DM Inspector/Occupant'],
+      sec: [{ h: '', items: ['Clean, wash water filter housing and replace filter core with new one', 'Check water filter inlet and outlet pipeline for any leakage', 'Place sticker on the filter housing indicating date of filter core replacement.', 'Check float valve and replace, if required', 'Check water taps and replace, if required', 'Check and clear drain pipeline and clean drain tray', 'Check operation of compressor and relay over load', 'Check operation of condenser fan motor and fan blade and replace, if required', 'Check thermostat and replace, if required', 'Check power supply point socket', 'Check tank cover and fix/retighten properly', 'Check foundation of water cooler', 'Check over flow pipeline', 'Check gas leakage, repair and refill'] }] },
+    cac: { kind: 'grid', units: 8, title: 'CAC Monthly Checklist', ref: 'DM-GMD-F05-CMC', note: 'Operate the unit for normal and safe condition.', remarks: ['Remarks'],
+      sign: ["Name of Contractor's Engineer/Foreman", 'DM Inspector/Occupant'],
+      sec: [{ h: 'A. CHILLER', items: ['Unusual knocks, noises and vibration', 'Operation of compressor, oil level and unloader.', 'Condition of belts, retention or replace.', 'Condition of condenser coils and clean.', "Control panel and its components' condition, clean and retighten connections.", 'Lubricate bearings and moving parts', 'Maintain chiller water pipe line fittings and accessories.'] },
+        { h: 'B. CHILLED WATER PUMP', items: ['Operation of chilled and make up water pump and motor', 'Chilled and make up water pump glands and mechanical seal', 'Clean suction strainer', 'Lubricate bearings and moving parts', 'Maintain and service winding, electrical and mechanical components and moving parts.'] },
+        { h: 'C. AHU/FCU', items: ['Unusual knocks, noises and vibration', 'Condition of belts, retention or replace.', 'Clean filters or replace the damaged one.', 'Clean, clear and test all drain pipelines up to the nearest drain point.', 'Airflow and dampers.', 'Control panel and its components clean and retighten connections.', 'Lubricate bearings and moving parts.', 'Remove, clean and wash grills and diffusers', 'Maintain all internal and external ducting (VCD, flexible connection, duct insulation, cladding etc).'] },
+        { h: 'D. RECORD', rec: 1, items: ['Incoming voltage', 'Compressor amps', 'Blower motor pump', 'Suction pressure', 'Discharge pressure', 'Chilled water inlet temperature', 'Chilled water outlet temperature', 'Chilled water inlet pressure', 'Chilled water outlet pressure', 'Thermostat setting', 'Room temperature'] }] },
+    pkg: { kind: 'grid', units: 8, title: 'Packaged Unit AC Monthly Checklist', ref: 'DM-GMD-F18-PUACMC', note: OPER, remarks: ['Remarks'],
+      sign: ["Contractor's Engineer/Foreman", 'DM Inspector/Occupant'],
+      sec: [{ h: 'A. GENERAL', items: ['Unusual knocks, noises and vibrations', 'Conditions of belts, retention or replace.', 'Conditions of condenser coil, clean.', 'Operation of compressor, oil level and unloader.', 'Condition of control panel and its components, clean and retighten connections.', 'Lubricate bearings and moving parts', 'Clean filter or replace the damaged one', 'Clean, clear and test all drain pipeline up to the nearest drain point.', 'Remove, clean and wash grills and diffusers', 'Maintain all internal and external ducting (VCD, flexible connection, duct insulation, cladding etc).'] },
+        { h: 'B. RECORD', rec: 1, items: ['Incoming voltage', 'Compressor amps', 'Blower amps', 'Suction pressure', 'Discharge pressure', 'Thermostat Setting', 'Room Temperature'] }] },
+    sac: { kind: 'grid', units: 8, title: 'Split Unit AC Quarterly Checklist', ref: 'DM-GMD-F25-SUACQC', note: OPER, remarks: ['Remarks'],
+      sign: ["Contractor's Engineer/Foreman", 'DM Inspector/Occupant'],
+      sec: [{ h: 'A. CONDENSING UNITS', items: ['Service with water pressure', 'Unusual knocks, noises and vibrations', 'Conditions of condenser fan motor and fan blades', 'Condition of condenser coils and comb.', 'Operation of compressor, oil level and unloader.', 'Condition of control panel and its components clean and retighten connections.', 'Lubricate the bearings and moving parts', 'Clean and paint rusted area.'] },
+        { h: 'B. AHU', items: ['Service with water pressure', 'Unusual knocks, noises and vibrations', 'Condition of belts, blower and motor pulley and adjust or replace.', 'Lubricate bearings and moving parts', 'Paint rusted area.', 'Condition of panel and components and clean and retighten connections.', 'Clean filters or replace the damaged one.', 'Clean supply and return air grill and duct joints from inside.', 'Check air flow, dampers and motorize valve and adjust.', 'Clean, clear and test all drain pipeline up to the nearest drain point.'] },
+        { h: 'C. RECORD', rec: 1, items: ['Incoming voltage', 'Compressor amps', 'Blower amps', 'Suction pressure', 'Discharge pressure', 'Thermostat Setting', 'Room Temperature'] }] },
+    light: { kind: 'elec', title: 'Preventive Maintenance Checklist for light fixtures', ref: 'DM-GMD-F20-PMCLF', freq: 'FREQUENCY – HALF YEARLY / YEARLY',
+      items: ['Generally, clean the luminaire internally and externally (Reflectors, diffuser, mirrors and lamps)', 'Re-examine for damage or overheated component or wiring.', 'Re-assemble & return luminaire to workable', 'Inspect transformer / Blast for sign of overheating', 'Check / tighten mains and low voltage connect to transformer', 'Energize lighting and confirm the fitting is aimed correctly, adjust as necessary.', 'Check the pole light security of mounting bolts alignment, cut-out, terminals and repair or replace as necessary', 'Test operation of Emergency lights, restore lighting circuit supply & ensure recharging in progress.', 'Inform DM Engineer for any additional / major works required.'] },
+    db: { kind: 'elec', title: 'Electrical Maintenance – Distribution Boards', ref: 'DM-GMD-F09-EMDB', freq: 'FREQUENCY - HALF YEARLY / YEARLY',
+      items: ['Check all Electrical Terminations', 'Clean all busbars – check tightness – check condition', 'Clean interior', 'Record line voltages – phase voltages', 'Record all sub circuit loads', 'Check tripping mechanism of RCCBs / ELCBs'] },
+    lv: { kind: 'elec', title: 'Electrical Maintenance – LV PANEL & CAP. BANK', ref: 'DM-GMD-F10-EMLVPC', freq: 'FREQUENCY - HALF YEARLY / YEARLY',
+      items: ['Ammeter & Voltmeter in operation', 'Selector Switch in in operation', 'Earth Leakage Sensor are working within their Set Range', 'All outgoing cable termination for overheating', 'Tighten all cable terminations', 'Blow of any accumulated Test', 'Take Insulation tests and issue Certificates'] }
+  };
+  var PPM_MON = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+  function ppmMonthOf(ms) { if (!ms) return ''; var d = new Date(+ms); return PPM_MON[d.getUTCMonth()] + '-' + d.getUTCFullYear(); }
+  function ppmSiteOf(descr) { var m = /@\s*(.+)$/.exec(String(descr || '')); return m ? m[1].trim() : String(descr || '').replace(/^PPM of\s*/i, '').trim(); }
+  // which checklists a report needs: one per group that has at least one category with a count
+  function ppmClKeys(d) {
+    var T = PPM_TYPES[d.rtype], out = []; if (!T) return out;
+    T.groups.forEach(function (g) { if ((d.cats || []).some(function (c) { return c.g === g.g && +c.n > 0; })) out.push(g.cl); });
+    return out;
+  }
+  function ppmGroupCount(d, g) { return (d.cats || []).filter(function (c) { return c.g === g; }).reduce(function (s, c) { return s + (+c.n || 0); }, 0); }
+  /* ===================== v4.32 PPM: phone app for the PPM supervisor and his team ===================== */
+  var PPM = { works: [], reps: {}, tab: 'todo', ty: '', q: '', F: null, set: null };
+  function ppmTeam() { return !!(profile && profile.role === 'ppm_team'); }
+  function ppmSup() { return !!(profile && (profile.role === 'ppm_supervisor' || profile.role === 'admin')); }
+  function ppmMyOwner() { return ppmTeam() ? profile.team_of : profile.id; }
+  async function ppmPaged(table, cols, order) { var out = [], f = 0; for (;;) { var r = await sb.from(table).select(cols).order(order).range(f, f + 999); if (r.error) throw r.error; out = out.concat(r.data || []); if ((r.data || []).length < 1000) break; f += 1000; } return out; }
+  async function ppmLoad() {
+    var res = await Promise.all([ppmPaged('ppm_works', '*', 'wo'), ppmPaged('ppm_reports', 'wo,uid,status,data,prepared_name,updated_at,sent_at,signed_at,approved_at,cust,sup_name,mx_at', 'wo')]);
+    PPM.works = res[0]; PPM.reps = {}; res[1].forEach(function (x) { PPM.reps[x.wo] = x; });
+  }
+  async function ppmApp() {
+    loadingScreen('Loading PPM works…');
+    try {
+      if (ppmTeam() && !profile.team_of) { screen('<div class="auth-f"><p><b>This team account is not linked to a PPM supervisor yet.</b></p><p>Ask the portal administrator (Admin → Users → Team of supervisor).</p><button class="btn" id="soBtn">Sign out</button></div>'); $('#soBtn').onclick = signOut; return; }
+      await ppmLoad();
+      var s = await sb.from('svc_settings').select('uid,sig_path,sig_name').eq('uid', ppmMyOwner()).maybeSingle(); PPM.set = (s && s.data) || null;
+    } catch (e) { screen('<div class="auth-f"><p class="status err">Could not load: ' + esc(e.message || e) + (/ppm_/.test(e.message || '') ? ' — the admin needs to run update 20 in Supabase.' : '') + '</p><button class="btn" id="rtBtn">Try again</button> <button class="btn" id="soBtn">Sign out</button></div>'); $('#rtBtn').onclick = ppmApp; $('#soBtn').onclick = signOut; return; }
+    ppmDraw();
+  }
+  function ppmTabs() { return ppmTeam() ? [['todo', 'To do'], ['draft', 'Drafts'], ['sent', 'With supervisor']] : [['todo', 'To do'], ['draft', 'Drafts'], ['cust', 'Customer'], ['signed', 'Signed']]; }
+  function ppmTabOf(w) {
+    var r = PPM.reps[w.wo]; if (!r) return w.active ? 'todo' : null;
+    if (ppmTeam()) { if (r.status === 'draft' && !(r.data || {}).teamDone) return 'draft'; return r.status === 'signed' ? null : 'sent'; }
+    if (r.status === 'draft') return 'draft'; if (r.status === 'signed') return 'signed'; return 'cust';
+  }
+  function ppmRows(tab) {
+    var q = PPM.q.trim().toLowerCase();
+    return PPM.works.filter(function (w) {
+      if (ppmTabOf(w) !== tab) return false; if (PPM.ty && w.rtype !== PPM.ty) return false;
+      return !q || (w.wo + ' ' + (w.descr || '') + ' ' + (w.route || '')).toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a, b) { var ra = PPM.reps[a.wo], rb = PPM.reps[b.wo]; if (tab === 'todo') return (+a.target || 0) - (+b.target || 0); return String((rb && rb.updated_at) || '') < String((ra && ra.updated_at) || '') ? -1 : 1; });
+  }
+  function ppmDraw() {
+    var L = logos(), tabs = ppmTabs(); if (!tabs.some(function (t) { return t[0] === PPM.tab; })) PPM.tab = 'todo';
+    var n = {}; tabs.forEach(function (t) { n[t[0]] = ppmRows(t[0]).length; });
+    $('#app').innerHTML = '<div class="sv">' +
+      '<header class="sv-top"><div class="sv-logos">' + (L.left ? '<img src="' + L.left + '" alt="Imdaad">' : '') + (L.right ? '<img src="' + L.right + '" alt="Dubai Municipality">' : '') + '</div>' +
+      '<div class="sv-h"><div><h1>PPM works</h1><div class="sv-who">' + esc(profile.full_name || profile.email) + (ppmTeam() ? ' · team' : '') + '</div></div>' +
+      '<div class="sv-act"><button class="sv-ib" id="ppRef" aria-label="Refresh">↻</button>' + (ppmSup() ? '<button class="sv-ib" id="ppSet" aria-label="My signature">⚙</button>' : '') + '<details class="sv-menu"><summary class="sv-ib" aria-label="Account">☰</summary><div class="sv-pop"><form id="svPw"><label for="svP">New password</label><input id="svP" type="password" minlength="8" autocomplete="new-password"><button class="btn" type="submit">Change password</button><div class="status" id="svPwSt"></div></form><button class="btn" id="svOut">Sign out</button></div></details></div></div>' +
+      '<div class="sv-today">' + (ppmTeam() ? '👥 Team account — prepare the reports and send them to your supervisor' : 'Preventive maintenance reports · ' + PPM.works.filter(function (w) { return w.active; }).length + ' works in the list') + '</div></header>' +
+      (ppmSup() && !(PPM.set && PPM.set.sig_path) ? '<div class="svc-pend" style="margin:8px 12px 0">First time: press <b>⚙</b> and save your signature. It is added to every report.</div>' : '') +
+      '<div class="svc-tabs" role="tablist" style="margin:10px 12px 0">' + tabs.map(function (t) { return '<button role="tab" class="svc-tab" data-ppt="' + t[0] + '" aria-selected="' + (PPM.tab === t[0]) + '">' + t[1] + (n[t[0]] ? ' <i>' + n[t[0]] + '</i>' : '') + '</button>'; }).join('') + '</div>' +
+      '<div class="pp-ty">' + [['', 'All']].concat(Object.keys(PPM_TYPES).map(function (k) { return [k, k === 'LIGHT' ? 'ELECT-LIGHT' : k === 'DB' ? 'ELECT-DB' : k]; })).map(function (x) { return '<button class="svc-chip' + (PPM.ty === x[0] ? ' on' : '') + '" data-pty="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="sv-search"><input type="search" id="ppQ" placeholder="Search work order, site, route" value="' + esc(PPM.q) + '"></div>' +
+      '<main id="svList" class="sv-list"></main><div id="svSheet"></div><div class="sv-toast" id="svToast" role="status" aria-live="polite"></div></div>';
+    svcAll('[data-ppt]').forEach(function (b) { b.onclick = function () { PPM.tab = b.getAttribute('data-ppt'); ppmDraw(); }; });
+    svcAll('[data-pty]').forEach(function (b) { b.onclick = function () { PPM.ty = b.getAttribute('data-pty'); ppmDraw(); }; });
+    var qt; $('#ppQ').oninput = function (e) { clearTimeout(qt); qt = setTimeout(function () { PPM.q = e.target.value; ppmList(); }, 250); };
+    $('#ppRef').onclick = ppmApp; $('#svOut').onclick = signOut; var st = $('#ppSet'); if (st) st.onclick = ppmSettings;
+    $('#svPw').onsubmit = async function (e) { e.preventDefault(); var r = await sb.auth.updateUser({ password: $('#svP').value }); setMsg('svPwSt', r.error ? r.error.message : 'Password changed.', r.error ? 'err' : 'ok'); };
+    ppmList();
+  }
+  var PP_ST = { draft: ['Draft', 'svc-p-acc'], ready: ['Ready', 'svc-p-acc'], sent: ['Link sent', 'svc-p-warn'], csigned: ['Customer signed – approve', 'svc-p-team'], signed: ['Signed', 'svc-p-good'] };
+  function ppmCard(w) {
+    var r = PPM.reps[w.wo], d = (r && r.data) || {}, h = '<article class="sv-card' + (r ? ' svc-c-' + r.status : ' s-rep') + '" data-wo="' + esc(w.wo) + '"><div class="sv-row"><b class="sv-sr">WO ' + esc(w.wo) + '</b><span class="pill avg">' + esc(w.rtype === 'LIGHT' ? 'ELECT-LIGHT' : w.rtype === 'DB' ? 'ELECT-DB' : w.rtype) + '</span>' +
+      (r ? '<span class="svc-pill ' + PP_ST[r.status][1] + '">' + PP_ST[r.status][0] + '</span>' : '') + (r && r.status === 'draft' && d.teamDone ? '<span class="svc-pill svc-p-team">' + (ppmTeam() ? '✓ Sent to supervisor' : '👥 From team – review') + '</span>' : '') + '</div>' +
+      '<div class="sv-meta">' + esc(w.route || '') + ' · Zone ' + esc(w.zone || '?') + (w.target ? ' · target ' + esc(dmDxb(+w.target - 4 * 3600e3, true)) : '') + (w.active ? '' : ' · <b>not in the latest list</b>') + '</div><div class="sv-loc">' + esc(w.descr || '') + '</div>';
+    if (r && r.prepared_name && !ppmTeam()) h += '<div class="sv-meta">Prepared by ' + esc(r.prepared_name) + '</div>';
+    var mine = !r || r.uid === ppmMyOwner() || (profile && profile.role === 'admin');
+    if (!mine) return h + '<div class="sv-meta" style="margin-top:6px">Another supervisor\'s team is preparing this report.</div></article>';
+    if (!r) h += '<button class="sv-b svc-pri" data-ppa="open" style="width:100%;margin-top:8px">📝 Create report</button>';
+    else if (r.status === 'draft') h += '<div class="svc-btn3" style="grid-template-columns:3fr 1fr"><button class="sv-b" data-ppa="open">' + (d.teamDone && !ppmTeam() ? 'Review' : 'Continue') + '</button><button class="sv-b svc-del" data-ppa="del" aria-label="Delete the draft">🗑</button></div>';
+    else if (ppmTeam()) h += '<div class="sv-meta" style="margin-top:6px">' + (r.status === 'csigned' ? '✍ Signed by ' + esc((r.cust || {}).name || 'the customer') + ' — waiting for the supervisor\'s approval.' : 'With the supervisor.') + '</div>';
+    else if (r.status === 'csigned') h += '<div class="sv-meta">✍ Signed on site by ' + esc((r.cust || {}).name || '') + (r.cust && r.cust.comments ? ' · “' + esc(r.cust.comments) + '”' : '') + '</div><div class="svc-btn3" style="grid-template-columns:1fr 1fr"><button class="sv-b svc-good" data-ppa="approve">✓ Approve</button><button class="sv-b" data-ppa="open">Review</button></div>';
+    else if (r.status === 'ready' || r.status === 'sent') h += (r.status === 'sent' ? '<div class="sv-meta">🔗 Link sent ' + esc(dmDxb(r.sent_at)) + ' — waiting for signature.</div>' : '') + '<div class="svc-btn3"><button class="sv-b svc-good" data-ppa="sign">✍ Sign now</button><button class="sv-b" data-ppa="link">📤 ' + (r.status === 'sent' ? 'Share again' : 'Share for signature') + '</button><button class="sv-b" data-ppa="open">✎ Edit</button></div><button class="sv-link svc-dell" data-ppa="del">🗑 Delete this report</button>';
+    else if (r.status === 'signed') {
+      var c = r.cust || {}, hl = svcHoursLeft(r.signed_at);
+      h += '<div class="sv-donel">✓ Signed by ' + esc(c.name || '') + ' · ' + esc(dmDxb(r.signed_at)) + (c.method === 'link' ? ' · by link' : ' · on site') + '</div>' + (c.comments ? '<div class="sv-meta">“' + esc(c.comments) + '”</div>' : '');
+      if (hl > 0) h += '<div class="svc-btn3" style="grid-template-columns:1fr 1fr"><button class="sv-b" data-ppa="reopen">✎ Re-open</button><button class="sv-b svc-del" data-ppa="del">🗑 Delete</button></div><div class="sv-meta">Sent by mistake? You can change or delete it for ' + (hl >= 1 ? Math.floor(hl) + ' more hour' + (Math.floor(hl) === 1 ? '' : 's') : 'less than 1 hour') + '.</div>';
+    }
+    return h + '</article>';
+  }
+  function ppmList() {
+    var rows = ppmRows(PPM.tab), el = $('#svList'); if (!el) return;
+    el.innerHTML = rows.slice(0, 200).map(ppmCard).join('') + (!rows.length ? '<p class="sv-empty">' + ({ todo: 'No PPM work waiting for a report. ✓', draft: 'No drafts.', sent: 'Nothing with the supervisor.', cust: 'No report waiting for the customer.', signed: 'No signed reports yet.' }[PPM.tab]) + '</p>' : rows.length > 200 ? '<p class="sv-empty">Showing 200 of ' + rows.length + '. Use search.</p>' : '');
+    svcAll('#svList [data-ppa]').forEach(function (b) {
+      b.onclick = function () {
+        var wo = b.closest('[data-wo]').getAttribute('data-wo'), a = b.getAttribute('data-ppa');
+        if (a === 'open') ppmOpen(wo); else if (a === 'sign') ppmSignSheet(wo); else if (a === 'link') ppmLinkSheet(wo); else if (a === 'approve') ppmApprove(wo);
+        else if (a === 'del') ppmWithdraw(wo, 'delete'); else if (a === 'reopen') ppmWithdraw(wo, 'edit');
+      };
+    });
+  }
+  // ---------- the report form
+  function ppmNew(w) {
+    var T = PPM_TYPES[w.rtype] || { label: w.rtype, groups: [] };
+    return { v: 1, wo: w.wo, descr: w.descr || '', route: w.route || '', rtype: w.rtype, tlabel: T.label, zone: w.zone || '', project: 'DUBAI MUNICIPALITY', site: ppmSiteOf(w.descr), month: ppmMonthOf(w.reported),
+      cats: [], rows: [{ b: null, d: null, a: null }], cl: {}, remarks: '' };
+  }
+  function ppmOpen(wo) {
+    var w = PPM.works.filter(function (x) { return x.wo === wo; })[0], r = PPM.reps[wo]; if (!w) return;
+    if (r && r.status === 'csigned' && !confirm('The customer already signed this report. If you change it, the signature is removed and the customer signs again. Open it?')) return;
+    var d = r ? JSON.parse(JSON.stringify(r.data || {})) : ppmNew(w);
+    d.rows = d.rows && d.rows.length ? d.rows : [{ b: null, d: null, a: null }]; d.cats = d.cats || []; d.cl = d.cl || {};
+    PPM.F = { wo: wo, w: w, d: d, step: 1, status: r ? r.status : 'draft', fresh: !r }; ppmForm();
+  }
+  function ppmForm() {
+    var F = PPM.F, names = ['Details', 'Photos', 'Checklists', 'Finish'];
+    var foot = F.step < 4 ? (F.step > 1 ? '<button class="sv-b" id="ppBack">‹ Back</button>' : '<button class="sv-b" id="ppDraft">Save draft</button>') + '<button class="sv-b svc-pri" id="ppNext">Next ›</button>'
+      : '<button class="sv-b" id="ppBack">‹ Back</button><button class="sv-b" id="ppDraft">Save draft</button>' + (ppmTeam() ? '<button class="sv-b svc-gold svc-wide" id="ppTeam">Send to supervisor ›</button>' : '<button class="sv-b svc-gold svc-wide" id="ppReady">Ready for customer ›</button>');
+    svSheet('<div class="svc-form"><div class="svc-fh"><div><b>WO ' + esc(F.wo) + ' · PPM report</b><div class="sv-meta">Step ' + F.step + ' of 4 · ' + names[F.step - 1] + '</div></div><button class="sv-x" id="ppX" aria-label="Close and keep as draft">✕</button></div>' +
+      '<div class="svc-prog"><i style="width:' + (F.step * 25) + '%"></i></div><div class="svc-body" id="ppBody">' + [ppmS1, ppmS2, ppmS3, ppmS4][F.step - 1](F) + '</div><div class="svc-foot">' + foot + '</div></div>');
+    $('#svOv').onclick = null;
+    $('#ppX').onclick = async function () { ppmRead(); if (await ppmSave('draft', true)) { svClose(); ppmDraw(); } };
+    var nx = $('#ppNext'); if (nx) nx.onclick = async function () { ppmRead(); if (F.step === 1 && !F.d.cats.some(function (c) { return +c.n > 0; })) return svToast('Choose at least one category and its count.', true); F.step++; ppmSave('draft', true); ppmForm(); };
+    var bk = $('#ppBack'); if (bk) bk.onclick = function () { ppmRead(); F.step--; ppmForm(); };
+    var dr = $('#ppDraft'); if (dr) dr.onclick = async function () { ppmRead(); if (await ppmSave('draft')) { svClose(); PPM.tab = 'draft'; ppmDraw(); svToast('Draft saved.'); } };
+    var rd = $('#ppReady'); if (rd) rd.onclick = function () { ppmFinish('ready'); };
+    var tm = $('#ppTeam'); if (tm) tm.onclick = function () { ppmFinish('team'); };
+    var cs = $('#ppCust'); if (cs) cs.onclick = async function () { ppmRead(); var m = ppmMissing(F.d); if (m.length) return svToast('Missing: ' + m.join(', '), true); if (await ppmSave('draft')) ppmSignSheet(F.wo); };
+    [ppmB1, ppmB2, ppmB3, ppmB4][F.step - 1](F);
+  }
+  function ppmIn(id, label, val, o) { return svcIn(id, label, val, o); }
+  function ppmS1(F) {
+    var d = F.d, T = PPM_TYPES[d.rtype] || { groups: [] };
+    return '<section class="svc-card"><h4>Work order <span class="svc-auto">FROM MAXIMO</span></h4><div class="sv-meta">' + esc(d.route) + ' · Zone ' + esc(d.zone || '?') + '</div><div class="sv-loc">' + esc(d.descr) + '</div><div class="svc-grid">' +
+      ppmIn('pp1site', 'Site', d.site, {}) + ppmIn('pp1mon', 'PPM date (month)', d.month, { half: 1, auto: 1, ph: 'OCTOBER-2026' }) + ppmIn('pp1prj', 'Project name', d.project, { half: 1 }) + '</div></section>' +
+      T.groups.map(function (g) {
+        var cats = g.cats.concat(d.cats.filter(function (c) { return c.g === g.g && g.cats.indexOf(c.name) < 0; }).map(function (c) { return c.name; }));
+        return '<section class="svc-card"><h4>' + (T.groups.length > 1 ? g.g + ' – ' : '') + esc(g.name) + ' <span class="svc-opt">category · count</span></h4>' +
+          cats.map(function (nm) { var c = d.cats.filter(function (x) { return x.g === g.g && x.name === nm; })[0]; return '<div class="pp-cat"><label for="ppc_' + g.g + '_' + esc(nm).replace(/\W/g, '_') + '">' + esc(nm) + '</label><input type="number" min="0" max="999" inputmode="numeric" data-ppc="' + g.g + '" data-ppn="' + esc(nm) + '" id="ppc_' + g.g + '_' + esc(nm).replace(/\W/g, '_') + '" value="' + (c && c.n ? c.n : '') + '" placeholder="0"></div>'; }).join('') +
+          '<div class="pp-add"><input id="ppAdd' + g.g + '" placeholder="Other category" maxlength="40"><button type="button" class="sv-b" data-ppadd="' + g.g + '">+ Add</button></div></section>';
+      }).join('');
+  }
+  function ppmB1(F) {
+    svcAll('[data-ppadd]').forEach(function (b) { b.onclick = function () { var g = b.getAttribute('data-ppadd'), inp = $('#ppAdd' + g), v = (inp.value || '').trim(); if (!v) return; ppmRead(); if (!F.d.cats.some(function (c) { return c.g === g && c.name.toLowerCase() === v.toLowerCase(); })) F.d.cats.push({ g: g, name: v, n: 1 }); ppmForm(); }; });
+  }
+  function ppmS2(F) {
+    var cell = function (i, k, cap) { var p = F.d.rows[i][k]; return '<div class="pp-cell"><div class="pp-cap">' + cap + '</div>' + (p ? '<div class="pp-img"><img data-ppimg="' + esc(p) + '" alt="' + cap + '"><button class="svc-x" data-ppx="' + i + ':' + k + '" aria-label="Remove">✕</button></div>' : '<div class="pp-img empty" id="ppw_' + i + '_' + k + '">No photo</div>') +
+      '<div class="pp-btn"><label class="sv-b" aria-label="Camera">📷<input type="file" accept="image/*" capture="environment" data-ppf="' + i + ':' + k + '" hidden></label><label class="sv-b" aria-label="Gallery">🖼<input type="file" accept="image/*" data-ppf="' + i + ':' + k + '" hidden></label></div></div>'; };
+    return '<p class="sv-hint">One row per unit or part of the work: a photo <b>before</b>, <b>during</b> and <b>after</b>.</p>' + F.d.rows.map(function (r, i) {
+      return '<section class="svc-card"><h4>Row ' + (i + 1) + (F.d.rows.length > 1 ? ' <button class="sv-link" data-ppdel="' + i + '" style="padding:0;float:right">Remove row</button>' : '') + '</h4><div class="pp-row">' + cell(i, 'b', 'Before') + cell(i, 'd', 'During') + cell(i, 'a', 'After') + '</div></section>';
+    }).join('') + '<button class="sv-b" id="ppRow" style="width:100%">+ Add a row</button>';
+  }
+  function ppmB2(F) {
+    var paths = []; F.d.rows.forEach(function (r) { ['b', 'd', 'a'].forEach(function (k) { if (r[k]) paths.push(r[k]); }); });
+    if (paths.length) photoUrls(paths).then(function (u) { svcAll('[data-ppimg]').forEach(function (im) { im.src = u[im.getAttribute('data-ppimg')] || ''; }); });
+    svcAll('[data-ppf]').forEach(function (inp) {
+      inp.onchange = async function () {
+        var f = inp.files && inp.files[0], ik = inp.getAttribute('data-ppf').split(':'), i = +ik[0], k = ik[1]; inp.value = ''; if (!f) return;
+        if (navigator.onLine === false) return svToast('No network: photos need the internet. Try again when connected.', true);
+        var box = $('#ppw_' + i + '_' + k); if (box) box.textContent = 'Uploading…';
+        try { var bl = await svShrink(f), up = await phPost('a=ppmup&kind=ph&wo=' + encodeURIComponent(F.wo), bl, 'image/jpeg'); F.d.rows[i][k] = up.path; ppmSave('draft', true); ppmForm(); }
+        catch (e) { svToast('Photo not saved: ' + (e.message || e), true); if (box) box.textContent = 'No photo'; }
+      };
+    });
+    svcAll('[data-ppx]').forEach(function (b) { b.onclick = function () { var ik = b.getAttribute('data-ppx').split(':'); F.d.rows[+ik[0]][ik[1]] = null; ppmForm(); }; });
+    svcAll('[data-ppdel]').forEach(function (b) { b.onclick = function () { if (!confirm('Remove this row of photos?')) return; F.d.rows.splice(+b.getAttribute('data-ppdel'), 1); ppmForm(); }; });
+    $('#ppRow').onclick = function () { F.d.rows.push({ b: null, d: null, a: null }); ppmForm(); var b = $('#ppBody'); if (b) b.scrollTop = b.scrollHeight; };
+  }
+  // checklist state: d.cl[key] = { units, loc, date, v: { 'i.j': ['✓', ...] }, rec: { 'i.j': ['', ...] }, rem: ['', ''], e: { area, bld, loc, eq, card, dbfp, items: [{c1, c2, eff, rem}], tot } }
+  function ppmClInit(F, key) {
+    var C = PPM_CL[key], d = F.d, g = (PPM_TYPES[d.rtype] || { groups: [] }).groups.filter(function (x) { return x.cl === key; })[0], n = g ? ppmGroupCount(d, g.g) : 1;
+    var x = d.cl[key] || (d.cl[key] = {});
+    if (C.kind === 'grid') { x.units = Math.max(1, Math.min(C.units, x.units || n || 1)); x.loc = x.loc != null ? x.loc : d.site; x.date = x.date || svcDubaiDay().split('-').reverse().join('/'); x.v = x.v || {}; x.rec = x.rec || {}; x.rem = x.rem || []; }
+    else { x.e = x.e || { area: 'ZONE ' + (d.zone || ''), bld: d.site, loc: d.site, eq: d.route, card: '', dbfp: '', items: C.items.map(function () { return { c1: '✓', c2: '', eff: '', rem: '' }; }), tot: '' }; x.date = x.date || svcDubaiDay().split('-').reverse().join('/'); }
+    return x;
+  }
+  function ppmS3(F) {
+    var keys = ppmClKeys(F.d);
+    if (!keys.length) return '<p class="sv-empty">Choose the categories and counts in step 1 first.</p>';
+    return keys.map(function (key) {
+      var C = PPM_CL[key], x = ppmClInit(F, key), h = '<section class="svc-card pp-cl"><h4>' + esc(C.title) + ' <span class="svc-opt">' + esc(C.ref) + '</span></h4>';
+      if (C.kind === 'grid') {
+        h += '<div class="svc-grid">' + ppmIn('pp3l_' + key, 'Location', x.loc, {}) + ppmIn('pp3d_' + key, 'Date', x.date, { half: 1 }) + '<div class="svc-f half"><label for="pp3u_' + key + '">Units on this form (max ' + C.units + ')</label><input id="pp3u_' + key + '" type="number" min="1" max="' + C.units + '" value="' + x.units + '"></div></div>';
+        C.sec.forEach(function (s, si) {
+          if (s.h) h += '<div class="pp-sh">' + esc(s.h) + '</div>';
+          s.items.forEach(function (it, ii) {
+            var k = si + '.' + ii;
+            if (s.rec) { var rv = x.rec[k] || []; h += '<div class="pp-it"><div class="pp-q">' + (ii + 1) + '. ' + esc(it) + '</div><div class="pp-recs">' + Array.apply(null, Array(x.units)).map(function (_, u) { return '<input aria-label="' + esc(it) + ' unit ' + (u + 1) + '" data-pprec="' + key + '|' + k + '|' + u + '" value="' + esc(rv[u] || '') + '" placeholder="' + (u + 1) + '">'; }).join('') + '</div></div>'; return; }
+            var v = x.v[k] || [], all = v.length ? v[0] : '✓', same = !v.length || v.slice(0, x.units).every(function (y) { return (y || '✓') === all; });
+            h += '<div class="pp-it"><div class="pp-q">' + (ii + 1) + '. ' + esc(it) + '</div><div class="pp-vals">' + ['✓', '✗', 'N/A'].map(function (o) { return '<button type="button" class="pp-v' + (same && all === o ? ' on' : '') + '" data-ppv="' + key + '|' + k + '|' + o + '">' + o + (o === '✓' ? ' all' : '') + '</button>'; }).join('') +
+              '<button type="button" class="pp-v' + (same ? '' : ' on') + '" data-ppu="' + key + '|' + k + '">per unit</button></div>' + (same ? '' : '<div class="pp-units">' + Array.apply(null, Array(x.units)).map(function (_, u) { return '<button type="button" class="pp-u" data-ppuu="' + key + '|' + k + '|' + u + '">' + (u + 1) + ': ' + (v[u] || '✓') + '</button>'; }).join('') + '</div>') + '</div>';
+          });
+        });
+      } else {
+        var e = x.e;
+        h += '<div class="svc-grid">' + ppmIn('pp3ea_' + key, 'E.Area', e.area, { half: 1 }) + ppmIn('pp3eb_' + key, 'Building', e.bld, { half: 1 }) + ppmIn('pp3el_' + key, 'Location', e.loc, { half: 1 }) + ppmIn('pp3eq_' + key, 'Equip Ref', e.eq, { half: 1 }) +
+          ppmIn('pp3ec_' + key, 'Card / Code No', e.card, { half: 1 }) + ppmIn('pp3ef_' + key, 'DB/FP No', e.dbfp, { half: 1 }) + ppmIn('pp3d_' + key, 'Date', x.date, { half: 1 }) + '</div><div class="pp-sh">' + esc(C.freq) + '</div>';
+        C.items.forEach(function (it, ii) {
+          var r = e.items[ii] || (e.items[ii] = { c1: '✓', c2: '', eff: '', rem: '' });
+          h += '<div class="pp-it"><div class="pp-q">' + (ii + 1) + '. ' + esc(it) + '</div><div class="pp-vals"><span class="pp-cy">1st</span>' + ['✓', 'OK', '✗', 'N/A'].map(function (o) { return '<button type="button" class="pp-v' + (r.c1 === o ? ' on' : '') + '" data-ppe="' + key + '|' + ii + '|c1|' + o + '">' + o + '</button>'; }).join('') +
+            '<span class="pp-cy">2nd</span>' + ['', '✓', 'OK', 'N/A'].map(function (o) { return '<button type="button" class="pp-v' + (r.c2 === o ? ' on' : '') + '" data-ppe="' + key + '|' + ii + '|c2|' + o + '">' + (o || '—') + '</button>'; }).join('') + '</div>' +
+            '<div class="pp-recs pp-e2"><input data-ppef="' + key + '|' + ii + '|eff" value="' + esc(r.eff) + '" placeholder="Efficiency %" aria-label="Percentage of efficiency"><input data-ppef="' + key + '|' + ii + '|rem" value="' + esc(r.rem) + '" placeholder="Remarks" aria-label="Remarks"></div></div>';
+        });
+        h += '<div class="svc-grid">' + ppmIn('pp3et_' + key, 'Total percentage of efficiency', e.tot, { half: 1 }) + '</div>';
+      }
+      return h + '</section>';
+    }).join('') + '<section class="svc-card"><h4>Contractor\'s remarks <span class="svc-opt">optional — any note of the supervisor or the team</span></h4><textarea id="pp3rem" class="sv-in" rows="3" maxlength="800">' + esc(F.d.remarks || '') + '</textarea></section>';
+  }
+  function ppmB3(F) {
+    var redraw = function () { var b = $('#ppBody'), y = b ? b.scrollTop : 0; ppmRead(); ppmForm(); var b2 = $('#ppBody'); if (b2) b2.scrollTop = y; };
+    svcAll('[data-ppv]').forEach(function (b) { b.onclick = function () { var p = b.getAttribute('data-ppv').split('|'), x = F.d.cl[p[0]]; x.v[p[1]] = Array.apply(null, Array(PPM_CL[p[0]].units)).map(function () { return p[2]; }); redraw(); }; });
+    svcAll('[data-ppu]').forEach(function (b) { b.onclick = function () { var p = b.getAttribute('data-ppu').split('|'), x = F.d.cl[p[0]], v = x.v[p[1]] || []; v = Array.apply(null, Array(PPM_CL[p[0]].units)).map(function (_, i) { return v[i] || '✓'; }); if (v.slice(0, x.units).every(function (y) { return y === v[0]; }) && x.units > 1) v[x.units - 1] = v[0] === '✓' ? 'N/A' : '✓'; x.v[p[1]] = v; redraw(); }; });
+    svcAll('[data-ppuu]').forEach(function (b) { b.onclick = function () { var p = b.getAttribute('data-ppuu').split('|'), x = F.d.cl[p[0]], v = x.v[p[1]] || [], u = +p[2], cyc = ['✓', '✗', 'N/A']; v[u] = cyc[(cyc.indexOf(v[u] || '✓') + 1) % 3]; x.v[p[1]] = v; redraw(); }; });
+    svcAll('[data-ppe]').forEach(function (b) { b.onclick = function () { var p = b.getAttribute('data-ppe').split('|'); F.d.cl[p[0]].e.items[+p[1]][p[2]] = p[3]; redraw(); }; });
+    svcAll('[id^="pp3u_"]').forEach(function (inp) { inp.onchange = function () { redraw(); }; });
+  }
+  function ppmS4(F) {
+    var m = ppmMissing(F.d), nph = 0; F.d.rows.forEach(function (r) { ['b', 'd', 'a'].forEach(function (k) { if (r[k]) nph++; }); });
+    return '<section class="svc-card"><h4>Summary</h4><div class="sv-meta">' + esc(F.d.month) + ' · ' + esc(F.d.site) + '</div><div class="sv-loc">' + F.d.cats.filter(function (c) { return +c.n > 0; }).map(function (c) { return esc(c.name) + ' × ' + c.n; }).join(' · ') + '</div>' +
+      '<div class="sv-meta">' + nph + ' photo' + (nph === 1 ? '' : 's') + ' in ' + F.d.rows.length + ' row' + (F.d.rows.length === 1 ? '' : 's') + ' · ' + ppmClKeys(F.d).map(function (k) { return PPM_CL[k].ref; }).join(' · ') + '</div></section>' +
+      '<section class="svc-card"><h4>Check</h4>' + (m.length ? '<div class="svc-miss">Missing: ' + esc(m.join(', ')) + '</div>' : '<div class="sv-donel">✓ Ready. ' + (ppmTeam() ? 'Send it to your supervisor, or let the customer sign here.' : 'Mark it ready, or let the customer sign here.') + '</div>') + '</section>' +
+      '<button class="sv-b svc-good" id="ppCust" style="width:100%">✍ Customer is here – sign on this phone</button>' + (ppmTeam() ? '<p class="sv-hint">After the customer signs, the report goes to your supervisor for approval.</p>' : (PPM.set && PPM.set.sig_path ? '' : '<div class="svc-miss">Save your signature first (⚙ on the main screen).</div>'));
+  }
+  function ppmB4() { }
+  function ppmMissing(d) {
+    var m = []; if (!(d.cats || []).some(function (c) { return +c.n > 0; })) m.push('categories');
+    if (!(d.rows || []).some(function (r) { return r.b || r.d || r.a; })) m.push('photos');
+    if (!String(d.month || '').trim()) m.push('PPM date');
+    return m;
+  }
+  function ppmRead() {
+    var F = PPM.F; if (!F) return; var d = F.d, v = function (id) { var e = document.getElementById(id); return e ? e.value : null; };
+    if (v('pp1site') != null) { d.site = v('pp1site').trim(); d.month = v('pp1mon').trim().toUpperCase(); d.project = v('pp1prj').trim() || 'DUBAI MUNICIPALITY'; }
+    svcAll('[data-ppc]').forEach(function (inp) { var g = inp.getAttribute('data-ppc'), nm = inp.getAttribute('data-ppn'), n = Math.max(0, Math.min(999, parseInt(inp.value, 10) || 0)), c = d.cats.filter(function (x) { return x.g === g && x.name === nm; })[0]; if (c) c.n = n; else if (n) d.cats.push({ g: g, name: nm, n: n }); });
+    ppmClKeys(d).forEach(function (key) {
+      var C = PPM_CL[key], x = d.cl[key]; if (!x) return;
+      if (C.kind === 'grid') {
+        if (v('pp3l_' + key) != null) { x.loc = v('pp3l_' + key); x.date = v('pp3d_' + key); x.units = Math.max(1, Math.min(C.units, parseInt(v('pp3u_' + key), 10) || 1)); }
+        C.remarks.forEach(function (_, ri) { var t = v('pp3r_' + key + '_' + ri); if (t != null) x.rem[ri] = t; });
+      } else if (x.e && v('pp3ea_' + key) != null) { var e = x.e; e.area = v('pp3ea_' + key); e.bld = v('pp3eb_' + key); e.loc = v('pp3el_' + key); e.eq = v('pp3eq_' + key); e.card = v('pp3ec_' + key); e.dbfp = v('pp3ef_' + key); x.date = v('pp3d_' + key); e.tot = v('pp3et_' + key); }
+    });
+    svcAll('[data-pprec]').forEach(function (inp) { var p = inp.getAttribute('data-pprec').split('|'), x = d.cl[p[0]]; (x.rec[p[1]] = x.rec[p[1]] || [])[+p[2]] = inp.value; });
+    svcAll('[data-ppef]').forEach(function (inp) { var p = inp.getAttribute('data-ppef').split('|'); d.cl[p[0]].e.items[+p[1]][p[2]] = inp.value; });
+    var rm = v('pp3rem'); if (rm != null) d.remarks = rm;
+  }
+  // saves run one after the other, so an older save can never overwrite a newer one
+  function ppmSave(status, quiet) { var run = function () { return ppmSave1(status, quiet); }; PPM.chain = (PPM.chain || Promise.resolve()).then(run, run); return PPM.chain; }
+  async function ppmSave1(status, quiet) {
+    var F = PPM.F; if (!F) return false;
+    try {
+      var r = await sb.rpc('ppm_save', { p_wo: F.wo, p_data: F.d, p_status: status }); if (r.error) throw r.error;
+      var old = PPM.reps[F.wo] || {};
+      PPM.reps[F.wo] = Object.assign({}, old, { wo: F.wo, uid: old.uid || ppmMyOwner(), status: status, data: JSON.parse(JSON.stringify(F.d)), updated_at: new Date().toISOString(), cust: old.status === 'csigned' ? null : old.cust });
+      F.status = status; return true;
+    } catch (e) { if (!quiet || /signed|taken|Another/.test(e.message || '')) svToast('Not saved: ' + (e.message || e), true); return false; }
+  }
+  async function ppmFinish(kind) {
+    var F = PPM.F; ppmRead(); var m = ppmMissing(F.d); if (m.length) return svToast('Missing: ' + m.join(', '), true);
+    if (kind === 'team') { F.d.teamDone = true; F.d.teamAt = new Date().toISOString(); }
+    if (!(await ppmSave(kind === 'team' ? 'draft' : 'ready'))) return;
+    svClose(); PPM.tab = kind === 'team' ? 'sent' : 'cust'; ppmDraw(); svToast(kind === 'team' ? 'Sent to the supervisor.' : 'Ready — share it for signature or let the customer sign on site.');
+  }
+  // ---------- customer signs on this phone
+  function ppmSignSheet(wo) {
+    var r = PPM.reps[wo] || {}, d = r.data || {};
+    if (ppmSup() && !(PPM.set && PPM.set.sig_path)) return svToast('Save your signature first (⚙).', true);
+    svSheet('<div class="sv-shh"><div><b>WO ' + esc(wo) + ' · Customer signature</b><div class="sv-meta">' + esc(d.site || '') + '</div></div><button class="sv-x" id="svX" aria-label="Close">✕</button></div>' +
+      '<p class="sv-hint">Give the phone to the customer: he checks the work, writes a comment if he wants and signs.</p>' +
+      '<label class="sv-lbl" for="pcNm">Customer name</label><input id="pcNm" class="sv-in" maxlength="120">' +
+      '<label class="sv-lbl" for="pcDs">Designation (optional)</label><input id="pcDs" class="sv-in" maxlength="120">' +
+      '<label class="sv-lbl" for="pcCm">Comments (optional)</label><textarea id="pcCm" class="sv-in" rows="2" maxlength="600"></textarea>' +
+      '<div class="svc-lbl">Signature</div><div class="svc-pad"><canvas id="pcPad"></canvas></div><button class="sv-link" id="pcClr" style="padding:4px 0">Clear</button>' +
+      '<div class="svc-foot"><button class="sv-b svc-good svc-wide" id="pcGo">Save signature</button></div>');
+    $('#svX').onclick = svClose; $('#svOv').onclick = null;
+    var pad = svcPad($('#pcPad')); $('#pcClr').onclick = pad.clear;
+    $('#pcGo').onclick = async function () {
+      var nm = ($('#pcNm').value || '').trim(); if (!nm) return svToast('Write the customer name.', true); if (pad.empty()) return svToast('The customer signs in the box.', true);
+      var b = $('#pcGo'); b.disabled = true; b.textContent = 'Saving…';
+      try {
+        var up = await phPost('a=ppmup&kind=csig&wo=' + encodeURIComponent(wo), await pad.blob(), 'image/jpeg');
+        var res = await sb.rpc('ppm_sign_site', { p_wo: wo, p_cust: { name: nm, designation: $('#pcDs').value || '', comments: $('#pcCm').value || '', sig: up.path } }); if (res.error) throw res.error;
+        var st = res.data.status; PPM.reps[wo] = Object.assign({}, PPM.reps[wo], { status: st, signed_at: new Date().toISOString(), cust: { name: nm, comments: $('#pcCm').value || '', method: 'onsite' } });
+        svClose(); PPM.F = null; PPM.tab = st === 'signed' ? 'signed' : ppmTeam() ? 'sent' : 'cust'; ppmDraw();
+        svToast(st === 'signed' ? 'Signed ✓ — the report is complete.' : 'Signed by the customer — sent to the supervisor for approval.');
+      } catch (e) { svToast('Not saved: ' + (e.message || e), true); b.disabled = false; b.textContent = 'Save signature'; }
+    };
+  }
+  async function ppmApprove(wo) {
+    if (!(PPM.set && PPM.set.sig_path)) return svToast('Save your signature first (⚙).', true);
+    if (!confirm('Approve the report of WO ' + wo + '? Your signature is added and the report is complete.')) return;
+    var r = await sb.rpc('ppm_approve', { p_wo: wo }); if (r.error) return svToast(r.error.message, true);
+    PPM.reps[wo] = Object.assign({}, PPM.reps[wo], { status: 'signed', approved_at: new Date().toISOString() }); PPM.tab = 'signed'; ppmDraw(); svToast('Approved ✓');
+  }
+  // ---------- share the private link (WhatsApp / email / any app chosen on the phone)
+  async function ppmLinkSheet(wo) {
+    var r = PPM.reps[wo] || {}, d = r.data || {};
+    svSheet('<div class="sv-shh"><div><b>WO ' + esc(wo) + ' · Share for signature</b><div class="sv-meta">' + esc(d.site || '') + '</div></div><button class="sv-x" id="svX" aria-label="Close">✕</button></div><div class="status" id="plSt">Creating the private link…</div>');
+    $('#svX').onclick = function () { svClose(); ppmDraw(); };
+    var res = await sb.rpc('ppm_link', { p_wo: wo }); if (res.error) { setMsg('plSt', res.error.message, 'err'); return; }
+    var url = location.origin + location.pathname.replace(/[^\/]*$/, '') + 'sign.html#p=' + res.data;
+    PPM.reps[wo] = Object.assign({}, PPM.reps[wo], { status: 'sent', sent_at: new Date().toISOString() });
+    var msg = 'Dear Customer,\nImdaad has completed the preventive maintenance (PPM) below. Please open the link, check the work and photos, and approve with your signature.\n\nWO ' + wo + ' – ' + (d.descr || '') + '\n' + url +
+      '\n\nعزيزي العميل،\nأنجزت إمداد أعمال الصيانة الوقائية التالية. يرجى فتح الرابط ومراجعة العمل والصور واعتماده بالتوقيع.\n\nThe link works once and is valid for 7 days. · الرابط صالح لمرة واحدة ولمدة 7 أيام.';
+    svSheet('<div class="sv-shh"><div><b>WO ' + esc(wo) + ' · Share for signature</b><div class="sv-meta">' + esc(d.site || '') + '</div></div><button class="sv-x" id="svX" aria-label="Close">✕</button></div>' +
+      '<section class="svc-card"><h4>Message</h4><pre class="svc-msg">' + esc(msg) + '</pre></section>' +
+      (navigator.share ? '<button class="sv-b svc-good svc-share" id="plSh">📤 Share… (WhatsApp, WhatsApp Business, Email, other apps)</button>' : '') +
+      '<div class="svc-foot svc-foot3"><a class="sv-b svc-good" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(msg) + '">WhatsApp</a><a class="sv-b" href="mailto:?subject=' + encodeURIComponent('Imdaad PPM report – WO ' + wo) + '&body=' + encodeURIComponent(msg) + '">Email</a><button class="sv-b" id="plCp">Copy</button></div>');
+    $('#svX').onclick = function () { svClose(); ppmDraw(); };
+    var sh = $('#plSh'); if (sh) sh.onclick = async function () { try { await navigator.share({ title: 'Imdaad PPM report – WO ' + wo, text: msg }); } catch (e) { if (e && e.name !== 'AbortError') svToast('Could not open the share menu: ' + (e.message || e), true); } };
+    $('#plCp').onclick = async function () { var ok = false; try { await navigator.clipboard.writeText(msg); ok = true; } catch (e) { } svToast(ok ? 'Message copied' : 'Select the message and copy it', !ok); };
+  }
+  async function ppmWithdraw(wo, action) {
+    var r = PPM.reps[wo] || {}, signed = r.status === 'signed' || r.status === 'csigned';
+    if (!confirm(action === 'delete' ? 'Delete the report of WO ' + wo + '?' + (signed ? ' The customer signature is removed.' : '') : 'Re-open the report of WO ' + wo + ' to edit it? The customer signature is removed; the customer signs again.')) return;
+    var res = await sb.rpc('ppm_withdraw', { p_wo: wo, p_action: action }); if (res.error) return svToast(res.error.message, true);
+    if (action === 'delete') delete PPM.reps[wo]; else PPM.reps[wo] = Object.assign({}, r, { status: 'draft', cust: null, signed_at: null, sent_at: null });
+    PPM.tab = action === 'delete' ? 'todo' : 'draft'; ppmDraw(); svToast(action === 'delete' ? 'Report deleted.' : 'Report re-opened.');
+  }
+  // ---------- supervisor signature (once)
+  function ppmSettings() {
+    var s = PPM.set || {};
+    svSheet('<div class="sv-shh"><div><b>My signature</b><div class="sv-meta">Added to every PPM report as "Inspected & Tested by"</div></div><button class="sv-x" id="svX" aria-label="Close">✕</button></div>' +
+      '<label class="sv-lbl" for="psNm">Name on the reports</label><input id="psNm" class="sv-in" maxlength="80" value="' + esc(s.sig_name || profile.full_name || '') + '">' +
+      (s.sig_path ? '<div class="svc-lbl">Saved signature</div><div class="svc-sigv"><img id="psCur" alt="Saved signature"></div>' : '') +
+      '<div class="svc-lbl">' + (s.sig_path ? 'New signature (optional)' : 'Signature') + '</div><div class="svc-pad"><canvas id="psPad"></canvas></div><button class="sv-link" id="psClr" style="padding:4px 0">Clear</button>' +
+      '<div class="svc-foot"><button class="sv-b svc-good svc-wide" id="psGo">Save</button></div>');
+    $('#svX').onclick = svClose; $('#svOv').onclick = null;
+    if (s.sig_path) photoUrls([s.sig_path]).then(function (u) { var im = $('#psCur'); if (im) im.src = u[s.sig_path] || ''; });
+    var pad = svcPad($('#psPad')); $('#psClr').onclick = pad.clear;
+    $('#psGo').onclick = async function () {
+      var b = $('#psGo'), nm = ($('#psNm').value || '').trim(); if (!s.sig_path && pad.empty()) return svToast('Sign in the box.', true);
+      b.disabled = true;
+      try {
+        var path = s.sig_path; if (!pad.empty()) path = (await phPost('a=ppmup&kind=sig', await pad.blob(), 'image/jpeg')).path;
+        var r = await sb.from('svc_settings').upsert({ uid: profile.id, sig_path: path, sig_name: nm, updated_at: new Date().toISOString() }, { onConflict: 'uid' }); if (r.error) throw r.error;
+        PPM.set = { uid: profile.id, sig_path: path, sig_name: nm }; svClose(); ppmDraw(); svToast('Signature saved.');
+      } catch (e) { svToast('Not saved: ' + (e.message || e), true); b.disabled = false; }
+    };
+  }
+  /* ===================== v4.32 PPM: office tab (upload the works list, follow-up, PDF in the DM formats) ===================== */
+  var PPO = { works: null, reps: {}, f: { ty: '', st: '', q: '' }, sel: {}, el: null, pend: null };
+  function ppoCanEdit() { return profile && (profile.role === 'admin' || profile.role === 'operator'); }
+  function ppoDate(v) {
+    if (v == null || v === '') return null;
+    if (typeof v === 'number' && isFinite(v) && v > 20000 && v < 80000) return Math.round((v - 25569) * 86400000);
+    var m = String(v).trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+    m = String(v).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/); if (m) return Date.UTC(+m[3], +m[2] - 1, +m[1]);
+    return null;
+  }
+  // Maximo "List of Work Orders": keep Status APPR and Route CAC / ELECT-DB / WC / WAC / SAC / ELECT-LIGHT (with unit numbers, WCSYST)
+  function ppoParse(wb) {
+    for (var s = 0; s < wb.SheetNames.length; s++) {
+      var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[s]], { header: 1, raw: true, defval: null, blankrows: false });
+      for (var hr = 0; hr < Math.min(rows.length, 15); hr++) {
+        var head = (rows[hr] || []).map(function (x) { return String(x == null ? '' : x).trim().toLowerCase(); }), c = function (n) { return head.indexOf(n); };
+        if (c('work order') < 0 || c('route') < 0 || c('status') < 0) continue;
+        var C = { wo: c('work order'), de: c('description'), ro: c('route'), pm: c('pm'), rd: c('reported date'), ts: c('target start'), co: c('boq total cost for this wo'), st: c('status') };
+        var out = [], all = 0, by = {}, seen = {};
+        for (var r = hr + 1; r < rows.length; r++) {
+          var x = rows[r]; if (!x || x[C.wo] == null || x[C.wo] === '') continue; all++;
+          var wo = typeof x[C.wo] === 'number' ? String(Math.round(x[C.wo])) : String(x[C.wo]).trim(); if (seen[wo]) continue;
+          var st = String(x[C.st] || '').trim().toUpperCase(), route = String(x[C.ro] || '').trim().toUpperCase(), ty = ppmRouteType(route);
+          if (st !== 'APPR' || !ty) continue; seen[wo] = 1; by[ty] = (by[ty] || 0) + 1;
+          out.push({ wo: wo, descr: String(x[C.de] || '').trim(), route: route, rtype: ty, zone: ppmRouteZone(route), pm: C.pm >= 0 && x[C.pm] != null ? String(x[C.pm]) : '', reported: C.rd >= 0 ? ppoDate(x[C.rd]) : null, target: C.ts >= 0 ? ppoDate(x[C.ts]) : null, cost: C.co >= 0 && x[C.co] != null && x[C.co] !== '' ? +x[C.co] : null, status: st });
+        }
+        return { rows: out, all: all, by: by };
+      }
+    }
+    throw new Error('This is not the Maximo "List of Work Orders" export (no "Work Order", "Route" and "Status" columns).');
+  }
+  async function ppmOffice(el) {
+    if (!el) return; PPO.el = el; el.innerHTML = '<div class="notice">Loading…</div>';
+    try { var res = await Promise.all([ppmPaged('ppm_works', '*', 'wo'), ppmPaged('ppm_reports', '*', 'wo')]); PPO.works = res[0]; PPO.reps = {}; res[1].forEach(function (x) { PPO.reps[x.wo] = x; }); }
+    catch (e) { el.innerHTML = '<div class="notice">' + (/ppm_|schema cache|does not exist/i.test(e.message || '') ? 'Not set up yet: run the update <b>20_SQL_ppm_reports.sql</b> in Supabase.' : 'Could not load: ' + esc(e.message || e)) + '</div>'; return; }
+    ppoDraw();
+  }
+  function ppoSt(w) { var r = PPO.reps[w.wo]; return !r ? 'none' : r.status; }
+  function ppoList() {
+    var f = PPO.f, q = f.q.trim().toLowerCase();
+    return PPO.works.filter(function (w) {
+      var st = ppoSt(w), r = PPO.reps[w.wo];
+      if (!w.active && st === 'none') return false;
+      if (f.ty && w.rtype !== f.ty) return false;
+      if (f.st === 'none' && st !== 'none') return false; if (f.st === 'draft' && st !== 'draft') return false; if (f.st === 'cust' && ['ready', 'sent', 'csigned'].indexOf(st) < 0) return false;
+      if (f.st === 'signed' && st !== 'signed') return false; if (f.st === 'nomx' && !(st === 'signed' && !r.mx_at)) return false;
+      return !q || (w.wo + ' ' + (w.descr || '') + ' ' + (w.route || '')).toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a, b) { return (+a.target || 0) - (+b.target || 0); });
+  }
+  function ppoDraw() {
+    var el = PPO.el, W = PPO.works.filter(function (w) { return w.active || PPO.reps[w.wo]; }), cnt = { none: 0, draft: 0, cust: 0, signed: 0, nomx: 0 };
+    W.forEach(function (w) { var s = ppoSt(w), r = PPO.reps[w.wo]; if (s === 'none') cnt.none++; else if (s === 'draft') cnt.draft++; else if (s === 'signed') { cnt.signed++; if (!r.mx_at) cnt.nomx++; } else cnt.cust++; });
+    var list = ppoList(), f = PPO.f, o = function (v, t, c) { return '<option value="' + esc(v) + '"' + (v === c ? ' selected' : '') + '>' + esc(t) + '</option>'; }, nsel = list.filter(function (w) { return PPO.sel[w.wo]; }).length;
+    var stl = { none: '<span class="pill na">No report</span>', draft: '<span class="pill na">Draft</span>', ready: '<span class="pill avg">Ready</span>', sent: '<span class="pill avg">Link sent</span>', csigned: '<span class="pill avg">Signed on site – supervisor to approve</span>', signed: '<span class="pill good">Signed</span>' };
+    el.innerHTML = '<div class="kpis">' + [['PPM works in the list', W.length, PPO.works.length ? 'APPR · CAC, ELECT-DB, WC, WAC, SAC, ELECT-LIGHT' : 'upload the list below'], ['No report yet', cnt.none, 'on the PPM phones'], ['Drafts', cnt.draft, 'being prepared'], ['Waiting for customer', cnt.cust, 'ready, link sent or to approve'], ['Signed', cnt.signed, 'by the customer'], ['To upload to Maximo', cnt.nomx, 'signed, not marked uploaded']].map(function (x) { return '<div class="kpi"><span class="l">' + x[0] + '</span><span class="v">' + x[1] + '</span><span class="s">' + x[2] + '</span></div>'; }).join('') + '</div>' +
+      (ppoCanEdit() ? '<div class="panel" style="margin-top:12px"><h3>Upload the PPM works list<small>Maximo "List of Work Orders" — Status APPR and Route CAC, ELECT-DB, WC, WAC, SAC, ELECT-LIGHT are kept</small></h3><p class="muted" style="margin:0 0 8px">New work orders are added; work orders no longer in the file are removed unless a report was started. Reports are never deleted by an upload.</p><div class="form"><div class="f"><label for="ppoF">Excel file</label><input type="file" id="ppoF" accept=".xlsx,.xls,.csv"></div></div><div id="ppoPend"></div><div class="status" id="ppoSt1"></div></div>' : '') +
+      '<div class="filters" style="margin:12px 0 8px;padding:0"><div class="f"><label for="ppoTy">Work type</label><select id="ppoTy">' + o('', 'All', f.ty) + Object.keys(PPM_TYPES).map(function (k) { return o(k, k === 'LIGHT' ? 'ELECT-LIGHT' : k === 'DB' ? 'ELECT-DB' : k, f.ty); }).join('') + '</select></div>' +
+      '<div class="f"><label for="ppoS">Status</label><select id="ppoS">' + o('', 'All', f.st) + o('none', 'No report yet', f.st) + o('draft', 'Drafts', f.st) + o('cust', 'Waiting for customer', f.st) + o('signed', 'Signed', f.st) + o('nomx', 'Signed, not uploaded to Maximo', f.st) + '</select></div>' +
+      '<div class="f"><label for="ppoQ">Search</label><input id="ppoQ" type="search" value="' + esc(f.q) + '" placeholder="WO, site, route"></div></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn primary" id="ppoZip"' + (nsel ? '' : ' disabled') + '>⬇ PDF (' + nsel + ' selected' + (nsel > 1 ? ', ZIP' : '') + ')</button>' + (ppoCanEdit() ? '<button class="btn" id="ppoMxOn"' + (nsel ? '' : ' disabled') + '>Mark uploaded to Maximo</button><button class="btn" id="ppoMxOff"' + (nsel ? '' : ' disabled') + '>Undo uploaded</button>' : '') + '<span class="status" id="ppoSt2"></span></div>' +
+      '<div class="tw" style="max-height:560px"><table class="t"><thead><tr><th><input type="checkbox" id="ppoAll" aria-label="Select all"></th><th>WO</th><th>Type</th><th>Description</th><th>Route</th><th>Zone</th><th>Target</th><th>Status</th><th>Supervisor / team</th><th>Customer</th><th>Maximo</th><th></th></tr></thead><tbody>' +
+      list.slice(0, 500).map(function (w) {
+        var r = PPO.reps[w.wo], st = ppoSt(w), c = (r && r.cust) || {};
+        return '<tr><td>' + (r ? '<input type="checkbox" data-pps="' + esc(w.wo) + '"' + (PPO.sel[w.wo] ? ' checked' : '') + ' aria-label="Select WO ' + esc(w.wo) + '">' : '') + '</td><td>' + esc(w.wo) + '</td><td>' + esc(w.rtype === 'LIGHT' ? 'ELECT-LIGHT' : w.rtype === 'DB' ? 'ELECT-DB' : w.rtype) + '</td><td>' + esc(w.descr || '') + (w.active ? '' : '<div class="muted" style="font-size:.72rem">not in the latest list</div>') + '</td><td>' + esc(w.route || '') + '</td><td>' + esc(w.zone || '') + '</td><td>' + (w.target ? esc(dmDxb(+w.target - 4 * 3600e3, true)) : '') + '</td><td>' + stl[st] + '</td>' +
+          '<td>' + esc((r && (r.sup_name || '')) || '') + (r && r.prepared_name ? '<div class="muted" style="font-size:.72rem">team: ' + esc(r.prepared_name) + '</div>' : '') + '</td><td>' + (c.name ? esc(c.name) + '<div class="muted" style="font-size:.72rem">' + esc(dmDxb(r.signed_at)) + (c.method === 'link' ? ' · link' : ' · on site') + '</div>' + (c.comments ? '<div class="muted" style="font-size:.72rem">“' + esc(c.comments) + '”</div>' : '') : '—') + '</td>' +
+          '<td>' + (r && r.mx_at ? '✓ ' + esc(dmDxb(r.mx_at, true)) : '—') + '</td><td style="white-space:nowrap">' + (r ? '<button class="btn xs" data-ppp="' + esc(w.wo) + '">' + (st === 'signed' ? 'PDF' : 'Preview PDF') + '</button>' + (ppoCanEdit() ? (st !== 'draft' ? ' <button class="btn xs" data-ppr="' + esc(w.wo) + '">Re-open</button>' : '') + ' <button class="btn xs danger" data-ppd="' + esc(w.wo) + '">Delete</button>' : '') : '') + '</td></tr>';
+      }).join('') + '</tbody></table></div>' + (list.length > 500 ? '<p class="muted">Showing 500 of ' + list.length + '. Use the filters.</p>' : '') + (!list.length ? '<p class="muted">Nothing for these filters.</p>' : '');
+    var re = function () { PPO.sel = {}; ppoDraw(); };
+    $('#ppoTy').onchange = function (e) { PPO.f.ty = e.target.value; re(); }; $('#ppoS').onchange = function (e) { PPO.f.st = e.target.value; re(); };
+    var qt; $('#ppoQ').oninput = function (e) { clearTimeout(qt); qt = setTimeout(function () { PPO.f.q = e.target.value; ppoDraw(); var x = $('#ppoQ'); x.focus(); x.setSelectionRange(x.value.length, x.value.length); }, 300); };
+    svcAll('[data-pps]').forEach(function (c) { c.onchange = function () { var k = c.getAttribute('data-pps'); if (c.checked) PPO.sel[k] = 1; else delete PPO.sel[k]; ppoDraw(); }; });
+    var withRep = list.slice(0, 500).filter(function (w) { return PPO.reps[w.wo]; });
+    $('#ppoAll').checked = !!withRep.length && withRep.every(function (w) { return PPO.sel[w.wo]; });
+    $('#ppoAll').onchange = function (e) { withRep.forEach(function (w) { if (e.target.checked) PPO.sel[w.wo] = 1; else delete PPO.sel[w.wo]; }); ppoDraw(); };
+    var sel = function () { return list.filter(function (w) { return PPO.sel[w.wo] && PPO.reps[w.wo]; }); };
+    var wOf = function (wo) { return PPO.works.filter(function (w) { return w.wo === wo; })[0]; };
+    svcAll('[data-ppp]').forEach(function (b) { b.onclick = async function () { b.disabled = true; try { var wo = b.getAttribute('data-ppp'); svcSave(await ppmPdf(PPO.reps[wo], wOf(wo), function (t) { setMsg('ppoSt2', t); }), 'PPM_Report_WO_' + wo + '.pdf'); setMsg('ppoSt2', 'PDF downloaded.', 'ok'); } catch (e) { setMsg('ppoSt2', e.message || String(e), 'err'); } b.disabled = false; }; });
+    svcAll('[data-ppr]').forEach(function (b) { b.onclick = async function () { var wo = b.getAttribute('data-ppr'); if (!confirm('Re-open the report of WO ' + wo + '? It goes back to draft; the customer signature is removed.')) return; var r = await sb.rpc('ppm_withdraw', { p_wo: wo, p_action: 'edit' }); if (r.error) return setMsg('ppoSt2', r.error.message, 'err'); ppmOffice(PPO.el); }; });
+    svcAll('[data-ppd]').forEach(function (b) { b.onclick = async function () { var wo = b.getAttribute('data-ppd'); if (!confirm('Delete the report of WO ' + wo + '? This cannot be undone.')) return; var r = await sb.rpc('ppm_withdraw', { p_wo: wo, p_action: 'delete' }); if (r.error) return setMsg('ppoSt2', r.error.message, 'err'); ppmOffice(PPO.el); }; });
+    $('#ppoZip').onclick = async function () {
+      var b = this, S = sel(); b.disabled = true;
+      try {
+        if (S.length === 1) svcSave(await ppmPdf(PPO.reps[S[0].wo], S[0], function (t) { setMsg('ppoSt2', t); }), 'PPM_Report_WO_' + S[0].wo + '.pdf');
+        else { await svcLib('zip', function () { return !!window.JSZip; }); var z = new JSZip(); for (var i = 0; i < S.length; i++) { setMsg('ppoSt2', 'Preparing PDF ' + (i + 1) + ' of ' + S.length + '…'); z.file('PPM_Report_WO_' + S[i].wo + '.pdf', await ppmPdf(PPO.reps[S[i].wo], S[i])); } svcSave(await z.generateAsync({ type: 'blob' }), 'PPM_Reports_' + svcDubaiDay() + '_' + S.length + '.zip'); }
+        setMsg('ppoSt2', S.length + ' PDF(s) downloaded.', 'ok');
+      } catch (e) { setMsg('ppoSt2', e.message || String(e), 'err'); }
+      b.disabled = false;
+    };
+    if (ppoCanEdit()) {
+      var mark = async function (on) { var S = sel().filter(function (w) { return ppoSt(w) === 'signed'; }).map(function (w) { return w.wo; }); if (!S.length) return setMsg('ppoSt2', 'Select signed reports.', 'err'); var r = await sb.rpc('ppm_mx_mark', { p_wos: S, p_on: on }); if (r.error) return setMsg('ppoSt2', r.error.message, 'err'); S.forEach(function (wo) { PPO.reps[wo].mx_at = on ? new Date().toISOString() : null; }); PPO.sel = {}; ppoDraw(); setMsg('ppoSt2', r.data + ' report(s) updated.', 'ok'); };
+      $('#ppoMxOn').onclick = function () { mark(true); }; $('#ppoMxOff').onclick = function () { mark(false); };
+      $('#ppoF').onchange = async function (e) {
+        var file = e.target.files && e.target.files[0]; if (!file) return; setMsg('ppoSt1', 'Reading ' + file.name + '…'); $('#ppoPend').innerHTML = '';
+        try {
+          await svcLib('xlsx', function () { return !!window.XLSX; });
+          var p = ppoParse(XLSX.read(await file.arrayBuffer(), { type: 'array' })), have = {}; PPO.works.forEach(function (w) { have[w.wo] = w; });
+          var nNew = p.rows.filter(function (x) { return !have[x.wo]; }).length, ids = {}; p.rows.forEach(function (x) { ids[x.wo] = 1; });
+          var gone = PPO.works.filter(function (w) { return w.active && !ids[w.wo]; }), goneRep = gone.filter(function (w) { return PPO.reps[w.wo]; }).length;
+          $('#ppoPend').innerHTML = '<dl class="kv" style="margin-top:10px"><dt>File</dt><dd>' + esc(file.name) + ' · ' + H().fmt(p.all) + ' work orders</dd><dt>Kept (APPR + routes)</dt><dd><b>' + p.rows.length + '</b> · ' + Object.keys(p.by).map(function (k) { return (k === 'LIGHT' ? 'ELECT-LIGHT' : k === 'DB' ? 'ELECT-DB' : k) + ' ' + p.by[k]; }).join(' · ') + '</dd><dt>New in the list</dt><dd>' + nNew + '</dd><dt>No longer in the file</dt><dd>' + gone.length + (goneRep ? ' (' + goneRep + ' with a report are kept)' : '') + '</dd></dl>' +
+            '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn primary" id="ppoGo"' + (p.rows.length ? '' : ' disabled') + '>Save the list (' + p.rows.length + ' works)</button><button class="btn" id="ppoNo">Cancel</button></div>';
+          setMsg('ppoSt1', 'Check the numbers, then save.', 'ok');
+          $('#ppoNo').onclick = function () { $('#ppoPend').innerHTML = ''; setMsg('ppoSt1', ''); e.target.value = ''; };
+          $('#ppoGo').onclick = async function () { this.disabled = true; var r = await sb.rpc('ppm_works_load', { p_rows: p.rows, p_file: file.name }); if (r.error) { this.disabled = false; return setMsg('ppoSt1', r.error.message, 'err'); } await ppmOffice(PPO.el); setMsg('ppoSt1', 'Saved: ' + r.data.rows + ' works (' + r.data.added + ' new, ' + r.data.removed + ' removed).', 'ok'); };
+        } catch (er) { setMsg('ppoSt1', er.message || String(er), 'err'); }
+      };
+    }
+  }
+  // ---------- PDF: PPM ACTIVITY page(s) + the DM checklists (same layout as the forms)
+  var PPM_PCSS = '.pp-pg{width:794px;min-height:1123px;padding:26px 34px 22px;box-sizing:border-box;background:#fff;color:#000;font:12px Arial,Helvetica,sans-serif;position:relative}' +
+    '.pp-lg{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.pp-lg img{height:46px}' +
+    '.pp-ti{text-align:center;font:700 21px "Times New Roman",serif;margin:2px 0 12px}.pp-kv{font:12px "Times New Roman",serif;margin:5px 0 5px 26px}.pp-kv b{font-weight:700}' +
+    '.pp-t{width:100%;border-collapse:collapse}.pp-t td,.pp-t th{border:1px solid #000;padding:3px 5px;vertical-align:middle}' +
+    '.pp-cat th{font:700 12px "Times New Roman",serif}.pp-cat td{font:12px "Times New Roman",serif}' +
+    '.pp-ph th{font:400 11px Arial;padding:4px}.pp-ph td{height:255px;padding:2px;text-align:center}.pp-ph img{max-width:100%;max-height:250px;object-fit:contain}' +
+    '.dm-h{width:100%;border-collapse:collapse;margin-bottom:10px}.dm-h td{border:1px solid #000;padding:4px 6px;font-size:11px}.dm-h .lg{width:22%;text-align:center}.dm-h .lg img{max-width:150px;max-height:62px}.dm-h .k{width:18%}.dm-h .ar{text-align:right;direction:rtl;width:18%}' +
+    '.cl-t{width:100%;border-collapse:collapse}.cl-t td,.cl-t th{border:1px solid #000;padding:2px 4px;font-size:10.5px}.cl-t th{background:#f2f2f2}.cl-t .u{width:34px;text-align:center}.cl-t .n{width:26px;text-align:center}.cl-t .sec td{font-weight:700;background:#fafafa}' +
+    '.cl-box{border:1px solid #000;min-height:38px;padding:4px 6px;margin-top:6px;font-size:11px;white-space:pre-wrap}.cl-sg{width:100%;border-collapse:collapse;margin-top:8px}.cl-sg td{border:1px solid #000;padding:4px 6px;font-size:11px;height:40px;vertical-align:middle}.cl-sg img{max-height:36px;max-width:150px}' +
+    '.pp-ft{position:absolute;left:34px;right:34px;bottom:14px;text-align:center;font-size:8.5px;color:#333;border-top:1px solid #999;padding-top:3px}';
+  function ppmImg(I, p, ph) { return p && I[p] ? '<img src="' + I[p] + '">' : (ph || ''); }
+  function ppmDmHead(C) { var T = window.DM_PPM_TPL || {}; return '<table class="dm-h"><tr><td class="lg" rowspan="3">' + (T.gov ? '<img src="' + T.gov + '">' : 'Government of Dubai') + '</td><td class="k">Organization Unit :</td><td>&nbsp;</td><td class="ar">إدارة الصيانة العامة<br>: اسم الوحدة التنظيمية</td><td class="lg" rowspan="3">' + (T.dm ? '<img src="' + T.dm + '">' : 'Dubai Municipality') + '</td></tr><tr><td class="k">Document title:</td><td><b>' + esc(C.title) + '</b></td><td class="ar">: اسم الوثيقة</td></tr><tr><td class="k">Doc Ref.</td><td style="text-align:center">' + esc(C.ref) + '</td><td class="ar">: رمز الوثيقة</td></tr></table>'; }
+  var PPM_FT = '<div class="pp-ft">☐ مشتركة - سرية &nbsp; ☑ مشتركة - حساسة &nbsp; ☐ مشتركة - خصوصية &nbsp; ☐ بيانات مفتوحة &nbsp;&nbsp; التصنيف<br>SHARED – SENSITIVE / مشترك – حساس</div>';
+  function ppmPages(r, w, I) {
+    var d = r.data || {}, L = logos(), c = r.cust || {}, sday = r.signed_at ? dmDxb(r.signed_at, true) : '', pages = [];
+    var lg = '<div class="pp-lg">' + (L.left ? '<img src="' + L.left + '">' : '<b>Imdaad</b>') + (L.right ? '<img src="' + L.right + '">' : '<b>Dubai Municipality</b>') + '</div>';
+    var rows = (d.rows || []).filter(function (x) { return x.b || x.d || x.a; }), cats = (d.cats || []).filter(function (x) { return +x.n > 0; });
+    var prow = function (x) { return '<tr><td>' + ppmImg(I, x.b) + '</td><td>' + ppmImg(I, x.d) + '</td><td>' + ppmImg(I, x.a) + '</td></tr>'; };
+    var first = 2 - (cats.length > 4 ? 1 : 0);
+    pages.push('<div class="pp-pg">' + lg + '<div class="pp-ti">PPM ACTIVITY ' + esc(d.month || '') + '</div><div class="pp-kv"><b>PROJECT NAME:</b> ' + esc(d.project || 'DUBAI MUNICIPALITY') + '</div><div class="pp-kv" style="font-family:Arial;font-weight:700;font-size:11px">SITE: ' + esc(String(d.descr || d.site || '').toUpperCase()) + '</div><div class="pp-kv"><b>PPM DATE:</b> ' + esc(d.month || '') + '</div>' +
+      '<table class="pp-t pp-cat" style="margin-bottom:12px"><tr><th>CATEGORY</th><th>COUNT</th></tr>' + cats.map(function (x) { return '<tr><td>' + esc(String(x.name).toUpperCase()) + '</td><td style="text-align:center">' + x.n + '</td></tr>'; }).join('') + '</table>' +
+      '<table class="pp-t pp-ph"><tr><th>BEFORE</th><th>DURING</th><th>AFTER</th></tr>' + rows.slice(0, first).map(prow).join('') + '</table></div>');
+    for (var i = first; i < rows.length; i += 3) pages.push('<div class="pp-pg">' + lg + '<table class="pp-t pp-ph">' + rows.slice(i, i + 3).map(prow).join('') + '</table></div>');
+    ppmClKeys(d).forEach(function (key) {
+      var C = PPM_CL[key], x = (d.cl || {})[key] || {}, h = '<div class="pp-pg">' + ppmDmHead(C);
+      var supSig = ppmImg(I, r.sup_sig), custSig = ppmImg(I, c.sig), supNm = esc(r.sup_name || ''), custNm = esc(c.name || '');
+      if (C.kind === 'grid') {
+        var n = Math.max(1, Math.min(C.units, x.units || 1)), uh = '';
+        for (var u = 1; u <= C.units; u++) uh += '<th class="u">' + u + '</th>';
+        h += '<table class="cl-t" style="margin-bottom:6px"><tr><td style="width:12%"><b>Location:</b></td><td>' + esc(x.loc || d.site || '') + '</td><td style="width:8%"><b>Date:</b></td><td style="width:18%">' + esc(x.date || '') + '</td></tr></table>' +
+          '<table class="cl-t"><tr><th class="n" rowspan="2">No.</th><th rowspan="2">CHECK</th><th colspan="' + C.units + '">UNIT NOS.</th></tr><tr>' + uh + '</tr>';
+        C.sec.forEach(function (s, si) {
+          if (s.h) h += '<tr class="sec"><td colspan="' + (C.units + 2) + '">' + esc(s.h) + '</td></tr>';
+          s.items.forEach(function (it, ii) {
+            var k = si + '.' + ii, v = (x.v || {})[k] || [], rv = (x.rec || {})[k] || [], cells = '';
+            for (var u2 = 0; u2 < C.units; u2++) cells += '<td class="u">' + (u2 < n ? esc(s.rec ? (rv[u2] || '') : (v[u2] || '✓')) : '') + '</td>';
+            h += '<tr><td class="n">' + (ii + 1) + '</td><td>' + esc(it) + '</td>' + cells + '</tr>';
+          });
+        });
+        h += '</table><div style="font-size:10.5px;margin-top:5px"><b>Note:</b> - ' + esc(C.note) + '</div>';
+        C.remarks.forEach(function (rt, ri) { var t = ri === 0 ? (d.remarks || '') : ''; h += '<div class="cl-box"><b>' + esc(rt) + ':</b> ' + esc(t) + '</div>'; });
+        h += '<table class="cl-sg"><tr><td style="width:30%">' + esc(C.sign[0]) + ':</td><td style="width:22%">' + supNm + '</td><td style="width:11%">Signature:</td><td>' + supSig + '</td><td style="width:16%">Date: ' + esc(sday) + '</td></tr>' +
+          '<tr><td>' + esc(C.sign[1]) + ':</td><td>' + custNm + '</td><td>Signature:</td><td>' + custSig + '</td><td>Date: ' + esc(sday) + '</td></tr></table>';
+      } else {
+        var e = x.e || { items: [] };
+        h += '<table class="cl-t" style="margin-bottom:8px"><tr><td style="color:#c00"><b>E.Area:</b></td><td>' + esc(e.area || '') + '</td><td><b>Location:</b></td><td>' + esc(e.loc || '') + '</td><td><b>Card/Code No:</b></td><td>' + esc(e.card || '') + '</td></tr><tr><td><b>Building:</b></td><td>' + esc(e.bld || '') + '</td><td><b>Equip Ref:</b></td><td>' + esc(e.eq || '') + '</td><td><b>DB/FP No:</b></td><td>' + esc(e.dbfp || '') + '</td></tr></table>' +
+          '<table class="cl-t"><tr><th class="n">S.No</th><th>Description</th><th style="width:60px">1st Cycle</th><th style="width:60px">2nd Cycle</th><th style="width:72px">Percentage of Efficiency</th><th style="width:110px">Remarks</th></tr><tr class="sec"><td></td><td colspan="5">' + esc(C.freq) + '</td></tr>' +
+          C.items.map(function (it, ii) { var q = e.items[ii] || {}; return '<tr><td class="n">' + (ii + 1) + '</td><td>' + esc(it) + '</td><td class="u">' + esc(q.c1 || '') + '</td><td class="u">' + esc(q.c2 || '') + '</td><td class="u">' + esc(q.eff || '') + '</td><td>' + esc(q.rem || '') + '</td></tr>'; }).join('') +
+          '<tr><td></td><td style="text-align:right"><b>Total Percentage of Efficiency</b></td><td colspan="2"></td><td class="u">' + esc(e.tot || '') + '</td><td></td></tr></table>' +
+          (d.remarks ? '<div class="cl-box"><b>Contractor\'s Remarks:</b> ' + esc(d.remarks) + '</div>' : '') +
+          '<table class="cl-sg"><tr><td style="width:34%;vertical-align:top"><b>Inspected &amp; Tested by (Contractor):</b><br>' + supNm + '<br>' + supSig + '<br>Date: ' + esc(sday) + '</td><td style="width:33%;vertical-align:top"><b>Customer Signature (If required):</b><br>' + custNm + '<br>' + custSig + '<br>Date: ' + esc(sday) + '</td><td style="vertical-align:top"><b>Verified by (DM Inspector/Engineer):</b></td></tr></table>';
+      }
+      pages.push(h + PPM_FT + '</div>');
+    });
+    return pages;
+  }
+  async function ppmPdf(r, w, onp) {
+    if (!r) throw new Error('No report');
+    await svcLib('h2c', function () { return !!window.html2canvas; }); await svcLib('pdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); });
+    if (!window.DM_PPM_TPL) { SVC_LIBS.ppmf = window.DM_LOCAL_LIBS ? 'ppm-forms.js' : 'ppm-forms.js'; try { await svcLib('ppmf', function () { return !!window.DM_PPM_TPL; }); } catch (e) { } }
+    var d = r.data || {}, paths = [r.sup_sig, (r.cust || {}).sig]; (d.rows || []).forEach(function (x) { paths.push(x.b, x.d, x.a); });
+    if (onp) onp('Loading the photos…');
+    var I = await svcDataUrls(paths.filter(Boolean)), pages = ppmPages(r, w, I);
+    var pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+    var host = document.createElement('div'); host.style.cssText = 'position:fixed;left:-10000px;top:0;z-index:-1'; document.body.appendChild(host);
+    try {
+      for (var i = 0; i < pages.length; i++) {
+        if (onp) onp('Preparing page ' + (i + 1) + ' of ' + pages.length + '…');
+        host.innerHTML = '<style>' + PPM_PCSS + '</style>' + pages[i];
+        await Promise.all(Array.prototype.map.call(host.querySelectorAll('img'), function (im) { return im.complete ? 0 : new Promise(function (res) { im.onload = im.onerror = res; }); }));
+        var node = host.querySelector('.pp-pg'), cv = await window.html2canvas(node, { scale: 1.6, backgroundColor: '#ffffff', logging: false });
+        var hmm = 210 * cv.height / cv.width, wmm = 210, x0 = 0; if (hmm > 297) { wmm = 210 * 297 / hmm; hmm = 297; x0 = (210 - wmm) / 2; }
+        if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', 0.85), 'JPEG', x0, 0, wmm, hmm);
+      }
+    } finally { host.remove(); }
+    pdf.setProperties({ title: 'PPM report WO ' + r.wo, author: 'Imdaad FM' });
+    return pdf.output('blob');
+  }
+
+  window.DM_CLOUD = { ppmOffice: ppmOffice, sfOffice: sfOffice, sfCan: sfCan, apOffice: apOffice, svcOffice: svcOffice, reportsAdd: reportsAdd, reportsRemove: reportsRemove, reportsReload: reportsReload, syncKeyNew: syncKeyNew, syncKeyRevoke: syncKeyRevoke, syncScript: syncScript, syncCmd: syncCmd, emgList: emgList, emgFlag: emgFlag, emgClear: emgClear, emgPushStatus: emgPushStatus, emgSaveCfg: emgSaveCfg, purgePhotos: purgePhotos, rmActivity: rmActivity, materials: materials, matDecide: matDecide, photoUrls: photoUrls, loadUtil: loadUtil, utilSave: utilSave, utilDropMonth: utilDropMonth, utilZoneSet: utilZoneSet, photoCounts: photoCounts, photoCount: photoCount, loadFlags: loadFlags, flagOf: flagOf, flagLabel: flagLabel, flagPill: flagPill, flagCanSet: flagCanSet, flagFormHTML: flagFormHTML, flagFormBind: flagFormBind, FLAGS: FLAGS, srPhotos: srPhotos, photoStrip: photoStrip, gallery: gallery, mxAllowed: mxAllowed, mxKeyNew: mxKeyNew, mxStatus: mxStatus, mxScript: mxScript, rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
 
   /* ---------- route: direct to Supabase, or through the relay when supabase.co is blocked (e.g. UAE mobile data) ---------- */
   function probe(base, ms) {
@@ -4044,7 +4724,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   /* ---------- views ---------- */
   var TABS = [['summary', 'Summary'], ['cm', 'CM performance'], ['backlog', 'Backlog & aging'], ['sla', 'Priority & SLA'], ['ppm', 'PPM'], ['site', 'By location'], ['loc', 'Locations & repeats'], ['maximo', 'Maximo closure'], ['weekly', 'Weekly report tables'], ['reports', 'Service reports'], ['register', 'SR register']];
   var tab = 'home', ADMIN = false, CAPS = { artifact: null, user: null, downloads: null };
-  try { var h = (location.hash || '').replace('#', ''); if (h && (h === 'home' || h === 'rm' || h === 'admin' || h === 'data' || h === 'log' || TABS.some(function (t) { return t[0] === h; }))) tab = h; } catch (e) { }
+  try { var h = (location.hash || '').replace('#', ''); if (h && (h === 'home' || h === 'rm' || h === 'flags' || h === 'ppmr' || h === 'admin' || h === 'data' || TABS.some(function (t) { return t[0] === h; }))) tab = h; } catch (e) { }
 
   function kpiTile(l, v, s, extra) { return '<div class="kpi"><span class="l">' + esc(l) + '</span><span class="v">' + v + '</span><span class="s">' + (s || '') + '</span>' + (extra || '') + '</div>'; }
   function kpisHTML(R) {
@@ -4134,8 +4814,12 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       SD = siteCompute(cm); out += siteHTML(SD);
     } else if (tab === 'register') {
       out += registerHTML(cm);
+    } else if (tab === 'ppmr' && CLOUD && ['admin', 'operator', 'manager', 'imdaad_engineer'].indexOf(ROLE) >= 0) {
+      out += section('PP', 'PPM reports', 'تقارير الصيانة الوقائية', 'PPM works from the Maximo work-order list (Status APPR; Route CAC, ELECT-DB, WC, WAC, SAC, ELECT-LIGHT). The PPM teams prepare the report on the phone (PPM ACTIVITY page with before / during / after photos and the DM checklist); the PPM supervisor sends it to the customer, who signs on site or by private link. Download the PDF, upload it to Maximo, then mark it uploaded.', '<div id="ppmOff"><div class="notice">Loading…</div></div>');
     } else if (tab === 'check' && checkAllowed()) {
       out += checkHTML();
+    } else if (tab === 'flags' && CLOUD && (ROLE === 'admin' || ROLE === 'operator' || ROLE === 'manager')) {
+      out += section('SF', 'SR status sent by the supervisors', 'حالات البلاغات من المشرفين', 'When a supervisor marks an SR <b>Out of scope</b>, <b>Canceled by end user</b>, <b>Done by DM team</b> or <b>Adhoc scope</b> (with the reason), it leaves his lists and waits here. Deal with it (Maximo, customer, DM), then mark it <b>handled</b> — or <b>return it to the supervisor</b> with a note: it goes back to his list.', '<div id="sfOff"><div class="notice">Loading…</div></div>');
     } else if (tab === 'util' && utilAllowed()) {
       out += utilHTML();
     } else if (tab === 'data' && dataAllowed()) {
@@ -4160,7 +4844,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     Array.prototype.forEach.call(document.querySelectorAll('#view [data-go]'), function (b) { b.onclick = function () { tab = b.getAttribute('data-go'); drawTabs(); render(); try { history.replaceState(null, '', '#' + tab); } catch (e) { } window.scrollTo(0, 0); }; });
     if (tab === 'register') bindRegister(cm);
     if (tab === 'check' && checkAllowed()) bindCheck();
+    if (tab === 'ppmr' && window.DM_CLOUD && window.DM_CLOUD.ppmOffice) window.DM_CLOUD.ppmOffice(document.getElementById('ppmOff'));
     if (tab === 'util' && utilAllowed()) bindUtil();
+    if (tab === 'flags' && window.DM_CLOUD && window.DM_CLOUD.sfOffice) window.DM_CLOUD.sfOffice(document.getElementById('sfOff'));
     if (tab === 'reports' && CLOUD && RAW.reports != null) bindReports(cm);
     if (tab === 'site') bindSite();
     if (tab === 'admin' && ADMIN) { bindAdmin(); permBind(); }
@@ -5849,9 +6535,10 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var list = TABS.filter(function (t) { return !allowed || allowed.indexOf(t[0]) >= 0; });
     if (rmVisible()) list.push(['rm', 'RM works']);
     if (checkAllowed()) list.push(['check', 'SR status check']);
+    if (CLOUD && ['admin', 'operator', 'manager', 'imdaad_engineer'].indexOf(ROLE) >= 0) list.push(['ppmr', 'PPM reports']);
+    if (ROLE === 'admin' || ROLE === 'operator' || ROLE === 'manager') list.push(['flags', 'SR status – office']);
     if (utilAllowed()) list.push(['util', 'Electricity & water']);
     if (ROLE === 'admin' || ROLE === 'operator') list.push(['data', 'Data update']);
-    if (ROLE === 'admin' || ROLE === 'manager' || ROLE === 'operator') list.push(['log', 'Upload history']);
     if (ROLE === 'admin') list.push(['admin', 'Admin']);
     return list;
   }
@@ -6214,7 +6901,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       maximo: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>', weekly: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 9v11M15 9v11"/>',
       reports: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>', register: '<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
       rm: '<path d="M4 15a8 8 0 0 1 16 0v2H4z"/><path d="M12 7v4M2 17h20"/>', data: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
-      check: '<path d="M9 3h6l1 2h3v16H5V5h3z"/><path d="m9 13 2 2 4-4"/>', util: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>', log: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 8v4l3 2"/>', admin: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+      check: '<path d="M9 3h6l1 2h3v16H5V5h3z"/><path d="m9 13 2 2 4-4"/>', ppmr: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/><circle cx="17" cy="17" r="3"/>', flags: '<path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/>', util: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>', log: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 8v4l3 2"/>', admin: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
       full: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>', close: '<path d="M6 6l12 12M18 6 6 18"/>'
     };
     var o = {}; for (var k in P) o[k] = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + P[k] + '</svg>';
@@ -6224,7 +6911,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     summary: 'Key figures, monthly and weekly trends', cm: 'Corrective maintenance by trade, zone and month', backlog: 'Open SRs by age and the oldest open SRs',
     sla: 'Priority and SLA compliance', ppm: 'Preventive maintenance compliance and cost', site: 'Pick a zone, area or location and compare',
     loc: 'Top locations and repeat failures', maximo: 'Done on site vs closed in Maximo', weekly: 'Weekly and monthly tables and comparisons',
-    reports: 'Service reports by supervisor and reports still needed', check: 'Upload any Excel with SR numbers: adds Maximo status, done-not-closed and remarks', util: 'DEWA electricity and water consumption by zone and month', register: 'Search and list every SR', rm: 'Remaining works for the labour supervisors',
+    ppmr: 'PPM works list, PPM reports from the phones, customer signatures and PDF', reports: 'Service reports by supervisor and reports still needed', flags: 'SRs the supervisors marked Out of scope, Canceled, Done by DM or Adhoc: handle them or return them', check: 'Upload any Excel with SR numbers: adds Maximo status, done-not-closed and remarks', util: 'DEWA electricity and water consumption by zone and month', register: 'Search and list every SR', rm: 'Remaining works for the labour supervisors',
     data: 'Upload the tracker and the PPM report', log: 'Every data upload, newest first', admin: 'Users, permissions and settings'
   };
   function homeHTML() {
