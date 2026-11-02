@@ -543,6 +543,10 @@ details.hist .tw{max-height:420px;margin:0;border:0}
 .pp-cy{font-size:.72rem;color:var(--ink-2);margin:0 2px 0 4px}
 .pp-units{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.pp-u{padding:4px 8px;border-radius:8px;border:1px dashed #9aa6b5;background:#fff;font:inherit;font-size:.75rem;cursor:pointer}
 .pp-recs{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:4px}.pp-recs input{width:100%;padding:6px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:.8rem}.pp-e2{grid-template-columns:1fr 2fr;margin-top:5px}
+/* v4.33 per-person permissions */
+.upm{background:#f7f9fc;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.upm-o{display:block;font-size:.85rem;margin:3px 0}
+.upm-g{display:flex;flex-wrap:wrap;gap:6px 16px;margin:6px 0 0 22px;font-size:.82rem}
 </style></head><body><div id="app"></div><script>
 /* ==== PORTAL CONNECTION — fill in from Supabase: Project Settings > API ==== */
 window.DM_CLOUD_CONFIG = {
@@ -862,6 +866,14 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (role === 'dm_engineer') r.rm = 'none';
     return r;
   }
+  // permissions of one person (Admin > Users > Permissions); falls back to the role for anything not set
+  function permsOwn(u) {
+    var r = permsFor(u.role, RAWC && RAWC.config), o = u.perms || {};
+    if (Array.isArray(o.tabs)) r.tabs = o.tabs.filter(function (t) { return ALL_TABS.indexOf(t) >= 0 && (t !== 'reports' || REP_ROLES.indexOf(u.role) >= 0); });
+    ['export', 'print', 'deck'].forEach(function (k) { if (typeof o[k] === 'boolean') r[k] = o[k]; });
+    if (o.rm && u.role !== 'dm_engineer') r.rm = o.rm;
+    return r;
+  }
   function chk(res) { if (res.error) throw new Error(res.error.message || String(res.error)); return res.data; }
 
   /* ---------- screens ---------- */
@@ -1060,7 +1072,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   async function enter() {
     loadingScreen('Checking your account…');
     var u = (await sb.auth.getUser()).data.user; if (!u) return loginScreen();
-    var pr0 = await sb.from('profiles').select('id,email,full_name,role,active,must_set_password,sup_names,team_of').eq('id', u.id).maybeSingle();
+    var pr0 = await sb.from('profiles').select('id,email,full_name,role,active,must_set_password,sup_names,team_of,perms').eq('id', u.id).maybeSingle();
+    if (pr0.error && /perms/.test(pr0.error.message || '')) pr0 = await sb.from('profiles').select('id,email,full_name,role,active,must_set_password,sup_names,team_of').eq('id', u.id).maybeSingle();
     if (pr0.error && /team_of/.test(pr0.error.message || '')) pr0 = await sb.from('profiles').select('id,email,full_name,role,active,must_set_password,sup_names').eq('id', u.id).maybeSingle();
     if (pr0.error && /sup_names/.test(pr0.error.message || '')) pr0 = await sb.from('profiles').select('id,email,full_name,role,active,must_set_password').eq('id', u.id).maybeSingle();
     profile = chk(pr0);
@@ -1076,7 +1089,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     start();
   }
   function start() {
-    window.DMApp.start(RAWC, { role: profile.role, perms: permsFor(profile.role, RAWC.config), user: { name: profile.full_name, email: profile.email } });
+    window.DMApp.start(RAWC, { role: profile.role, perms: profile.perms && profile.role !== 'admin' ? permsOwn(profile) : permsFor(profile.role, RAWC.config), user: { name: profile.full_name, email: profile.email } });
     if (profile.role === 'admin') setTimeout(function () { purgePhotos(false).catch(function () { }); }, 4000);
   }
   async function reload(msg) { RAWC = await loadData(); start(); if (msg) H().toast(msg); }
@@ -1247,6 +1260,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         if (!v && st === 'todo') acts += '<div class="sv-q">Contractor quotation needed?</div><div class="sv-btns">' + svBtn('b-yes', 'yes', 'Yes – contractor', '', false, busy) + svBtn('b-no', 'no', 'No – our team', '', false, busy) + '</div>';
         acts += '<div class="sv-btns three">' + (st === 'todo' ? svBtn('b-start', 'start', '▶ Start work', '', null, busy) : '<div class="sv-since">Working since ' + esc(d.startAt || '') + '</div>') +
           svBtn('b-done', 'done', '✓ Completed', '', null, busy) + svBtn('b-mat', 'mat', '📦 Materials', '', null, busy) + '</div>' +
+          (st === 'work' ? '<button class="sv-link" data-a="unstart"' + (busy ? ' disabled' : '') + '>↩ Undo start (pressed by mistake)</button>' : '') +
           (v === 'no' ? '<button class="sv-link" data-a="yes"' + (busy ? ' disabled' : '') + '>Needs a contractor instead?</button>' : '');
       }
       return '<article class="sv-card s-' + st + '" data-id="' + esc(r.id) + '">' +
@@ -1323,6 +1337,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (a === 'yes') return svCall(row, 'sup_mark', { p_sr: row.id, p_need: 'yes' }, 'needs contractor');
     if (a === 'no') return svCall(row, 'sup_mark', { p_sr: row.id, p_need: 'no' }, 'our team');
     if (a === 'start') return svCall(row, 'sup_log', { p_sr: row.id, p_action: 'start', p_photos: [], p_note: null }, 'work started').then(function (ok) { if (ok) { SV.today.started++; svDraw(); } });
+    if (a === 'unstart') { if (!confirm('Undo "Start work" for SR ' + row.id + '? It goes back to To do.')) return; return svCall(row, 'sup_log', { p_sr: row.id, p_action: 'unstart', p_photos: [], p_note: null }, 'start undone').then(function (ok) { if (ok) { SV.today.started = Math.max(0, SV.today.started - 1); svDraw(); } }); }
     if (a === 'undo') return svCall(row, 'sup_log', { p_sr: row.id, p_action: 'undo', p_photos: [], p_note: null }, 'completion undone').then(function (ok) { if (ok) { SV.today.completed = Math.max(0, SV.today.completed - 1); svDraw(); } });
     if (a === 'done') return svSheetDone(row);
     if (a === 'mat') return svSheetMat(row);
@@ -1622,17 +1637,50 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     async function drawUsers() {
       var el = $('#usersT'); if (!el) return;
       try {
-        var ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password,sup_names,team_of').order('created_at'); if (ur0.error && /team_of/.test(ur0.error.message || '')) ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password,sup_names').order('created_at'); if (ur0.error && /sup_names/.test(ur0.error.message || '')) ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password').order('created_at'); USERS = chk(ur0);
+        var ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password,sup_names,team_of,perms').order('created_at'); if (ur0.error && /perms/.test(ur0.error.message || '')) ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password,sup_names,team_of').order('created_at'); if (ur0.error && /team_of/.test(ur0.error.message || '')) ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password,sup_names').order('created_at'); if (ur0.error && /sup_names/.test(ur0.error.message || '')) ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password').order('created_at'); USERS = chk(ur0);
         var SUPN = (h.supNames ? h.supNames() : []);
         el.innerHTML = '<div class="tw"><table class="t"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Supervisor name (labour supervisors)</th><th>Status</th><th>Active</th><th></th></tr></thead><tbody>' + USERS.map(function (u) {
           var me = u.id === profile.id;
-          return '<tr><td><input data-un="' + u.id + '" value="' + esc(u.full_name || '') + '" style="width:150px"></td><td>' + esc(u.email) + '</td><td><select data-ur="' + u.id + '"' + (me ? ' disabled' : '') + '><option value="">No access</option>' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></td><td>' + (u.role === 'supervisor' ? '<select multiple size="4" data-usn="' + u.id + '" aria-label="Supervisor names" style="min-width:190px">' + SUPN.concat((u.sup_names || []).filter(function (x) { return SUPN.indexOf(x) < 0; })).map(function (n) { return '<option value="' + esc(n) + '"' + ((u.sup_names || []).indexOf(n) >= 0 ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Ctrl+click for more than one</div>' : (u.role === 'team' || u.role === 'ppm_team') ? '<label class="muted" style="font-size:.72rem;display:block" for="utf' + u.id + '">Team of ' + (u.role === 'ppm_team' ? 'PPM supervisor' : 'supervisor') + '</label><select id="utf' + u.id + '" data-utf="' + u.id + '" style="min-width:190px"><option value="">Choose the supervisor…</option>' + USERS.filter(function (x) { return x.role === (u.role === 'ppm_team' ? 'ppm_supervisor' : 'supervisor'); }).map(function (x) { return '<option value="' + x.id + '"' + (u.team_of === x.id ? ' selected' : '') + '>' + esc(x.full_name || x.email) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Prepares reports only; the supervisor sends them</div>' : '<span class="muted">—</span>') + '</td><td>' + (u.must_set_password ? '<span class="pill avg">Invited, password not set</span>' : '<span class="pill good">Active account</span>') + '</td><td><input type="checkbox" data-ua="' + u.id + '"' + (u.active ? ' checked' : '') + (me ? ' disabled' : '') + '></td><td><button class="btn xs" data-us="' + u.id + '">Save</button> ' + (u.must_set_password ? '<button class="btn xs" data-ri="' + esc(u.email) + '" data-rn="' + esc(u.full_name || '') + '">Resend invitation</button>' : '<button class="btn xs" data-rs="' + esc(u.email) + '" title="Email this user a link to set a new password">Reset password</button>') + '</td></tr>';
+          return '<tr><td><input data-un="' + u.id + '" value="' + esc(u.full_name || '') + '" style="width:150px"></td><td>' + esc(u.email) + '</td><td><select data-ur="' + u.id + '"' + (me ? ' disabled' : '') + '><option value="">No access</option>' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></td><td>' + (u.role === 'supervisor' ? '<select multiple size="4" data-usn="' + u.id + '" aria-label="Supervisor names" style="min-width:190px">' + SUPN.concat((u.sup_names || []).filter(function (x) { return SUPN.indexOf(x) < 0; })).map(function (n) { return '<option value="' + esc(n) + '"' + ((u.sup_names || []).indexOf(n) >= 0 ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Ctrl+click for more than one</div>' : (u.role === 'team' || u.role === 'ppm_team') ? '<label class="muted" style="font-size:.72rem;display:block" for="utf' + u.id + '">Team of ' + (u.role === 'ppm_team' ? 'PPM supervisor' : 'supervisor') + '</label><select id="utf' + u.id + '" data-utf="' + u.id + '" style="min-width:190px"><option value="">Choose the supervisor…</option>' + USERS.filter(function (x) { return x.role === (u.role === 'ppm_team' ? 'ppm_supervisor' : 'supervisor'); }).map(function (x) { return '<option value="' + x.id + '"' + (u.team_of === x.id ? ' selected' : '') + '>' + esc(x.full_name || x.email) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Prepares reports only; the supervisor sends them</div>' : '<span class="muted">—</span>') + '</td><td>' + (u.must_set_password ? '<span class="pill avg">Invited, password not set</span>' : '<span class="pill good">Active account</span>') + '</td><td><input type="checkbox" data-ua="' + u.id + '"' + (u.active ? ' checked' : '') + (me ? ' disabled' : '') + '></td><td><button class="btn xs" data-us="' + u.id + '">Save</button> ' + (u.must_set_password ? '<button class="btn xs" data-ri="' + esc(u.email) + '" data-rn="' + esc(u.full_name || '') + '">Resend invitation</button>' : '<button class="btn xs" data-rs="' + esc(u.email) + '" title="Email this user a link to set a new password">Reset password</button>') +
+            (['operator', 'manager', 'dm_engineer', 'imdaad_engineer'].indexOf(u.role) >= 0 ? ' <button class="btn xs" data-upm="' + u.id + '"' + (u.perms ? ' style="border-color:#c09a52"' : '') + ' title="Permissions of this person only">Permissions' + (u.perms ? ' ★' : '') + '</button>' : '') +
+            (me ? '' : ' <button class="btn xs danger" data-udel="' + u.id + '" data-uem="' + esc(u.email) + '">Delete</button>') + '</td></tr><tr class="upm-row" id="upm_' + u.id + '" hidden><td colspan="7"></td></tr>';
         }).join('') + '</tbody></table></div>';
         Array.prototype.forEach.call(document.querySelectorAll('[data-us]'), function (b) {
           b.onclick = async function () {
             var id = b.getAttribute('data-us'), q = function (a) { return document.querySelector('[' + a + '="' + id + '"]'); };
             var upd = { full_name: q('data-un').value.trim() }; if (!q('data-ur').disabled) { upd.role = q('data-ur').value || null; upd.active = q('data-ua').checked; } var sn = q('data-usn'); if (sn) upd.sup_names = Array.prototype.filter.call(sn.options, function (o) { return o.selected; }).map(function (o) { return o.value; }); var tf = q('data-utf'); if (tf) upd.team_of = tf.value || null;
             try { var was = (USERS.filter(function (x) { return x.id === id; })[0] || {}).role; chk(await sb.from('profiles').update(upd).eq('id', id)); b.textContent = 'Saved'; setTimeout(function () { b.textContent = 'Save'; }, 1500); if ((upd.role === 'supervisor') !== (was === 'supervisor') || (upd.role === 'team') !== (was === 'team') || (upd.role === 'ppm_team') !== (was === 'ppm_team')) drawUsers(); } catch (e) { h.setSt('stU', e.message, 'err'); }
+          };
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-udel]'), function (b) {
+          b.onclick = async function () {
+            var id = b.getAttribute('data-udel'), em = b.getAttribute('data-uem');
+            if (!confirm('Delete the account of ' + em + '? The person can no longer sign in. Reports and records they made stay in the portal. This cannot be undone.')) return;
+            b.disabled = true;
+            try { await phPost('a=userdel', JSON.stringify({ id: id })); h.setSt('stU', 'Account ' + em + ' deleted.', 'ok'); drawUsers(); }
+            catch (e) { b.disabled = false; h.setSt('stU', 'Not deleted: ' + (/Unknown action|404/.test(e.message || '') ? 'update the photos server (function photos) first.' : e.message), 'err'); }
+          };
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-upm]'), function (b) {
+          b.onclick = function () {
+            var id = b.getAttribute('data-upm'), u = USERS.filter(function (x) { return x.id === id; })[0], row = document.getElementById('upm_' + id); if (!u || !row) return;
+            if (!row.hidden) { row.hidden = true; return; }
+            var TB = h.tabs().filter(function (t) { return t[0] !== 'reports' || REP_ROLES.indexOf(u.role) >= 0; }), cur = u.perms ? permsOwn(u) : permsFor(u.role, RAWC.config), own = !!u.perms;
+            row.querySelector('td').innerHTML = '<div class="upm"><div class="upm-h"><b>Permissions of ' + esc(u.full_name || u.email) + '</b> <span class="muted">(' + esc(roleLabel(u.role)) + ')</span></div>' +
+              '<label class="upm-o"><input type="radio" name="upmM' + id + '" value="role"' + (own ? '' : ' checked') + '> Same as the role (Permissions table below)</label><label class="upm-o"><input type="radio" name="upmM' + id + '" value="own"' + (own ? ' checked' : '') + '> Only for this person:</label>' +
+              '<div class="upm-g"' + (own ? '' : ' style="opacity:.55"') + '>' + TB.map(function (t) { return '<label><input type="checkbox" data-upt="' + t[0] + '"' + (cur.tabs.indexOf(t[0]) >= 0 ? ' checked' : '') + '> ' + esc(t[1]) + '</label>'; }).join('') +
+              '<label><input type="checkbox" data-upt="_export"' + (cur.export ? ' checked' : '') + '> Excel export</label><label><input type="checkbox" data-upt="_print"' + (cur.print ? ' checked' : '') + '> Print</label><label><input type="checkbox" data-upt="_deck"' + (cur.deck ? ' checked' : '') + '> Weekly deck (PPTX)</label>' +
+              (u.role === 'dm_engineer' ? '' : '<label>RM works <select data-upt="_rm">' + RM_SCOPES.map(function (x) { return '<option value="' + x[0] + '"' + (cur.rm === x[0] ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select></label>') + '</div>' +
+              '<div style="margin-top:8px"><button class="btn xs primary" data-upms="' + id + '">Save permissions</button> <span class="status" id="upmSt' + id + '"></span></div><p class="muted" style="font-size:.75rem;margin:6px 0 0">The person sees the change the next time the portal is opened or refreshed.</p></div>';
+            row.hidden = false;
+            var box = row.querySelector('.upm-g');
+            Array.prototype.forEach.call(row.querySelectorAll('input[name="upmM' + id + '"]'), function (r) { r.onchange = function () { box.style.opacity = r.value === 'own' && r.checked ? 1 : 0.55; }; });
+            row.querySelector('[data-upms]').onclick = async function () {
+              var mode = row.querySelector('input[name="upmM' + id + '"]:checked').value, q = function (k) { return row.querySelector('[data-upt="' + k + '"]'); }, val = null;
+              if (mode === 'own') { val = { tabs: TB.map(function (t) { return t[0]; }).filter(function (t) { return q(t).checked; }), export: q('_export').checked, print: q('_print').checked, deck: q('_deck').checked }; if (q('_rm')) val.rm = q('_rm').value; }
+              try { chk(await sb.from('profiles').update({ perms: val }).eq('id', id)); u.perms = val; setMsg('upmSt' + id, 'Saved.', 'ok'); setTimeout(drawUsers, 700); }
+              catch (e) { setMsg('upmSt' + id, /perms/.test(e.message) ? 'Run the update 21 in Supabase first.' : e.message, 'err'); }
+            };
           };
         });
         Array.prototype.forEach.call(document.querySelectorAll('[data-ri]'), function (b) {
@@ -1844,6 +1892,18 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var rows = r.data || []; if (!rows.length) return [];
     var urls = await photoUrls(rows.map(function (x) { return x.path; }));
     return rows.filter(function (x) { return urls[x.path]; }).map(function (x) { var u = urls[x.path]; return { name: x.name, url: u, thumb: /\/functions\/v1\/photos\?/.test(u) ? u + '&w=t' : u }; });
+  }
+  // Work lists + photo (admin): the first Maximo photo of each SR as a JPEG (max 800 px), for Excel
+  async function firstPhotos(srs, onp) {
+    var first = {}, out = {}, list = srs.map(String);
+    for (var i = 0; i < list.length; i += 300) { var r = await sb.rpc('sr_photos_for', { p_srs: list.slice(i, i + 300) }); if (r.error) throw r.error; (r.data || []).forEach(function (x) { if (!first[x.sr]) first[x.sr] = x.path; }); }
+    var ks = Object.keys(first), urls = {};
+    for (var j = 0; j < ks.length; j += 300) Object.assign(urls, await photoUrls(ks.slice(j, j + 300).map(function (k) { return first[k]; })));
+    var idx = 0, done = 0;
+    async function shrink(blob) { var bmp = await createImageBitmap(blob), k = Math.min(1, 800 / Math.max(bmp.width, bmp.height)), c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); return { b64: c.toDataURL('image/jpeg', 0.8).split(',')[1], w: c.width, h: c.height }; }
+    async function worker() { while (idx < ks.length) { var sr = ks[idx++], u = urls[first[sr]]; try { if (u) { var rs = await fetch(u); if (rs.ok) out[sr] = await shrink(await rs.blob()); } } catch (e) { } done++; if (onp) onp(done, ks.length); } }
+    await Promise.all([worker(), worker(), worker(), worker(), worker(), worker()]);
+    return out;
   }
   async function mxKeyNew(label) { return chk(await sb.rpc('sync_key_new', { p_label: label || 'Maximo photos', p_kind: 'maximo' })); }
   async function mxStatus() { return chk(await sb.rpc('mx_status')); }
@@ -2346,15 +2406,15 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   // step 3: materials from the BOQ list
   async function svcCatalog() {
     if (SVC.cat) return SVC.cat;
-    var c = await svcKv('cat2'); if (c && c.rows && c.rows.length && Date.now() - c.at < 7 * 864e5) return (SVC.cat = c.rows);
+    var c = await svcKv('cat3'); if (c && c.rows && c.rows.length && Date.now() - c.at < 7 * 864e5) return (SVC.cat = c.rows);
     try {
       var rows = [];
-      var cols = 'line,item,descr,cat,btype,cost';
-      for (var f = 0; ; f += 1000) { var r = await sb.from('mat_catalog').select(cols).order('line').range(f, f + 999); if (r.error && cols.indexOf('cost') > 0) { cols = 'line,item,descr,cat,btype'; f -= 1000; continue; } if (r.error) throw r.error; rows = rows.concat(r.data || []); if ((r.data || []).length < 1000) break; }
-      rows.forEach(function (x) { x.u = String(x.descr || '').toUpperCase(); }); svcKv('cat2', { at: Date.now(), rows: rows }); return (SVC.cat = rows);
+      var cols = 'line,item,descr,cat,btype,cost,unit';
+      for (var f = 0; ; f += 1000) { var r = await sb.from('mat_catalog').select(cols).order('line').range(f, f + 999); if (r.error && cols.indexOf('unit') > 0) { cols = 'line,item,descr,cat,btype,cost'; f -= 1000; continue; } if (r.error && cols.indexOf('cost') > 0) { cols = 'line,item,descr,cat,btype'; f -= 1000; continue; } if (r.error) throw r.error; rows = rows.concat(r.data || []); if ((r.data || []).length < 1000) break; }
+      rows.forEach(function (x) { x.u = String(x.descr || '').toUpperCase(); }); svcKv('cat3', { at: Date.now(), rows: rows }); return (SVC.cat = rows);
     } catch (e) { if (c && c.rows) return (SVC.cat = c.rows); throw e; }
   }
-  function svcMatInfo(bt, c) { return (bt || c != null) ? '<span class="svc-minfo">' + (bt ? '<i>B.Type</i> ' + esc(bt) : '') + (c != null && c !== '' ? (bt ? ' · ' : '') + '<i>Unit cost</i> AED ' + (+c).toFixed(2) : '') + '</span>' : ''; }
+  function svcMatInfo(un, c) { return (un || c != null) ? '<span class="svc-minfo">' + (un ? '<i>Unit</i> ' + esc(un) : '') + (c != null && c !== '' ? (un ? ' · ' : '') + '<i>Unit cost</i> AED ' + (+c).toFixed(2) : '') + '</span>' : ''; }
   function svcS3(F) {
     var m = F.data.mats || (F.data.mats = []), man = F.matMode === 'man';
     var units = '<option value="">unit</option>' + SV_UNITS.map(function (u) { return '<option>' + esc(u) + '</option>'; }).join('');
@@ -2364,7 +2424,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         : '<div class="svc-search">🔍 <input id="svcMQ" type="search" placeholder="Type to search the BOQ list (e.g. LED, valve, compressor)" autocomplete="off"></div><div id="svcMR" class="svc-res"><div class="sv-hint">Loading materials list…</div></div>' +
           '<button class="sv-link" id="svcToMan">Not in the list? ✍ Write it manually</button>') + '</section>' +
       '<section class="svc-card"><h4>Selected (' + m.length + (m.length >= SVC_MAXMAT ? ' – maximum' : '') + ')</h4>' + (m.length ? m.map(function (x, i) {
-        return '<div class="svc-mrow"><span class="svc-n">' + (i + 1) + '</span><span class="svc-md">' + esc(x.d) + (x.line ? '<small> · BOQ line ' + x.line + '</small>' + svcMatInfo(x.bt, x.c) : '<small> · <span class="svc-mtag">manual</span></small>') + '</span><span class="svc-qty"><button data-mm="' + i + '" aria-label="Less">−</button><input data-mq="' + i + '" type="number" inputmode="decimal" min="0" step="any" value="' + esc(x.q) + '" aria-label="Quantity"><button data-mp="' + i + '" aria-label="More">+</button>' + (x.u ? '<span class="svc-u">' + esc(x.u) + '</span>' : '') + '</span><button class="svc-x2" data-mx2="' + i + '" aria-label="Remove">✕</button></div>';
+        return '<div class="svc-mrow"><span class="svc-n">' + (i + 1) + '</span><span class="svc-md">' + esc(x.d) + (x.line ? '<small> · BOQ line ' + x.line + '</small>' + svcMatInfo(x.u || '', x.c) : '<small> · <span class="svc-mtag">manual</span></small>') + '</span><span class="svc-qty"><button data-mm="' + i + '" aria-label="Less">−</button><input data-mq="' + i + '" type="number" inputmode="decimal" min="0" step="any" value="' + esc(x.q) + '" aria-label="Quantity"><button data-mp="' + i + '" aria-label="More">+</button>' + (x.u ? '<span class="svc-u">' + esc(x.u) + '</span>' : '') + '</span><button class="svc-x2" data-mx2="' + i + '" aria-label="Remove">✕</button></div>';
       }).join('') : '<p class="sv-hint">No material yet. If no material was used, leave this empty.</p>') + '</section>';
   }
   function svcB3(F) {
@@ -2380,7 +2440,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     };
     if (!q) { bindSel(); return; }
     svcKv('matuse').then(function (u) { use = u || {}; });
-    function add(line, d, x0) { svcRead(); if (m.length >= SVC_MAXMAT) return svToast('Maximum ' + SVC_MAXMAT + ' materials per report.', true); var ex = m.filter(function (x) { return line ? x.line === line : x.d === d; })[0]; if (ex) ex.q = (+ex.q || 0) + 1; else m.push(Object.assign({ line: line || null, d: d, q: 1 }, x0 ? { bt: x0.btype || '', c: x0.cost != null ? +x0.cost : null } : {})); svcForm(); var nq = $('#svcMQ'); if (nq) nq.focus(); }
+    function add(line, d, x0) { svcRead(); if (m.length >= SVC_MAXMAT) return svToast('Maximum ' + SVC_MAXMAT + ' materials per report.', true); var ex = m.filter(function (x) { return line ? x.line === line : x.d === d; })[0]; if (ex) ex.q = (+ex.q || 0) + 1; else m.push(Object.assign({ line: line || null, d: d, q: 1 }, x0 ? { u: x0.unit || '', c: x0.cost != null ? +x0.cost : null } : {})); svcForm(); var nq = $('#svcMQ'); if (nq) nq.focus(); }
     function show() {
       if (!cat) return;
       var t = q.value.trim().toUpperCase().split(/\s+/).filter(Boolean), list;
@@ -2390,7 +2450,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       res.innerHTML = list.length ? list.slice(0, 30).map(row).join('') + (list.length > 30 ? '<div class="sv-hint">' + list.length + ' matches — type more words.</div>' : '') : '<div class="sv-hint">Nothing found in the BOQ list. Tap "Write it manually" below.</div>';
       bindRes();
     }
-    function row(x) { var w = q.value.trim().split(/\s+/).filter(Boolean), t = esc(x.descr); w.forEach(function (k) { if (k.length > 1) t = t.replace(new RegExp('(' + esc(k).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>'); }); return '<button class="svc-ri" data-ml="' + x.line + '"><span>' + t + '<small> · ' + esc(SVC_MCAT[x.cat] || x.cat || '') + ' · line ' + x.line + '</small>' + svcMatInfo(x.btype, x.cost) + '</span><b>+</b></button>'; }
+    function row(x) { var w = q.value.trim().split(/\s+/).filter(Boolean), t = esc(x.descr); w.forEach(function (k) { if (k.length > 1) t = t.replace(new RegExp('(' + esc(k).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>'); }); return '<button class="svc-ri" data-ml="' + x.line + '"><span>' + t + '<small> · ' + esc(SVC_MCAT[x.cat] || x.cat || '') + ' · line ' + x.line + '</small>' + svcMatInfo(x.unit || '', x.cost) + '</span><b>+</b></button>'; }
     function bindRes() { Array.prototype.forEach.call(res.querySelectorAll('[data-ml]'), function (b) { b.onclick = function () { var l = +b.getAttribute('data-ml'), x = cat.filter(function (y) { return y.line === l; })[0]; if (x) add(x.line, x.descr, x); }; }); }
     var qt; q.oninput = function () { clearTimeout(qt); qt = setTimeout(show, 150); };
     svcCatalog().then(function (c) { cat = c; show(); }).catch(function (e) { res.innerHTML = '<div class="sv-hint">BOQ list not available (' + esc(e.message || e) + '). Use "Write it manually".</div>'; });
@@ -3166,7 +3226,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     try {
       if (ppmTeam() && !profile.team_of) { screen('<div class="auth-f"><p><b>This team account is not linked to a PPM supervisor yet.</b></p><p>Ask the portal administrator (Admin → Users → Team of supervisor).</p><button class="btn" id="soBtn">Sign out</button></div>'); $('#soBtn').onclick = signOut; return; }
       await ppmLoad();
-      var s = await sb.from('svc_settings').select('uid,sig_path,sig_name').eq('uid', ppmMyOwner()).maybeSingle(); PPM.set = (s && s.data) || null;
+      var s = await sb.from('svc_settings').select('uid,sig_path,sig_name,techs').eq('uid', ppmMyOwner()).maybeSingle(); PPM.set = (s && s.data) || null;
     } catch (e) { screen('<div class="auth-f"><p class="status err">Could not load: ' + esc(e.message || e) + (/ppm_/.test(e.message || '') ? ' — the admin needs to run update 20 in Supabase.' : '') + '</p><button class="btn" id="rtBtn">Try again</button> <button class="btn" id="soBtn">Sign out</button></div>'); $('#rtBtn').onclick = ppmApp; $('#soBtn').onclick = signOut; return; }
     ppmDraw();
   }
@@ -3208,7 +3268,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var r = PPM.reps[w.wo], d = (r && r.data) || {}, h = '<article class="sv-card' + (r ? ' svc-c-' + r.status : ' s-rep') + '" data-wo="' + esc(w.wo) + '"><div class="sv-row"><b class="sv-sr">WO ' + esc(w.wo) + '</b><span class="pill avg">' + esc(w.rtype === 'LIGHT' ? 'ELECT-LIGHT' : w.rtype === 'DB' ? 'ELECT-DB' : w.rtype) + '</span>' +
       (r ? '<span class="svc-pill ' + PP_ST[r.status][1] + '">' + PP_ST[r.status][0] + '</span>' : '') + (r && r.status === 'draft' && d.teamDone ? '<span class="svc-pill svc-p-team">' + (ppmTeam() ? '✓ Sent to supervisor' : '👥 From team – review') + '</span>' : '') + '</div>' +
       '<div class="sv-meta">' + esc(w.route || '') + ' · Zone ' + esc(w.zone || '?') + (w.target ? ' · target ' + esc(dmDxb(+w.target - 4 * 3600e3, true)) : '') + (w.active ? '' : ' · <b>not in the latest list</b>') + '</div><div class="sv-loc">' + esc(w.descr || '') + '</div>';
-    if (r && r.prepared_name && !ppmTeam()) h += '<div class="sv-meta">Prepared by ' + esc(r.prepared_name) + '</div>';
+    if (r && (d.techs || []).length) h += '<div class="sv-meta">👷 ' + esc(d.techs.join(', ')) + (r.prepared_name && !ppmTeam() ? ' · team account ' + esc(r.prepared_name) : '') + '</div>';
+    else if (r && r.prepared_name && !ppmTeam()) h += '<div class="sv-meta">Prepared by ' + esc(r.prepared_name) + '</div>';
     var mine = !r || r.uid === ppmMyOwner() || (profile && profile.role === 'admin');
     if (!mine) return h + '<div class="sv-meta" style="margin-top:6px">Another supervisor\'s team is preparing this report.</div></article>';
     if (!r) h += '<button class="sv-b svc-pri" data-ppa="open" style="width:100%;margin-top:8px">📝 Create report</button>';
@@ -3349,18 +3410,30 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     svcAll('[data-ppe]').forEach(function (b) { b.onclick = function () { var p = b.getAttribute('data-ppe').split('|'); F.d.cl[p[0]].e.items[+p[1]][p[2]] = p[3]; redraw(); }; });
     svcAll('[id^="pp3u_"]').forEach(function (inp) { inp.onchange = function () { redraw(); }; });
   }
+  function ppmTechNames() { return ((PPM.set && PPM.set.techs) || []).map(function (t) { return t.name || t.id; }).filter(Boolean); }
   function ppmS4(F) {
+    F.d.techs = F.d.techs || [];
+    var all = ppmTechNames().concat(F.d.techs.filter(function (n) { return ppmTechNames().indexOf(n) < 0; }));
+    var tech = '<section class="svc-card"><h4>Prepared by – technician name(s) <span class="svc-opt">required</span></h4>' + (all.length ? '<div class="svc-chips">' + all.map(function (n) { var on = F.d.techs.indexOf(n) >= 0; return '<button type="button" class="svc-chip' + (on ? ' on' : '') + '" data-ppte="' + esc(n) + '" aria-pressed="' + on + '">' + esc(n) + '</button>'; }).join('') + '</div>' : '<p class="sv-hint">No names saved by the supervisor yet — write the name below.</p>') +
+      '<div class="pp-add"><input id="ppTeN" placeholder="Other name" maxlength="60"><button type="button" class="sv-b" id="ppTeA">+ Add</button></div></section>';
+    return tech + ppmS4b(F);
+  }
+  function ppmS4b(F) {
     var m = ppmMissing(F.d), nph = 0; F.d.rows.forEach(function (r) { ['b', 'd', 'a'].forEach(function (k) { if (r[k]) nph++; }); });
     return '<section class="svc-card"><h4>Summary</h4><div class="sv-meta">' + esc(F.d.month) + ' · ' + esc(F.d.site) + '</div><div class="sv-loc">' + F.d.cats.filter(function (c) { return +c.n > 0; }).map(function (c) { return esc(c.name) + ' × ' + c.n; }).join(' · ') + '</div>' +
       '<div class="sv-meta">' + nph + ' photo' + (nph === 1 ? '' : 's') + ' in ' + F.d.rows.length + ' row' + (F.d.rows.length === 1 ? '' : 's') + ' · ' + ppmClKeys(F.d).map(function (k) { return PPM_CL[k].ref; }).join(' · ') + '</div></section>' +
       '<section class="svc-card"><h4>Check</h4>' + (m.length ? '<div class="svc-miss">Missing: ' + esc(m.join(', ')) + '</div>' : '<div class="sv-donel">✓ Ready. ' + (ppmTeam() ? 'Send it to your supervisor, or let the customer sign here.' : 'Mark it ready, or let the customer sign here.') + '</div>') + '</section>' +
       '<button class="sv-b svc-good" id="ppCust" style="width:100%">✍ Customer is here – sign on this phone</button>' + (ppmTeam() ? '<p class="sv-hint">After the customer signs, the report goes to your supervisor for approval.</p>' : (PPM.set && PPM.set.sig_path ? '' : '<div class="svc-miss">Save your signature first (⚙ on the main screen).</div>'));
   }
-  function ppmB4() { }
+  function ppmB4(F) {
+    svcAll('[data-ppte]').forEach(function (b) { b.onclick = function () { var n = b.getAttribute('data-ppte'), i = F.d.techs.indexOf(n); if (i >= 0) F.d.techs.splice(i, 1); else F.d.techs.push(n); ppmForm(); }; });
+    var a = $('#ppTeA'); if (a) a.onclick = function () { var v = ($('#ppTeN').value || '').trim(); if (!v) return; if (F.d.techs.indexOf(v) < 0) F.d.techs.push(v); ppmForm(); };
+  }
   function ppmMissing(d) {
     var m = []; if (!(d.cats || []).some(function (c) { return +c.n > 0; })) m.push('categories');
     if (!(d.rows || []).some(function (r) { return r.b || r.d || r.a; })) m.push('photos');
     if (!String(d.month || '').trim()) m.push('PPM date');
+    if (!(d.techs || []).length) m.push('technician name');
     return m;
   }
   function ppmRead() {
@@ -3404,7 +3477,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<label class="sv-lbl" for="pcNm">Customer name</label><input id="pcNm" class="sv-in" maxlength="120">' +
       '<label class="sv-lbl" for="pcDs">Designation (optional)</label><input id="pcDs" class="sv-in" maxlength="120">' +
       '<label class="sv-lbl" for="pcCm">Comments (optional)</label><textarea id="pcCm" class="sv-in" rows="2" maxlength="600"></textarea>' +
-      '<div class="svc-lbl">Signature</div><div class="svc-pad"><canvas id="pcPad"></canvas></div><button class="sv-link" id="pcClr" style="padding:4px 0">Clear</button>' +
+      '<div class="svc-lbl">Signature</div><div class="svc-padw"><canvas id="pcPad"></canvas></div><button class="sv-link" id="pcClr" style="padding:4px 0">Clear</button>' +
       '<div class="svc-foot"><button class="sv-b svc-good svc-wide" id="pcGo">Save signature</button></div>');
     $('#svX').onclick = svClose; $('#svOv').onclick = null;
     var pad = svcPad($('#pcPad')); $('#pcClr').onclick = pad.clear;
@@ -3457,7 +3530,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     svSheet('<div class="sv-shh"><div><b>My signature</b><div class="sv-meta">Added to every PPM report as "Inspected & Tested by"</div></div><button class="sv-x" id="svX" aria-label="Close">✕</button></div>' +
       '<label class="sv-lbl" for="psNm">Name on the reports</label><input id="psNm" class="sv-in" maxlength="80" value="' + esc(s.sig_name || profile.full_name || '') + '">' +
       (s.sig_path ? '<div class="svc-lbl">Saved signature</div><div class="svc-sigv"><img id="psCur" alt="Saved signature"></div>' : '') +
-      '<div class="svc-lbl">' + (s.sig_path ? 'New signature (optional)' : 'Signature') + '</div><div class="svc-pad"><canvas id="psPad"></canvas></div><button class="sv-link" id="psClr" style="padding:4px 0">Clear</button>' +
+      '<div class="svc-lbl">' + (s.sig_path ? 'New signature (optional)' : 'Signature') + '</div><div class="svc-padw"><canvas id="psPad"></canvas></div><button class="sv-link" id="psClr" style="padding:4px 0">Clear</button>' +
+      '<label class="sv-lbl" for="psTe">My technicians <span class="svc-opt">one name per line — the team chooses who prepared each report</span></label><textarea id="psTe" class="sv-in" rows="4" maxlength="1500">' + esc(ppmTechNames().join('\n')) + '</textarea>' +
       '<div class="svc-foot"><button class="sv-b svc-good svc-wide" id="psGo">Save</button></div>');
     $('#svX').onclick = svClose; $('#svOv').onclick = null;
     if (s.sig_path) photoUrls([s.sig_path]).then(function (u) { var im = $('#psCur'); if (im) im.src = u[s.sig_path] || ''; });
@@ -3467,8 +3541,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       b.disabled = true;
       try {
         var path = s.sig_path; if (!pad.empty()) path = (await phPost('a=ppmup&kind=sig', await pad.blob(), 'image/jpeg')).path;
-        var r = await sb.from('svc_settings').upsert({ uid: profile.id, sig_path: path, sig_name: nm, updated_at: new Date().toISOString() }, { onConflict: 'uid' }); if (r.error) throw r.error;
-        PPM.set = { uid: profile.id, sig_path: path, sig_name: nm }; svClose(); ppmDraw(); svToast('Signature saved.');
+        var te = String($('#psTe').value || '').split(/\n/).map(function (x) { return x.trim(); }).filter(function (x, i, a) { return x && a.indexOf(x) === i; }).slice(0, 60).map(function (x) { return { id: x, name: x }; });
+        var r = await sb.from('svc_settings').upsert({ uid: profile.id, sig_path: path, sig_name: nm, techs: te, updated_at: new Date().toISOString() }, { onConflict: 'uid' }); if (r.error) throw r.error;
+        PPM.set = { uid: profile.id, sig_path: path, sig_name: nm, techs: te }; svClose(); ppmDraw(); svToast('Signature saved.');
       } catch (e) { svToast('Not saved: ' + (e.message || e), true); b.disabled = false; }
     };
   }
@@ -3533,11 +3608,11 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="f"><label for="ppoS">Status</label><select id="ppoS">' + o('', 'All', f.st) + o('none', 'No report yet', f.st) + o('draft', 'Drafts', f.st) + o('cust', 'Waiting for customer', f.st) + o('signed', 'Signed', f.st) + o('nomx', 'Signed, not uploaded to Maximo', f.st) + '</select></div>' +
       '<div class="f"><label for="ppoQ">Search</label><input id="ppoQ" type="search" value="' + esc(f.q) + '" placeholder="WO, site, route"></div></div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn primary" id="ppoZip"' + (nsel ? '' : ' disabled') + '>⬇ PDF (' + nsel + ' selected' + (nsel > 1 ? ', ZIP' : '') + ')</button>' + (ppoCanEdit() ? '<button class="btn" id="ppoMxOn"' + (nsel ? '' : ' disabled') + '>Mark uploaded to Maximo</button><button class="btn" id="ppoMxOff"' + (nsel ? '' : ' disabled') + '>Undo uploaded</button>' : '') + '<span class="status" id="ppoSt2"></span></div>' +
-      '<div class="tw" style="max-height:560px"><table class="t"><thead><tr><th><input type="checkbox" id="ppoAll" aria-label="Select all"></th><th>WO</th><th>Type</th><th>Description</th><th>Route</th><th>Zone</th><th>Target</th><th>Status</th><th>Supervisor / team</th><th>Customer</th><th>Maximo</th><th></th></tr></thead><tbody>' +
+      '<div class="tw" style="max-height:560px"><table class="t"><thead><tr><th><input type="checkbox" id="ppoAll" aria-label="Select all"></th><th>WO</th><th>Type</th><th>Description</th><th>Route</th><th>Zone</th><th>Target</th><th>Status</th><th>Supervisor / team</th><th>Technician(s)</th><th>Customer</th><th>Maximo</th><th></th></tr></thead><tbody>' +
       list.slice(0, 500).map(function (w) {
         var r = PPO.reps[w.wo], st = ppoSt(w), c = (r && r.cust) || {};
         return '<tr><td>' + (r ? '<input type="checkbox" data-pps="' + esc(w.wo) + '"' + (PPO.sel[w.wo] ? ' checked' : '') + ' aria-label="Select WO ' + esc(w.wo) + '">' : '') + '</td><td>' + esc(w.wo) + '</td><td>' + esc(w.rtype === 'LIGHT' ? 'ELECT-LIGHT' : w.rtype === 'DB' ? 'ELECT-DB' : w.rtype) + '</td><td>' + esc(w.descr || '') + (w.active ? '' : '<div class="muted" style="font-size:.72rem">not in the latest list</div>') + '</td><td>' + esc(w.route || '') + '</td><td>' + esc(w.zone || '') + '</td><td>' + (w.target ? esc(dmDxb(+w.target - 4 * 3600e3, true)) : '') + '</td><td>' + stl[st] + '</td>' +
-          '<td>' + esc((r && (r.sup_name || '')) || '') + (r && r.prepared_name ? '<div class="muted" style="font-size:.72rem">team: ' + esc(r.prepared_name) + '</div>' : '') + '</td><td>' + (c.name ? esc(c.name) + '<div class="muted" style="font-size:.72rem">' + esc(dmDxb(r.signed_at)) + (c.method === 'link' ? ' · link' : ' · on site') + '</div>' + (c.comments ? '<div class="muted" style="font-size:.72rem">“' + esc(c.comments) + '”</div>' : '') : '—') + '</td>' +
+          '<td>' + esc((r && (r.sup_name || '')) || '') + (r && r.prepared_name ? '<div class="muted" style="font-size:.72rem">team: ' + esc(r.prepared_name) + '</div>' : '') + '</td><td>' + esc(((r && r.data && r.data.techs) || []).join(', ')) + '</td><td>' + (c.name ? esc(c.name) + '<div class="muted" style="font-size:.72rem">' + esc(dmDxb(r.signed_at)) + (c.method === 'link' ? ' · link' : ' · on site') + '</div>' + (c.comments ? '<div class="muted" style="font-size:.72rem">“' + esc(c.comments) + '”</div>' : '') : '—') + '</td>' +
           '<td>' + (r && r.mx_at ? '✓ ' + esc(dmDxb(r.mx_at, true)) : '—') + '</td><td style="white-space:nowrap">' + (r ? '<button class="btn xs" data-ppp="' + esc(w.wo) + '">' + (st === 'signed' ? 'PDF' : 'Preview PDF') + '</button>' + (ppoCanEdit() ? (st !== 'draft' ? ' <button class="btn xs" data-ppr="' + esc(w.wo) + '">Re-open</button>' : '') + ' <button class="btn xs danger" data-ppd="' + esc(w.wo) + '">Delete</button>' : '') : '') + '</td></tr>';
       }).join('') + '</tbody></table></div>' + (list.length > 500 ? '<p class="muted">Showing 500 of ' + list.length + '. Use the filters.</p>' : '') + (!list.length ? '<p class="muted">Nothing for these filters.</p>' : '');
     var re = function () { PPO.sel = {}; ppoDraw(); };
@@ -3660,7 +3735,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     return pdf.output('blob');
   }
 
-  window.DM_CLOUD = { ppmOffice: ppmOffice, sfOffice: sfOffice, sfCan: sfCan, apOffice: apOffice, svcOffice: svcOffice, reportsAdd: reportsAdd, reportsRemove: reportsRemove, reportsReload: reportsReload, syncKeyNew: syncKeyNew, syncKeyRevoke: syncKeyRevoke, syncScript: syncScript, syncCmd: syncCmd, emgList: emgList, emgFlag: emgFlag, emgClear: emgClear, emgPushStatus: emgPushStatus, emgSaveCfg: emgSaveCfg, purgePhotos: purgePhotos, rmActivity: rmActivity, materials: materials, matDecide: matDecide, photoUrls: photoUrls, loadUtil: loadUtil, utilSave: utilSave, utilDropMonth: utilDropMonth, utilZoneSet: utilZoneSet, photoCounts: photoCounts, photoCount: photoCount, loadFlags: loadFlags, flagOf: flagOf, flagLabel: flagLabel, flagPill: flagPill, flagCanSet: flagCanSet, flagFormHTML: flagFormHTML, flagFormBind: flagFormBind, FLAGS: FLAGS, srPhotos: srPhotos, photoStrip: photoStrip, gallery: gallery, mxAllowed: mxAllowed, mxKeyNew: mxKeyNew, mxStatus: mxStatus, mxScript: mxScript, rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
+  window.DM_CLOUD = { firstPhotos: firstPhotos, ppmOffice: ppmOffice, sfOffice: sfOffice, sfCan: sfCan, apOffice: apOffice, svcOffice: svcOffice, reportsAdd: reportsAdd, reportsRemove: reportsRemove, reportsReload: reportsReload, syncKeyNew: syncKeyNew, syncKeyRevoke: syncKeyRevoke, syncScript: syncScript, syncCmd: syncCmd, emgList: emgList, emgFlag: emgFlag, emgClear: emgClear, emgPushStatus: emgPushStatus, emgSaveCfg: emgSaveCfg, purgePhotos: purgePhotos, rmActivity: rmActivity, materials: materials, matDecide: matDecide, photoUrls: photoUrls, loadUtil: loadUtil, utilSave: utilSave, utilDropMonth: utilDropMonth, utilZoneSet: utilZoneSet, photoCounts: photoCounts, photoCount: photoCount, loadFlags: loadFlags, flagOf: flagOf, flagLabel: flagLabel, flagPill: flagPill, flagCanSet: flagCanSet, flagFormHTML: flagFormHTML, flagFormBind: flagFormBind, FLAGS: FLAGS, srPhotos: srPhotos, photoStrip: photoStrip, gallery: gallery, mxAllowed: mxAllowed, mxKeyNew: mxKeyNew, mxStatus: mxStatus, mxScript: mxScript, rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
 
   /* ---------- route: direct to Supabase, or through the relay when supabase.co is blocked (e.g. UAE mobile data) ---------- */
   function probe(base, ms) {
@@ -4986,14 +5061,21 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="f"><label for="regScope">SRs</label><select id="regScope">' + opt('O', 'Open SRs only', REGF.scope) + opt('', 'All SRs (open and closed)', REGF.scope) + '</select></div>' +
       '<div class="f"><label for="regWt">Work type</label><select id="regWt">' + opt('', 'All work types (' + fmt(base.length) + ')', REGF.wt) + sum.filter(function (r) { return !r._cls; }).map(function (r) { return opt(r.wt, r.wt + ' (' + fmt(r.total) + ')', REGF.wt); }).join('') + '</select></div>' +
       '<div class="f"><label for="regLs">Labour supervisor</label><select id="regLs" style="min-width:340px">' + opt('', 'All labour supervisors', REGF.ls) + labSupList(cm).map(function (r) { return opt(r.name, r.name + '  —  ' + r.w + (r.z ? ' · Zones ' + r.z : '') + ' (' + fmt(r.n) + ')', REGF.ls); }).join('') + '</select></div>' +
-      (CAN_SAVE() ? '<div class="f" style="align-self:flex-end"><button class="btn primary" id="regWl" title="Summary sheet plus one work list per work type, with follow-up columns">Work lists (Excel) ⬇</button></div>' : '') + '</div>';
+      (CAN_SAVE() ? '<div class="f" style="align-self:flex-end"><button class="btn primary" id="regWl" title="Summary sheet plus one work list per work type, with follow-up columns">Work lists (Excel) ⬇</button></div>' : '') +
+      (CLOUD && ROLE === 'admin' ? '<div class="f" style="align-self:flex-end"><button class="btn" id="regWlp" title="Admin only: the same work lists with the before photo (from Maximo) of each SR in a large cell">Work lists (Excel) + photo ⬇</button></div>' : '') + '</div>';
     return section('', 'Work type analysis', '', 'Every SR is sorted into a work type from its description (summary), e.g. plumbing, carpentry, painting, tiling. Showing ' + scopeTxt + ' for the filters at the top. Click a work type to list its SRs. Labour supervisor (from the tracker Service Type): CIVIL / CARP go to the civil supervisor of the zone; AD-HOC works have no supervisor; all other works are MEP and follow the tracker Supervisors column.', ctl + panel('SRs by work type', fmt(base.length) + ' ' + scopeTxt, tbl)) +
       section('', 'SR register' + (REGF.wt ? ' — ' + REGF.wt : ''), '', fmt(list.length) + ' SRs. Click a column to sort.', '<div class="pager"><span id="regInfo"></span><button class="btn" id="regPrev">Previous</button><button class="btn" id="regNext">Next</button>' + (CAN_SAVE() ? '<button class="btn" id="regXl">Excel ⬇</button><button class="btn" id="regCsv">CSV ⬇</button>' : '') + '</div><div class="tw" id="regTable"></div>');
   }
   // Excel: Summary sheet + one work list per work type (follow-up columns in yellow)
-  async function workListsXlsx(base, btn) {
+  async function workListsXlsx(base, btn, withPhoto) {
     var old = btn ? btn.textContent : ''; if (btn) { btn.disabled = true; btn.textContent = 'Building…'; }
     try {
+      var PH = null;
+      if (withPhoto) {
+        if (base.length > 1500 && !confirm(base.length + ' SRs: the file with photos will be large (about ' + Math.round(base.length * 0.08) + ' MB) and take a few minutes. Use the filters (zone, supervisor, work type) for a smaller file. Continue?')) throw new Error('cancelled');
+        PH = await window.DM_CLOUD.firstPhotos(base.map(function (o) { return o.id; }), function (d, n) { if (btn) btn.textContent = 'Photos ' + d + ' / ' + n + '…'; });
+        if (btn) btn.textContent = 'Building…';
+      }
       if (typeof ExcelJS === 'undefined') await loadScript(CDN.exceljs);
       var wb = new ExcelJS.Workbook(); wb.creator = 'DM Maintenance Portal';
       var NAVY = 'FF1C3B67', GOLD = 'FFC09A52', YEL = 'FFFFF2CC', TOT = 'FFDCE3EE';
@@ -5012,7 +5094,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         if (!tot) { var c0 = ws.getCell(rr, 1); c0.value = { text: r.wt, hyperlink: "#'" + sheetName(r.wt) + "'!A1" }; c0.font = { color: { argb: 'FF0563C1' }, underline: true }; }
       });
       [30, 70, 9, 11, 9, 9, 9, 11].forEach(function (w, i) { ws.getColumn(i + 1).width = w; });
-      var cols = [['#', 5], ['SR No', 10], ['Work Order', 11], ['Reported Date', 13], ['Building / Area', 24], ['Work Description', 60], ['Contact No', 13], ['Pending Days', 10], ['Zone', 8], ['Priority', 11], ['Labour Supervisor', 18], ['Assigned To', 16], ['Planned Date', 13], ['Completion Date', 14], ['Status', 12], ['Remarks', 30]], FOLLOW = 11;
+      var cols = [['#', 5], ['SR No', 10], ['Work Order', 11], ['Reported Date', 13], ['Building / Area', 24], ['Work Description', 60], ['Contact No', 13], ['Pending Days', 10], ['Zone', 8], ['Priority', 11], ['Labour Supervisor', 18], ['Assigned To', 16], ['Planned Date', 13], ['Completion Date', 14], ['Status', 12], ['Remarks', 30]], FOLLOW = 11, PC = -1;
+      if (PH) { cols.splice(6, 0, ['Before photo', 46]); FOLLOW = 12; PC = 6; }
       sum.filter(function (r) { return !r._cls; }).forEach(function (r) {
         var a = g[r.wt].slice().sort(function (x, y) { return x.rd - y.rd; });
         var w = wb.addWorksheet(sheetName(r.wt), { views: [{ showGridLines: false, state: 'frozen', ySplit: 5 }] });
@@ -5025,13 +5108,20 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         w.getRow(5).height = 30;
         a.forEach(function (o, k) {
           var vals = [k + 1, o.id, o.wo, dstr(o.rd), o.area || community(o.locd) || o.loc2, o.sum, o.tel, o.st === 'O' ? o.age : '', o.fz, o.grp + (o.pr ? ' (P' + o.pr + ')' : ''), labSup(o), '', '', '', o.st === 'O' ? '' : 'Closed', ''];
-          vals.forEach(function (v, i) { var c = w.getCell(6 + k, i + 1); c.value = v === undefined ? '' : v; c.border = box; c.alignment = { vertical: 'top', wrapText: i === 5 || i === 4 }; if (i >= FOLLOW) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: YEL } }; });
+          if (PH) vals.splice(6, 0, PH[o.id] ? '' : 'No photo');
+          vals.forEach(function (v, i) { var c = w.getCell(6 + k, i + 1); c.value = v === undefined ? '' : v; c.border = box; c.alignment = { vertical: PH ? 'middle' : 'top', wrapText: i === 5 || i === 4, horizontal: i === PC ? 'center' : undefined }; if (i >= FOLLOW) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: YEL } }; });
+          if (PH && PH[o.id]) {   // large photo inside the cell (about 330 x 240 px), keeping its shape
+            var im = PH[o.id], sc = Math.min(322 / im.w, 232 / im.h), iw = Math.round(im.w * sc), ih = Math.round(im.h * sc);
+            w.getRow(6 + k).height = 182;
+            var id = wb.addImage({ base64: im.b64, extension: 'jpeg' });
+            w.addImage(id, { tl: { col: PC + (322 - iw) / 2 / 330 + 0.01, row: 5 + k + (232 - ih) / 2 / 243 + 0.015 }, ext: { width: iw, height: ih }, editAs: 'oneCell' });
+          }
         });
         w.autoFilter = { from: { row: 5, column: 1 }, to: { row: 5 + a.length, column: cols.length } };
       });
       var buf = await wb.xlsx.writeBuffer();
-      await saveFile('DM_Work_Lists_' + (REGF.scope === 'O' ? 'Open_' : 'All_') + (REGF.ls ? REGF.ls.replace(/[^A-Za-z0-9]+/g, '_') + '_' : '') + iso(CUT) + '.xlsx', new Blob([buf]));
-    } catch (e) { toast('Work lists failed: ' + (e.message || e)); }
+      await saveFile('DM_Work_Lists_' + (PH ? 'Photos_' : '') + (REGF.scope === 'O' ? 'Open_' : 'All_') + (REGF.ls ? REGF.ls.replace(/[^A-Za-z0-9]+/g, '_') + '_' : '') + iso(CUT) + '.xlsx', new Blob([buf]));
+    } catch (e) { if (e && e.message !== 'cancelled') toast('Work lists failed: ' + (e.message || e)); }
     if (btn) { btn.disabled = false; btn.textContent = old; }
   }
   function bindRegister(cm) {
@@ -5041,6 +5131,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var lsel = $('#regLs'); if (lsel) lsel.onchange = function () { REGF.ls = lsel.value; REG.page = 0; render(); };
     Array.prototype.forEach.call(document.querySelectorAll('#view [data-wt]'), function (l) { l.onclick = function (e) { e.preventDefault(); var t = l.getAttribute('data-wt'); REGF.wt = REGF.wt === t ? '' : t; REG.page = 0; render(); setTimeout(function () { var el = $('#regTable'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50); }; });
     var wl = $('#regWl'); if (wl) wl.onclick = function () { workListsXlsx(base, wl); };
+    var wlp = $('#regWlp'); if (wlp) wlp.onclick = function () { if (ROLE === 'admin') workListsXlsx(base, wlp, true); };
     function draw() {
       var k = REG.sort, d = REG.dir;
       rows.sort(function (a, b) { var x = a[k], y = b[k]; if (x === y) return 0; return (x > y ? 1 : -1) * d; });
