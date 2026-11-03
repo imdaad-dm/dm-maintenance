@@ -1061,16 +1061,18 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var pPpm = ppmViaEdge(pStamp).then(function (rows) { return rows || cachedTable('ppm', 'ppm', PPM_COLS + ',cost', 'id', null, null, pStamp).catch(function () { return fetchAll('ppm', PPM_COLS, 'id'); }); });
     var pSn = (async function () { var sq = await sb.from('snapshots').select('c,t,o,d').order('c'); if (sq.error && /\bd\b|column/i.test(sq.error.message || '')) sq = await sb.from('snapshots').select('c,t,o').order('c'); return chk(sq); })();
     var pXf = rpcAll('sr_transfers').catch(function () { return []; });
-    var all = await Promise.all([pSr, loadReports(), pPpm, pSn, pXf]);
+    var pWo = (async function () { try { var out = []; for (var f = 0; ; f += 1000) { var r = await sb.from('wo_list').select('wo,wtype,cat,done,cost,sr,fz,zn,trade,rd,status').order('wo').range(f, f + 999); if (r.error) return []; out = out.concat(r.data || []); if ((r.data || []).length < 1000) break; } return out; } catch (e) { return []; } })();
+    var all = await Promise.all([pSr, loadReports(), pPpm, pSn, pXf, pWo]);
     var sr = all[0], reps = all[1], ppm = all[2], snaps = all[3], util = undefined, xf = {};
     (all[4] || []).forEach(function (x) { xf[x.id] = x; });
+    var wo = all[5] || [], wot = {}; wo.forEach(function (w) { w.rd = w.rd == null ? null : +w.rd; w.cost = +w.cost || 0; if (w.sr && (!wot[w.sr] || w.wtype === 'CP' || w.wtype === 'MD')) wot[w.sr] = w.wtype; });
     progress(1, 'Opening dashboard…');
-    sr.forEach(function (o) { o.rd = +o.rd; o.cd = o.cd == null ? null : +o.cd; o.closed_seen = o.closed_seen == null ? null : +o.closed_seen; o.pr = o.pr || 0; ['wo', 'sum', 'wt', 'svc', 'tr', 'rbn', 'dept', 'mx', 'loc', 'locd', 'zn', 'fz', 'area', 'sup', 'ist', 'st', 'cnote', 'rem', 'park'].forEach(function (k) { if (o[k] == null) o[k] = ''; }); var x = xf[o.id]; if (x) { o.xk = x.kind; if (x.kind === 'MEP' && x.sup) o.sup = x.sup; } });
+    sr.forEach(function (o) { o.rd = +o.rd; o.cd = o.cd == null ? null : +o.cd; o.closed_seen = o.closed_seen == null ? null : +o.closed_seen; o.pr = o.pr || 0; ['wo', 'sum', 'wt', 'svc', 'tr', 'rbn', 'dept', 'mx', 'loc', 'locd', 'zn', 'fz', 'area', 'sup', 'ist', 'st', 'cnote', 'rem', 'park'].forEach(function (k) { if (o[k] == null) o[k] = ''; }); var x = xf[o.id]; if (x) { o.xk = x.kind; if (x.kind === 'MEP' && x.sup) o.sup = x.sup; } if (wot[o.id]) o.wot = wot[o.id]; });
     ppm.forEach(function (v) { v.st = +v.st; v.en = +v.en; v.cost = v.cost == null ? 0 : +v.cost; ['sheet', 'item', 'desc', 'sys', 'site', 'route', 'sc', 'freq', 'tr'].forEach(function (k) { if (v[k] == null) v[k] = ''; }); });
     var cfg = cfgRow.config || {}, lg = cfgRow.logos || {}, dl = logos();
     return {
       config: cfg, logos: { left: lg.left || dl.left, lw: lg.lw || dl.lw, right: lg.right || dl.right, rw: lg.rw || dl.rw },
-      pptTpl: window.DM_PPT_TPL || null, cm: sr, ppm: ppm, util: util, snapshots: snaps.map(function (s) { return { c: +s.c, t: s.t, o: s.o, d: s.d || null }; }), reports: reps.list, syncKeys: reps.keys,
+      pptTpl: window.DM_PPT_TPL || null, cm: sr, ppm: ppm, util: util, wo: wo, snapshots: snaps.map(function (s) { return { c: +s.c, t: s.t, o: s.o, d: s.d || null }; }), reports: reps.list, syncKeys: reps.keys,
       meta: { ppmFile: (cfg.ppmUpload && cfg.ppmUpload.file) || cfg.ppmFile || '', cmFile: cfg.lastUpload ? cfg.lastUpload.file : 'SR Master Tracker', updated: cfg.lastUpload ? cfg.lastUpload.at : '' }
     };
   }
@@ -1502,6 +1504,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="adm">' +
       h.panel('A · Daily additions', 'new and changed SRs only', '<p>Upload a file with the SRs added or changed today (same columns as the SR Master Tracker). New SRs are added, existing SRs are updated. Nothing is deleted.</p><div class="drop" id="dropA" tabindex="0">Drop today\'s additions here, or click to choose<input type="file" id="fileA" accept=".xlsx,.xlsm,.xls,.csv" hidden></div><div id="pendA"></div><div class="status" id="stA"></div>') +
       h.panel('B · Full tracker', 'replaces all CM data', '<p>Upload the complete SR Master Tracker. SRs in the file are added or updated, and SRs that are no longer in the file are removed. Use this for the weekly refresh.</p><div class="drop" id="dropB" tabindex="0">Drop the full SR Master Tracker here, or click to choose<input type="file" id="fileB" accept=".xlsx,.xlsm,.xls" hidden></div><div id="pendB"></div><div class="status" id="stB"></div>') +
+      h.panel('Work order update', 'Maximo "List of Work Orders" — costs', '<p>Upload the Maximo work-order list. Each upload replaces the last one. Category from the Work Type: <b>CM</b> = CM, AS · <b>PPM</b> = PM · <b>Ad-hoc</b> = CP, MD. Finished = any status except <b>WAPPR</b>. Cost = BoQ Total Cost for this WO. SRs of CP / MD work orders become Ad-hoc works (no labour supervisor).</p>' +
+        '<div class="drop" id="dropW" tabindex="0">Drop the work-order list here, or click to choose<input type="file" id="fileW" accept=".xlsx,.xls,.csv" hidden></div><div id="pendW"></div><div class="status" id="stW"></div>' +
+        '<div class="muted" style="font-size:.8rem;margin-top:6px">' + (((RAWC && RAWC.wo) || []).length ? 'In the portal: ' + h.fmt(RAWC.wo.length) + ' work orders.' : 'No work-order list uploaded yet.') + '</div>') +
       h.panel('C · PPM report', 'Maximo PM work orders (PM-All export)', '<p>Upload the latest Maximo PM work-order export (e.g. PM-All). It replaces the current PPM data. Current: ' + h.fmt(((RAWC && RAWC.ppm) || []).length) + ' work orders' + (RAWC.config.ppmUpload ? ' · ' + esc(RAWC.config.ppmUpload.file) + ' · ' + esc(RAWC.config.ppmUpload.at) : (RAWC.config.ppmFile ? ' · ' + esc(RAWC.config.ppmFile) : '')) + '.</p><div class="drop" id="dropC" tabindex="0">Drop the PPM report here, or click to choose<input type="file" id="fileC" accept=".xlsx,.xlsm,.xls" hidden></div><div id="pendC"></div><div class="status" id="stC"></div>') +
       h.panel('D · Maximo photos', 'pulled from Maximo by the CAFM PC', '<p>After you upload the tracker, the PC pulls the photos of the new open SRs by itself (it checks every 30 minutes, 07:00–19:00). Press the button to start it now.</p><div id="mxDataSt"><span class="muted">Loading…</span></div><div style="margin-top:8px"><button class="btn" id="mxRun2">⟳ Pull photos now</button></div><div class="status" id="stMx2"></div>') +
       h.panel('Current data', '', '<dl class="kv"><dt>SRs in the portal</dt><dd>' + h.fmt(h.cm().length) + '</dd><dt>Cut-off date</dt><dd>' + h.dstr(h.cut()) + '</dd><dt>Last upload</dt><dd>' + (L ? esc(L.file) + ' · ' + esc(L.at) + ' (' + (L.kind === 'full' ? 'full tracker' : 'daily additions') + ')' : '—') + '</dd></dl>') +
@@ -1516,6 +1521,58 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     d.ondragover = function (e) { e.preventDefault(); d.classList.add('over'); };
     d.ondragleave = function () { d.classList.remove('over'); };
     d.ondrop = function (e) { e.preventDefault(); d.classList.remove('over'); if (e.dataTransfer.files[0]) fn(e.dataTransfer.files[0]); };
+  }
+  // ---------- work order update (costs)
+  var WO_CAT = { CM: 'CM', AS: 'CM', PM: 'PPM', CP: 'ADHOC', MD: 'ADHOC' };
+  function woDate(v) {
+    if (v == null || v === '') return null; if (typeof v === 'number' && v > 20000 && v < 80000) return Math.round((v - 25569) * 86400000);
+    var m = String(v).trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/); if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+    m = String(v).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/); return m ? Date.UTC(+m[3], +m[2] - 1, +m[1]) : null;
+  }
+  function woParse(wb) {
+    for (var s = 0; s < wb.SheetNames.length; s++) {
+      var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[s]], { header: 1, raw: true, defval: null, blankrows: false });
+      for (var hr = 0; hr < Math.min(rows.length, 15); hr++) {
+        var head = (rows[hr] || []).map(function (x) { return String(x == null ? '' : x).trim().toLowerCase(); }), c = function (n) { return head.indexOf(n); };
+        if (c('work order') < 0 || c('work type') < 0 || c('status') < 0) continue;
+        var C = { wo: c('work order'), wt: c('work type'), st: c('status'), co: c('boq total cost for this wo'), sr: c('service request'), zn: c('zone'), tr: c('service type'), rd: c('reported date'), ro: c('route') };
+        var out = [], seen = {}, other = 0;
+        for (var r = hr + 1; r < rows.length; r++) {
+          var x = rows[r]; if (!x || x[C.wo] == null || x[C.wo] === '') continue;
+          var wo = typeof x[C.wo] === 'number' ? String(Math.round(x[C.wo])) : String(x[C.wo]).trim(); if (seen[wo]) continue; seen[wo] = 1;
+          var wt = String(x[C.wt] || '').trim().toUpperCase(), cat = WO_CAT[wt]; if (!cat) { other++; continue; }
+          var st = String(x[C.st] || '').trim().toUpperCase(), zn = C.zn >= 0 ? String(x[C.zn] || '').trim().toUpperCase() : '', route = C.ro >= 0 ? String(x[C.ro] || '').trim().toUpperCase() : '';
+          var fz = zn ? zn.charAt(0) : ((/^R-([A-Z])/.exec(route) || [])[1] || ''); if (fz === 'K') fz = 'H';
+          var sr = C.sr >= 0 && x[C.sr] != null ? (typeof x[C.sr] === 'number' ? String(Math.round(x[C.sr])) : String(x[C.sr]).trim()) : '';
+          var co = C.co >= 0 ? parseFloat(x[C.co]) : NaN;
+          out.push({ wo: wo, wtype: wt, cat: cat, status: st, done: st !== 'WAPPR', cost: isNaN(co) ? 0 : co, sr: sr, fz: fz, zn: zn, trade: C.tr >= 0 ? String(x[C.tr] || '').trim().toUpperCase() : '', rd: C.rd >= 0 ? woDate(x[C.rd]) : null, route: route });
+        }
+        return { rows: out, other: other };
+      }
+    }
+    throw new Error('This is not the Maximo "List of Work Orders" export (no "Work Order", "Work Type" and "Status" columns).');
+  }
+  function bindWO() {
+    bindDrop('dropW', 'fileW', async function (file) {
+      var h = H(); h.setSt('stW', 'Reading ' + file.name + '…'); document.getElementById('pendW').innerHTML = '';
+      try {
+        var p = woParse(await h.readWorkbook(file)), agg = {}, lab = { CM: 'CM (CM, AS)', PPM: 'PPM (PM)', ADHOC: 'Ad-hoc (CP, MD)' };
+        p.rows.forEach(function (w) { var a = agg[w.cat] = agg[w.cat] || { n: 0, d: 0, c: 0, wa: 0 }; a.n++; if (w.done) { a.d++; a.c += w.cost; } else a.wa++; });
+        document.getElementById('pendW').innerHTML = '<div class="tw" style="margin-top:10px"><table class="t"><thead><tr><th>Category</th><th class="n">Work orders</th><th class="n">Finished</th><th class="n">Cost of finished (AED)</th><th class="n">WAPPR</th></tr></thead><tbody>' +
+          ['CM', 'PPM', 'ADHOC'].filter(function (k) { return agg[k]; }).map(function (k) { var a = agg[k]; return '<tr><td>' + lab[k] + '</td><td class="n">' + h.fmt(a.n) + '</td><td class="n">' + h.fmt(a.d) + '</td><td class="n">' + h.fmt(Math.round(a.c)) + '</td><td class="n">' + h.fmt(a.wa) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+          (p.other ? '<p class="muted" style="font-size:.8rem">' + p.other + ' work orders with another work type are not counted.</p>' : '') +
+          '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn primary" id="goW"' + (p.rows.length ? '' : ' disabled') + '>Save (' + h.fmt(p.rows.length) + ' work orders)</button><button class="btn" id="noW">Cancel</button></div><div class="bar-p" hidden id="pbW"><span style="width:0%"></span></div>';
+        h.setSt('stW', 'Check the numbers, then save. This replaces the current work-order list.', 'ok');
+        document.getElementById('noW').onclick = function () { document.getElementById('pendW').innerHTML = ''; h.setSt('stW', ''); };
+        document.getElementById('goW').onclick = async function () {
+          var btn = this; btn.disabled = true; var pb = document.getElementById('pbW'); pb.hidden = false; var bar = pb.firstChild, B = 2000, res = null;
+          try {
+            for (var i = 0; i < p.rows.length; i += B) { res = chk(await sb.rpc('wo_load', { p_rows: p.rows.slice(i, i + B), p_first: i === 0, p_last: i + B >= p.rows.length, p_file: file.name, p_total: p.rows.length })); bar.style.width = Math.round(Math.min(1, (i + B) / p.rows.length) * 100) + '%'; h.setSt('stW', 'Saving… ' + h.fmt(Math.min(i + B, p.rows.length)) + ' of ' + h.fmt(p.rows.length)); }
+            await reload('Work orders saved: ' + h.fmt(p.rows.length) + (res && res.adhoc ? ' · ' + res.adhoc + ' SRs became Ad-hoc' : '') + (res && res.back ? ' · ' + res.back + ' SRs back from Ad-hoc' : ''));
+          } catch (e) { h.setSt('stW', 'Not saved: ' + (/wo_load/.test(e.message || '') ? 'run the update 23 in Supabase first.' : e.message) + ' You can upload the same file again.', 'err'); btn.disabled = false; }
+        };
+      } catch (e) { h.setSt('stW', e.message || String(e), 'err'); }
+    });
   }
   function bindPPM() {
     bindDrop('dropC', 'fileC', async function (file) {
@@ -1549,7 +1606,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     });
   }
   function bindData() {
-    bindPPM();
+    bindPPM(); bindWO();
     var hd = $('#histD'); if (hd) hd.ontoggle = function () { if (hd.open && !hd.loaded) { hd.loaded = 1; bindLog(); } };
     (async function drawMx2() {
       var el = $('#mxDataSt'); if (!el) return;
@@ -1581,7 +1638,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
             btn.disabled = true; var pb = document.getElementById('pb' + mode); pb.hidden = false; var bar = pb.firstChild;
             try {
               var added = 0, updated = 0, rem = 0, B = 1000;
-              if (h.kind) p.rows.forEach(function (o) { o.disc = h.kind(o); });   // civil / MEP from the kind of work
+              var wotm = {}; ((RAWC && RAWC.wo) || []).forEach(function (w) { if (w.sr && (!wotm[w.sr] || w.wtype === 'CP' || w.wtype === 'MD')) wotm[w.sr] = w.wtype; });
+              if (h.kind) p.rows.forEach(function (o) { if (wotm[o.id]) o.wot = wotm[o.id]; o.disc = h.kind(o); });   // civil / MEP from the kind of work
               for (var i = 0; i < p.rows.length; i += B) {
                 var res = chk(await sb.rpc('upsert_sr', { rows: p.rows.slice(i, i + B) }));
                 added += res.added; updated += res.updated; bar.style.width = Math.round(Math.min(1, (i + B) / p.rows.length) * 90) + '%';
@@ -1608,7 +1666,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     try {
       LOG = chk(await sb.from('upload_log').select('*').order('at', { ascending: false }).limit(300));
       el.innerHTML = '<table class="t"><thead><tr><th>When</th><th>By</th><th>Type</th><th>File</th><th class="n">Rows</th><th class="n">Added</th><th class="n">Updated</th><th class="n">Removed</th><th>Cut-off</th></tr></thead><tbody>' +
-        LOG.map(function (r) { return '<tr><td>' + esc(new Date(r.at).toLocaleString('en-GB', { timeZone: 'Asia/Dubai' })) + '</td><td>' + esc(r.email) + '</td><td>' + (r.kind === 'full' ? 'Full tracker' : r.kind === 'daily' ? 'Daily additions' : r.kind === 'ppm' ? 'PPM report' : r.kind === 'ppm_works' ? 'PPM works list' : esc(r.kind)) + '</td><td>' + esc(r.file) + '</td><td class="n">' + h.fmt(r.rows_in) + '</td><td class="n">' + h.fmt(r.added) + '</td><td class="n">' + h.fmt(r.updated) + '</td><td class="n">' + h.fmt(r.removed) + '</td><td>' + (r.cutoff ? h.dstr(+r.cutoff) : '') + '</td></tr>'; }).join('') + '</tbody></table>';
+        LOG.map(function (r) { return '<tr><td>' + esc(new Date(r.at).toLocaleString('en-GB', { timeZone: 'Asia/Dubai' })) + '</td><td>' + esc(r.email) + '</td><td>' + (r.kind === 'full' ? 'Full tracker' : r.kind === 'daily' ? 'Daily additions' : r.kind === 'ppm' ? 'PPM report' : r.kind === 'ppm_works' ? 'PPM works list' : r.kind === 'wo' ? 'Work orders (costs)' : esc(r.kind)) + '</td><td>' + esc(r.file) + '</td><td class="n">' + h.fmt(r.rows_in) + '</td><td class="n">' + h.fmt(r.added) + '</td><td class="n">' + h.fmt(r.updated) + '</td><td class="n">' + h.fmt(r.removed) + '</td><td>' + (r.cutoff ? h.dstr(+r.cutoff) : '') + '</td></tr>'; }).join('') + '</tbody></table>';
       if (!LOG.length) el.innerHTML = '<div class="notice">No uploads yet.</div>';
     } catch (e) { el.innerHTML = '<div class="notice">Could not load history: ' + esc(e.message) + '</div>'; }
   }
@@ -4015,6 +4073,23 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       return true;
     });
   }
+  // work orders (Data update > Work order update): costs by category, for the zone / trade / date / type filters
+  function applyWO(noDates) {
+    var from = F.from && !noDates ? Date.parse(F.from + 'T00:00:00Z') : -Infinity, to = F.to && !noDates ? Date.parse(F.to + 'T00:00:00Z') + DAY : Infinity;
+    return ((RAW && RAW.wo) || []).filter(function (w) {
+      if (w.rd != null && (w.rd < from || w.rd >= to)) return false;
+      if (F.type === 'CM' && w.cat !== 'CM') return false; if (F.type === 'PPM' && w.cat !== 'PPM') return false;
+      if (F.fz && w.fz !== F.fz) return false; if (F.zn && w.zn !== F.zn) return false;
+      if (F.tr && (w.trade || '') !== F.tr) return false;
+      return true;
+    });
+  }
+  function woCosts(list) {
+    var c = { CM: { n: 0, d: 0, c: 0, wa: 0 }, PPM: { n: 0, d: 0, c: 0, wa: 0 }, ADHOC: { n: 0, d: 0, c: 0, wa: 0 } };
+    list.forEach(function (w) { var a = c[w.cat]; if (!a) return; a.n++; if (w.done) { a.d++; a.c += +w.cost || 0; } else a.wa++; });
+    return c;
+  }
+  function aed(v) { return 'AED ' + fmt(Math.round(v || 0)); }
   function applyPPM(noDates) {
     var from = F.from && !noDates ? Date.parse(F.from + 'T00:00:00Z') : -Infinity, to = F.to && !noDates ? Date.parse(F.to + 'T00:00:00Z') + DAY : Infinity;
     var q = F.q.trim().toLowerCase();
@@ -4448,6 +4523,13 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     out += section('W5', 'Weekly tables and comparison', 'الجداول الأسبوعية والمقارنة', 'Change % = change ÷ last period; for percentages the change is in percentage points (pp). SRs closed = growth in the number of closed SRs between the uploads at the end of each period. "Backlog as of" shows which upload was used; empty = no upload in that week.',
       tablePanel(S.wk) + '<div style="margin-top:16px">' + tablePanel(S.wkH) + '</div>');
     out += section('W6', 'Monthly tables and comparison', 'الجداول الشهرية والمقارنة', '', tablePanel(S.mo) + '<div style="margin-top:16px">' + tablePanel(S.moH, '', { max: 520 }) + '</div>');
+    if (RAW && RAW.wo && RAW.wo.length) {
+      var WL = applyWO(), zs = {}, tot = woCosts(WL); WL.forEach(function (w) { (zs[w.fz || '?'] = zs[w.fz || '?'] || []).push(w); });
+      var zrow = function (lab, c, cls) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + lab + '</td><td class="n">' + fmt(Math.round(c.CM.c)) + '</td><td class="n">' + fmt(c.CM.d) + '</td><td class="n">' + fmt(Math.round(c.PPM.c)) + '</td><td class="n">' + fmt(c.PPM.d) + '</td><td class="n">' + fmt(Math.round(c.ADHOC.c)) + '</td><td class="n">' + fmt(c.ADHOC.d) + '</td><td class="n"><b>' + fmt(Math.round(c.CM.c + c.PPM.c + c.ADHOC.c)) + '</b></td></tr>'; };
+      out += section('W8', 'Work order costs', 'تكاليف أوامر العمل', 'From the last work-order list (Data update). Finished work orders only (status not WAPPR); cost = BoQ Total Cost for this WO, in AED. CM = CM + AS, PPM = PM, Ad-hoc = CP + MD. Follows the zone, trade, type and date filters.',
+        '<div class="tw"><table class="t"><thead><tr><th>Zone</th><th class="n">CM cost</th><th class="n">CM WOs</th><th class="n">PPM cost</th><th class="n">PPM WOs</th><th class="n">Ad-hoc cost</th><th class="n">Ad-hoc WOs</th><th class="n">Total cost</th></tr></thead><tbody>' +
+        Object.keys(zs).sort().map(function (z) { return zrow(z === '?' ? 'No zone' : zl(z), woCosts(zs[z])); }).join('') + zrow('<b>Total</b>', tot, 'tot') + '</tbody></table></div>');
+    }
     out += section('W7', 'Zone performance', 'أداء المناطق', 'All SRs up to the cut-off. Last-week columns come from last week\'s upload and fill in from the first upload after this update.', tableHTML(S.zone));
     return out;
   }
@@ -4834,8 +4916,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function kpiTile(l, v, s, extra) { return '<div class="kpi"><span class="l">' + esc(l) + '</span><span class="v">' + v + '</span><span class="s">' + (s || '') + '</span>' + (extra || '') + '</div>'; }
   function kpisHTML(R) {
     var k = R.k, sb = band(k.sla);
-    var bc = k.backlogChange;
-    return '<div class="kpis">' +
+    var bc = k.backlogChange, WC = (RAW && RAW.wo && RAW.wo.length) ? woCosts(applyWO()) : null;
+    var wct = WC ? kpiTile('CM cost', aed(WC.CM.c), fmt(WC.CM.d) + ' finished work orders · ' + fmt(WC.CM.wa) + ' WAPPR') + kpiTile('PPM cost', aed(WC.PPM.c), fmt(WC.PPM.d) + ' finished PM work orders') + kpiTile('Ad-hoc cost', aed(WC.ADHOC.c), fmt(WC.ADHOC.d) + ' finished · ' + fmt(WC.ADHOC.wa) + ' WAPPR') : '';
+    return '<div class="kpis">' + wct +
       kpiTile('Total CM', fmt(k.total), fp(k.comp) + ' completed') +
       kpiTile('Total PPM', fmt(R.p.planned), fmt(R.p.due) + ' due by cut-off') +
       kpiTile('Open CM', fmt(k.open), fp(pct(k.open, k.total)) + ' of received') +
@@ -5061,7 +5144,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   var CIVIL_WT = ['Carpentry & Door Hardware', 'Tiling & Flooring', 'Painting', 'Gypsum & False Ceiling', 'Waterproofing', 'Civil & Masonry', 'Metal & Steel Works', 'Interlock & Paving', 'Sports Surfaces & Tracks', 'Furniture & Fit-out'];
   function wtDisc(o) { return CIVIL_WT.indexOf(o.wt) >= 0 ? 'Civil' : 'MEP'; }
   // who does the work, from the tracker Service Type: CIVIL / CARP = civil (supervisor of the zone), AD-HOC = ad-hoc (no supervisor), others = MEP (tracker supervisor)
-  function srKind(o) { if (o.xk === 'CIVIL' || o.xk === 'MEP') return o.xk; var t = String(o.tr || '').toUpperCase(); return t === 'CIVIL' || t === 'CARP' ? 'CIVIL' : t === 'AD-HOC' || t === 'ADHOC' ? 'ADHOC' : 'MEP'; }
+  function srKind(o) { if (o.xk === 'CIVIL' || o.xk === 'MEP') return o.xk; var wty = String(o.wot || o.wt || '').toUpperCase(); if (wty === 'CP' || wty === 'MD') return 'ADHOC'; var t = String(o.tr || '').toUpperCase(); return t === 'CIVIL' || t === 'CARP' ? 'CIVIL' : t === 'AD-HOC' || t === 'ADHOC' ? 'ADHOC' : 'MEP'; }
   function labSup(o) { var k = srKind(o); if (k === 'CIVIL') { var m = {}; try { m = rmCivilMap(); } catch (e) { m = RM_CIVIL_DEF; } return m[o.fz] || 'Unassigned (civil)'; } if (k === 'ADHOC') return 'AD-HOC'; return o.sup || 'Unassigned (MEP)'; }
   function regScoped(cm) { return REGF.scope === 'O' ? cm.filter(function (o) { return o.st === 'O'; }) : cm; }
   // same split as RM works: open works marked for a contractor (quotation) are counted under "Contractor works", not under the team
@@ -6579,6 +6662,13 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       var gM = mtx(WK.gapZT, 'gap'), sts = WK.gapSt.slice(0, 5), gS = [['Zone'].concat(sts).concat(['Total', 'Last week'])].concat(WK.gapZS.map(function (r) { return [r.zone].concat(sts.map(function (x, i) { return r['s' + i]; })).concat([r.total, r.prev == null ? '—' : r.prev]); }));
       var rhG = Math.min(0.45, 5.2 / (WK.gapZS.length + 1));
       SID = 10; add(2, head('Done on site, not closed in Maximo', fmt(WK.gNow) + ' SRs are done on site but still open in Maximo' + (WK.Pw.gap != null ? ' (' + fmt(WK.Pw.gap) + ' on ' + dstr(WK.Pw.asOf) + ')' : '')).concat([txt('Gap matrix title', 0.5, 1.55, 6.3, 0.3, [para(run('By zone and trade', { sz: 11, b: true, color: NAVY }))], { ins: 0 }), table('Maximo gap by zone and trade', 0.5, 1.9, mw(gM, 6.3), gM, { rh: rhG, sz: 10.5 }), txt('Gap status title', 7.0, 1.55, 7.0, 0.3, [para(run('By zone and Maximo Status', { sz: 11, b: true, color: NAVY }))], { ins: 0 }), table('Maximo gap by status', 7.0, 1.9, mw(gS, 7.0), gS, { totLast: true, rh: rhG, sz: 10 })]));
+      // 11b. work order costs
+      if (RAW && RAW.wo && RAW.wo.length) {
+        var WLd = applyWO(), zd = {}, td = woCosts(WLd); WLd.forEach(function (w) { (zd[w.fz || '?'] = zd[w.fz || '?'] || []).push(w); });
+        var crow = function (lab, c) { return [lab, fmt(Math.round(c.CM.c)), fmt(c.CM.d), fmt(Math.round(c.PPM.c)), fmt(c.PPM.d), fmt(Math.round(c.ADHOC.c)), fmt(c.ADHOC.d), fmt(Math.round(c.CM.c + c.PPM.c + c.ADHOC.c))]; };
+        var ctab = [['Zone', 'CM cost (AED)', 'CM WOs', 'PPM cost (AED)', 'PPM WOs', 'Ad-hoc cost (AED)', 'Ad-hoc WOs', 'Total (AED)']].concat(Object.keys(zd).sort().map(function (z) { return crow(z === '?' ? 'No zone' : zl(z), woCosts(zd[z])); })).concat([crow('Total', td)]);
+        SID = 10; add(2, head('Work order costs', 'Finished work orders (status not WAPPR) · BoQ Total Cost for this WO · CM = CM + AS, PPM = PM, Ad-hoc = CP + MD').concat([table('Work order costs', 0.6, 1.95, [2.2, 1.75, 1.2, 1.75, 1.2, 1.85, 1.2, 1.85], ctab, { totLast: true })]));
+      }
       // 12. closing
       SID = 10; add(4, []);
 
