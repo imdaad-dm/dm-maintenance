@@ -547,6 +547,10 @@ details.hist .tw{max-height:420px;margin:0;border:0}
 .upm{background:#f7f9fc;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .upm-o{display:block;font-size:.85rem;margin:3px 0}
 .upm-g{display:flex;flex-wrap:wrap;gap:6px 16px;margin:6px 0 0 22px;font-size:.82rem}
+/* v4.35 PPM engineer: send for signature */
+.ppo-ov{position:fixed;inset:0;background:rgba(10,20,40,.45);display:flex;align-items:center;justify-content:center;z-index:9000;padding:16px}
+.ppo-box{background:var(--surface,#fff);border-radius:12px;padding:16px;width:min(620px,100%);max-height:90vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.ppo-msg{width:100%;margin-top:10px;font:12.5px/1.45 Arial,sans-serif;border:1px solid var(--line);border-radius:8px;padding:8px;box-sizing:border-box}
 </style></head><body><div id="app"></div><script>
 /* ==== PORTAL CONNECTION — fill in from Supabase: Project Settings > API ==== */
 window.DM_CLOUD_CONFIG = {
@@ -831,9 +835,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
 (function () {
   'use strict';
   var CONF = window.DM_CLOUD_CONFIG || {};
-  var ROLES = [['admin', 'Admin'], ['operator', 'CAFM operator'], ['manager', 'Manager'], ['dm_engineer', 'DM engineer'], ['imdaad_engineer', 'Imdaad engineer'], ['supervisor', 'Labour supervisor'], ['team', 'Labour team (shared)'], ['ppm_supervisor', 'PPM supervisor'], ['ppm_team', 'PPM team (shared)']];
+  var ROLES = [['admin', 'Admin'], ['operator', 'CAFM operator'], ['manager', 'Manager'], ['dm_engineer', 'DM engineer'], ['imdaad_engineer', 'Imdaad engineer'], ['ppm_engineer', 'PPM engineer'], ['supervisor', 'Labour supervisor'], ['team', 'Labour team (shared)'], ['ppm_supervisor', 'PPM supervisor'], ['ppm_team', 'PPM team (shared)']];
   var ALL_TABS = ['summary', 'cm', 'backlog', 'sla', 'ppm', 'site', 'loc', 'maximo', 'weekly', 'reports', 'register'];
-  var REP_ROLES = ['admin', 'operator', 'imdaad_engineer', 'manager']; // service reports: never DM engineers
+  var REP_ROLES = ['admin', 'operator', 'imdaad_engineer', 'ppm_engineer', 'manager']; // service reports: never DM engineers
   var DEFAULT_PERMS = {
     operator: { tabs: ALL_TABS.slice(), export: true, print: true, rm: 'none', deck: false },
     manager: { tabs: ALL_TABS.slice(), export: true, print: true, rm: 'all', deck: true },
@@ -853,6 +857,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function H() { return window.DMApp.h; }
   function logos() { return window.DM_DEFAULT_LOGOS || {}; }
   function permsFor(role, cfg) {
+    if (role === 'ppm_engineer') role = 'imdaad_engineer';   // same permissions as an Imdaad engineer
     var p = (cfg && cfg.perms) || {};
     if (role === 'admin') return { tabs: ALL_TABS.slice(), export: true, print: true, rm: 'all', deck: true };
     var d = DEFAULT_PERMS[role] || { tabs: [], export: false, print: false, rm: 'none', deck: false };
@@ -1077,6 +1082,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (pr0.error && /team_of/.test(pr0.error.message || '')) pr0 = await sb.from('profiles').select('id,email,full_name,role,active,must_set_password,sup_names').eq('id', u.id).maybeSingle();
     if (pr0.error && /sup_names/.test(pr0.error.message || '')) pr0 = await sb.from('profiles').select('id,email,full_name,role,active,must_set_password').eq('id', u.id).maybeSingle();
     profile = chk(pr0);
+    if (profile && profile.role === 'ppm_engineer') { profile.role_raw = 'ppm_engineer'; profile.role = 'imdaad_engineer'; }
     cleanUrl();
     if (profile && profile.must_set_password) return newPasswordScreen(true, u.email);
     if (!profile || !profile.role || !profile.active) {
@@ -1611,7 +1617,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function adminPanels() {
     var h = H(), cfg = RAWC.config, TABS = h.tabs();
     var perm = '<div class="tw"><table class="t"><thead><tr><th>Role</th>' + TABS.map(function (t) { return '<th>' + esc(t[1]) + '</th>'; }).join('') + '<th>Excel export</th><th>Print</th><th>Weekly deck (PPTX)</th><th>RM works</th></tr></thead><tbody>' +
-      ROLES.filter(function (r) { return ['admin', 'supervisor', 'team', 'ppm_supervisor', 'ppm_team'].indexOf(r[0]) < 0; }).map(function (r) {
+      ROLES.filter(function (r) { return ['admin', 'supervisor', 'team', 'ppm_supervisor', 'ppm_team', 'ppm_engineer'].indexOf(r[0]) < 0; }).map(function (r) {
         var p = permsFor(r[0], cfg);
         return '<tr><td>' + esc(r[1]) + '</td>' + TABS.map(function (t) { if (t[0] === 'reports' && REP_ROLES.indexOf(r[0]) < 0) return '<td><span class="muted" title="Not available for this role">—</span></td>'; return '<td><input type="checkbox" data-pr="' + r[0] + '" data-pt="' + t[0] + '"' + (p.tabs.indexOf(t[0]) >= 0 ? ' checked' : '') + ' aria-label="' + esc(r[1] + ' ' + t[1]) + '"></td>'; }).join('') +
           '<td><input type="checkbox" data-pr="' + r[0] + '" data-pt="_export"' + (p.export ? ' checked' : '') + '></td><td><input type="checkbox" data-pr="' + r[0] + '" data-pt="_print"' + (p.print ? ' checked' : '') + '></td>' +
@@ -1642,7 +1648,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         el.innerHTML = '<div class="tw"><table class="t"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Supervisor name (labour supervisors)</th><th>Status</th><th>Active</th><th></th></tr></thead><tbody>' + USERS.map(function (u) {
           var me = u.id === profile.id;
           return '<tr><td><input data-un="' + u.id + '" value="' + esc(u.full_name || '') + '" style="width:150px"></td><td>' + esc(u.email) + '</td><td><select data-ur="' + u.id + '"' + (me ? ' disabled' : '') + '><option value="">No access</option>' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></td><td>' + (u.role === 'supervisor' ? '<select multiple size="4" data-usn="' + u.id + '" aria-label="Supervisor names" style="min-width:190px">' + SUPN.concat((u.sup_names || []).filter(function (x) { return SUPN.indexOf(x) < 0; })).map(function (n) { return '<option value="' + esc(n) + '"' + ((u.sup_names || []).indexOf(n) >= 0 ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Ctrl+click for more than one</div>' : (u.role === 'team' || u.role === 'ppm_team') ? '<label class="muted" style="font-size:.72rem;display:block" for="utf' + u.id + '">Team of ' + (u.role === 'ppm_team' ? 'PPM supervisor' : 'supervisor') + '</label><select id="utf' + u.id + '" data-utf="' + u.id + '" style="min-width:190px"><option value="">Choose the supervisor…</option>' + USERS.filter(function (x) { return x.role === (u.role === 'ppm_team' ? 'ppm_supervisor' : 'supervisor'); }).map(function (x) { return '<option value="' + x.id + '"' + (u.team_of === x.id ? ' selected' : '') + '>' + esc(x.full_name || x.email) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Prepares reports only; the supervisor sends them</div>' : '<span class="muted">—</span>') + '</td><td>' + (u.must_set_password ? '<span class="pill avg">Invited, password not set</span>' : '<span class="pill good">Active account</span>') + '</td><td><input type="checkbox" data-ua="' + u.id + '"' + (u.active ? ' checked' : '') + (me ? ' disabled' : '') + '></td><td><button class="btn xs" data-us="' + u.id + '">Save</button> ' + (u.must_set_password ? '<button class="btn xs" data-ri="' + esc(u.email) + '" data-rn="' + esc(u.full_name || '') + '">Resend invitation</button>' : '<button class="btn xs" data-rs="' + esc(u.email) + '" title="Email this user a link to set a new password">Reset password</button>') +
-            (['operator', 'manager', 'dm_engineer', 'imdaad_engineer'].indexOf(u.role) >= 0 ? ' <button class="btn xs" data-upm="' + u.id + '"' + (u.perms ? ' style="border-color:#c09a52"' : '') + ' title="Permissions of this person only">Permissions' + (u.perms ? ' ★' : '') + '</button>' : '') +
+            (['operator', 'manager', 'dm_engineer', 'imdaad_engineer', 'ppm_engineer'].indexOf(u.role) >= 0 ? ' <button class="btn xs" data-upm="' + u.id + '"' + (u.perms ? ' style="border-color:#c09a52"' : '') + ' title="Permissions of this person only">Permissions' + (u.perms ? ' ★' : '') + '</button>' : '') +
             (me ? '' : ' <button class="btn xs danger" data-udel="' + u.id + '" data-uem="' + esc(u.email) + '">Delete</button>') + '</td></tr><tr class="upm-row" id="upm_' + u.id + '" hidden><td colspan="7"></td></tr>';
         }).join('') + '</tbody></table></div>';
         Array.prototype.forEach.call(document.querySelectorAll('[data-us]'), function (b) {
@@ -3549,7 +3555,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   }
   /* ===================== v4.32 PPM: office tab (upload the works list, follow-up, PDF in the DM formats) ===================== */
   var PPO = { works: null, reps: {}, f: { ty: '', st: '', q: '' }, sel: {}, el: null, pend: null };
-  function ppoCanEdit() { return profile && (profile.role === 'admin' || profile.role === 'operator'); }
+  function ppoCanEdit() { return profile && (profile.role === 'admin' || profile.role === 'operator' || profile.role_raw === 'ppm_engineer'); }
+  function ppoCanSend() { return profile && (profile.role === 'admin' || profile.role_raw === 'ppm_engineer'); }
+  function ppoSendable(r) { return r && (r.status === 'ready' || r.status === 'sent' || (r.status === 'draft' && (r.data || {}).teamDone)); }
   function ppoDate(v) {
     if (v == null || v === '') return null;
     if (typeof v === 'number' && isFinite(v) && v > 20000 && v < 80000) return Math.round((v - 25569) * 86400000);
@@ -3613,7 +3621,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         var r = PPO.reps[w.wo], st = ppoSt(w), c = (r && r.cust) || {};
         return '<tr><td>' + (r ? '<input type="checkbox" data-pps="' + esc(w.wo) + '"' + (PPO.sel[w.wo] ? ' checked' : '') + ' aria-label="Select WO ' + esc(w.wo) + '">' : '') + '</td><td>' + esc(w.wo) + '</td><td>' + esc(w.rtype === 'LIGHT' ? 'ELECT-LIGHT' : w.rtype === 'DB' ? 'ELECT-DB' : w.rtype) + '</td><td>' + esc(w.descr || '') + (w.active ? '' : '<div class="muted" style="font-size:.72rem">not in the latest list</div>') + '</td><td>' + esc(w.route || '') + '</td><td>' + esc(w.zone || '') + '</td><td>' + (w.target ? esc(dmDxb(+w.target - 4 * 3600e3, true)) : '') + '</td><td>' + stl[st] + '</td>' +
           '<td>' + esc((r && (r.sup_name || '')) || '') + (r && r.prepared_name ? '<div class="muted" style="font-size:.72rem">team: ' + esc(r.prepared_name) + '</div>' : '') + '</td><td>' + esc(((r && r.data && r.data.techs) || []).join(', ')) + '</td><td>' + (c.name ? esc(c.name) + '<div class="muted" style="font-size:.72rem">' + esc(dmDxb(r.signed_at)) + (c.method === 'link' ? ' · link' : ' · on site') + '</div>' + (c.comments ? '<div class="muted" style="font-size:.72rem">“' + esc(c.comments) + '”</div>' : '') : '—') + '</td>' +
-          '<td>' + (r && r.mx_at ? '✓ ' + esc(dmDxb(r.mx_at, true)) : '—') + '</td><td style="white-space:nowrap">' + (r ? '<button class="btn xs" data-ppp="' + esc(w.wo) + '">' + (st === 'signed' ? 'PDF' : 'Preview PDF') + '</button>' + (ppoCanEdit() ? (st !== 'draft' ? ' <button class="btn xs" data-ppr="' + esc(w.wo) + '">Re-open</button>' : '') + ' <button class="btn xs danger" data-ppd="' + esc(w.wo) + '">Delete</button>' : '') : '') + '</td></tr>';
+          '<td>' + (r && r.mx_at ? '✓ ' + esc(dmDxb(r.mx_at, true)) : '—') + '</td><td style="white-space:nowrap">' + (r ? '<button class="btn xs" data-ppp="' + esc(w.wo) + '">' + (st === 'signed' ? 'PDF' : 'Preview PDF') + '</button>' +
+          (ppoCanSend() && ppoSendable(r) ? ' <button class="btn xs primary" data-ppl="' + esc(w.wo) + '">' + (st === 'sent' ? 'Send again' : 'Send for signature') + '</button>' : '') +
+          (ppoCanSend() && st === 'csigned' ? ' <button class="btn xs primary" data-ppok="' + esc(w.wo) + '">Approve</button>' : '') + (ppoCanEdit() ? (st !== 'draft' ? ' <button class="btn xs" data-ppr="' + esc(w.wo) + '">Re-open</button>' : '') + ' <button class="btn xs danger" data-ppd="' + esc(w.wo) + '">Delete</button>' : '') : '') + '</td></tr>';
       }).join('') + '</tbody></table></div>' + (list.length > 500 ? '<p class="muted">Showing 500 of ' + list.length + '. Use the filters.</p>' : '') + (!list.length ? '<p class="muted">Nothing for these filters.</p>' : '');
     var re = function () { PPO.sel = {}; ppoDraw(); };
     $('#ppoTy').onchange = function (e) { PPO.f.ty = e.target.value; re(); }; $('#ppoS').onchange = function (e) { PPO.f.st = e.target.value; re(); };
@@ -3627,6 +3637,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     svcAll('[data-ppp]').forEach(function (b) { b.onclick = async function () { b.disabled = true; try { var wo = b.getAttribute('data-ppp'); svcSave(await ppmPdf(PPO.reps[wo], wOf(wo), function (t) { setMsg('ppoSt2', t); }), 'PPM_Report_WO_' + wo + '.pdf'); setMsg('ppoSt2', 'PDF downloaded.', 'ok'); } catch (e) { setMsg('ppoSt2', e.message || String(e), 'err'); } b.disabled = false; }; });
     svcAll('[data-ppr]').forEach(function (b) { b.onclick = async function () { var wo = b.getAttribute('data-ppr'); if (!confirm('Re-open the report of WO ' + wo + '? It goes back to draft; the customer signature is removed.')) return; var r = await sb.rpc('ppm_withdraw', { p_wo: wo, p_action: 'edit' }); if (r.error) return setMsg('ppoSt2', r.error.message, 'err'); ppmOffice(PPO.el); }; });
     svcAll('[data-ppd]').forEach(function (b) { b.onclick = async function () { var wo = b.getAttribute('data-ppd'); if (!confirm('Delete the report of WO ' + wo + '? This cannot be undone.')) return; var r = await sb.rpc('ppm_withdraw', { p_wo: wo, p_action: 'delete' }); if (r.error) return setMsg('ppoSt2', r.error.message, 'err'); ppmOffice(PPO.el); }; });
+    svcAll('[data-ppok]').forEach(function (b) { b.onclick = async function () { var wo = b.getAttribute('data-ppok'); if (!confirm('Approve the report of WO ' + wo + '? The PPM supervisor\'s signature is added and the report is complete.')) return; var r = await sb.rpc('ppm_approve', { p_wo: wo }); if (r.error) return setMsg('ppoSt2', r.error.message, 'err'); await ppmOffice(PPO.el); setMsg('ppoSt2', 'WO ' + wo + ' approved.', 'ok'); }; });
+    svcAll('[data-ppl]').forEach(function (b) { b.onclick = function () { ppoSend(b.getAttribute('data-ppl')); }; });
     $('#ppoZip').onclick = async function () {
       var b = this, S = sel(); b.disabled = true;
       try {
@@ -3654,6 +3666,24 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         } catch (er) { setMsg('ppoSt1', er.message || String(er), 'err'); }
       };
     }
+  }
+  // the PPM engineer (or admin) sends the private link from the dashboard: copy, WhatsApp, email or the share menu
+  async function ppoSend(wo) {
+    var r = PPO.reps[wo] || {}, d = r.data || {}, w = PPO.works.filter(function (x) { return x.wo === wo; })[0] || {};
+    if (!confirm('Send the PPM report of WO ' + wo + ' to the customer for signature? A private link is created (one use, 7 days).')) return;
+    var res = await sb.rpc('ppm_link', { p_wo: wo }); if (res.error) return setMsg('ppoSt2', res.error.message, 'err');
+    var url = location.origin + location.pathname.replace(/[^\/]*$/, '') + 'sign.html#p=' + res.data;
+    var msg = 'Dear Customer,\nImdaad has completed the preventive maintenance (PPM) below. Please open the link, check the work and photos, and approve with your signature.\n\nWO ' + wo + ' – ' + (d.descr || w.descr || '') + '\n' + url +
+      '\n\nعزيزي العميل،\nأنجزت إمداد أعمال الصيانة الوقائية التالية. يرجى فتح الرابط ومراجعة العمل والصور واعتماده بالتوقيع.\n\nThe link works once and is valid for 7 days. · الرابط صالح لمرة واحدة ولمدة 7 أيام.';
+    var ov = document.createElement('div'); ov.className = 'ppo-ov';
+    ov.innerHTML = '<div class="ppo-box" role="dialog" aria-modal="true" aria-label="Send for signature"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b>WO ' + esc(wo) + ' · Send for signature</b><button class="btn xs" data-x="1" aria-label="Close">✕</button></div>' +
+      '<textarea class="ppo-msg" readonly rows="11">' + esc(msg) + '</textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">' + (navigator.share ? '<button class="btn primary" data-sh="1">📤 Share…</button>' : '') +
+      '<a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(msg) + '">WhatsApp</a><a class="btn" href="mailto:?subject=' + encodeURIComponent('Imdaad PPM report – WO ' + wo) + '&body=' + encodeURIComponent(msg) + '">Email</a><button class="btn" data-cp="1">Copy message</button><span class="status" id="ppoSt3"></span></div></div>';
+    document.body.appendChild(ov);
+    var close = function () { ov.remove(); ppmOffice(PPO.el); };
+    ov.onclick = function (e) { if (e.target === ov) close(); }; ov.querySelector('[data-x]').onclick = close;
+    var sh = ov.querySelector('[data-sh]'); if (sh) sh.onclick = async function () { try { await navigator.share({ title: 'Imdaad PPM report – WO ' + wo, text: msg }); } catch (e) { } };
+    ov.querySelector('[data-cp]').onclick = async function () { var ok = false; try { await navigator.clipboard.writeText(msg); ok = true; } catch (e) { var t = ov.querySelector('.ppo-msg'); t.select(); try { ok = document.execCommand('copy'); } catch (x) { } } setMsg('ppoSt3', ok ? 'Copied — paste it in WhatsApp or the email.' : 'Select the text and copy it.', ok ? 'ok' : 'err'); };
   }
   // ---------- PDF: PPM ACTIVITY page(s) + the DM checklists (same layout as the forms)
   var PPM_PCSS = '.pp-pg{width:794px;min-height:1123px;padding:26px 34px 22px;box-sizing:border-box;background:#fff;color:#000;font:12px Arial,Helvetica,sans-serif;position:relative}' +
