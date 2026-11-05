@@ -570,6 +570,7 @@ body.viewas-phone #app{max-width:430px;margin:12px auto 24px;background:var(--bg
 .wa-box{width:min(720px,100%)}.wa-k{display:flex;flex-wrap:wrap;gap:6px 16px}.wa-k label{display:flex;gap:6px;align-items:center}
 .wa-list{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px 8px;display:grid;gap:3px}.wa-list label{display:flex;gap:6px;align-items:baseline;font-size:.85rem}
 .wa-prev{margin-top:10px;padding:8px 10px;background:#fff7e6;border-radius:8px;font-size:.85rem}
+.wa-sec{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:12px}.wa-sec h4{margin:2px 0 8px}.wa-sub{font-size:.8rem;font-weight:600;margin:10px 0 4px}
 </style></head><body><div id="app"></div><script>
 /* ==== PORTAL CONNECTION — fill in from Supabase: Project Settings > API ==== */
 window.DM_CLOUD_CONFIG = {
@@ -2145,63 +2146,73 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   var WA_ZONES = ['A', 'B', 'C', 'D', 'H'], DRAW_USERS = null;
   function drawUsersExt() { if (DRAW_USERS) DRAW_USERS(); }
   function scopeOf(uid) {
-    var r = (RAWC && RAWC.scope) || [], mine = r.filter(function (x) { return x.uid === uid; });
-    var k = { CIVIL: 0, MEP: 0 }; mine.forEach(function (x) { k[x.kind] = 1; });
-    var uniq = function (lvl) { return mine.filter(function (x) { return x.lvl === lvl; }).map(function (x) { return x.val; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort(); };
-    return { kind: k.CIVIL && k.MEP ? 'BOTH' : k.CIVIL ? 'CIVIL' : k.MEP ? 'MEP' : 'NONE', zones: uniq('zone'), areas: uniq('area') };
+    var r = ((RAWC && RAWC.scope) || []).filter(function (x) { return x.uid === uid; }), out = {};
+    ['CIVIL', 'MEP'].forEach(function (k) {
+      var mine = r.filter(function (x) { return x.kind === k; }), sh = mine.some(function (x) { return x.shared; });
+      var vals = function (lvl) { return mine.filter(function (x) { return x.lvl === lvl; }).map(function (x) { return x.val; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort(); };
+      out[k] = { mode: !mine.length ? 'none' : sh ? 'share' : 'own', zones: vals('zone'), areas: vals('area') };
+    });
+    return out;
   }
   function scopeSummary(uid) {
-    var s = scopeOf(uid); if (s.kind === 'NONE') return '<div class="muted wa-sum">Work area: as in the tracker</div>';
-    var lab = { CIVIL: 'Civil', MEP: 'MEP', BOTH: 'Civil + MEP' }[s.kind], parts = [];
-    if (s.zones.length) parts.push('Zone ' + s.zones.join(', ')); if (s.areas.length) parts.push(s.areas.length > 4 ? s.areas.slice(0, 4).join(', ') + ' +' + (s.areas.length - 4) : s.areas.join(', '));
-    return '<div class="wa-sum"><b>' + esc(lab) + '</b> · ' + esc(parts.join(' · ')) + '</div>';
+    var s = scopeOf(uid), parts = [];
+    ['CIVIL', 'MEP'].forEach(function (k) {
+      var c = s[k]; if (c.mode === 'none') return; var w = [];
+      if (c.zones.length) w.push('Zone ' + c.zones.join(', ')); if (c.areas.length) w.push(c.areas.length > 3 ? c.areas.slice(0, 3).join(', ') + ' +' + (c.areas.length - 3) : c.areas.join(', '));
+      parts.push('<b>' + (k === 'CIVIL' ? 'Civil' : 'MEP') + '</b> ' + esc(w.join(' · ')) + ' <span class="muted">(' + (c.mode === 'share' ? 'shared' : 'only him') + ')</span>');
+    });
+    return '<div class="wa-sum">' + (parts.length ? parts.join('<br>') : '<span class="muted">Work area: as in the tracker</span>') + '</div>';
   }
   function waKind(o) { var h = H(); try { return h.kind(o); } catch (e) { return /^(CIVIL|CARP)$/i.test(o.tr || '') ? 'CIVIL' : 'MEP'; } }
   function workAreaSheet(u) {
     if (!u) return;
-    var h = H(), cm = (h.cm ? h.cm() : (RAWC.cm || [])), cur = scopeOf(u.id), sel = { kind: cur.kind === 'NONE' ? 'BOTH' : cur.kind, zones: cur.zones.slice(), areas: cur.areas.slice() }, q = '';
-    var others = {}; ((RAWC && RAWC.scope) || []).forEach(function (x) { if (x.uid !== u.id) others[x.kind + '|' + x.lvl + '|' + x.val] = x.full_name || x.owner; });
-    var areas = {}; cm.forEach(function (o) { var a = String(o.area || '').trim().toUpperCase(); if (!a) return; var z = String(o.fz || '').toUpperCase() === 'K' ? 'H' : String(o.fz || '').toUpperCase(); var e = areas[a] = areas[a] || { a: a, z: {}, open: 0 }; e.z[z] = 1; if (o.st === 'O') e.open++; });
+    var h = H(), cm = (h.cm ? h.cm() : (RAWC.cm || [])), cur = scopeOf(u.id), sel = JSON.parse(JSON.stringify(cur)), q = { CIVIL: '', MEP: '' };
+    var others = {}; ((RAWC && RAWC.scope) || []).forEach(function (x) { if (x.uid !== u.id) { var key = x.kind + '|' + x.lvl + '|' + x.val; (others[key] = others[key] || []).push((x.full_name || x.owner) + (x.shared ? ' (shared)' : '')); } });
+    var areas = {}; cm.forEach(function (o) { var a = String(o.area || '').trim().toUpperCase(); if (!a) return; var z = String(o.fz || '').toUpperCase() === 'K' ? 'H' : String(o.fz || '').toUpperCase(), k = waKind(o); var e = areas[a] = areas[a] || { a: a, z: {}, open: { CIVIL: 0, MEP: 0 } }; e.z[z] = 1; if (o.st === 'O' && e.open[k] != null) e.open[k]++; });
     var AL = Object.keys(areas).sort().map(function (k) { return areas[k]; });
-    var kinds = function () { return sel.kind === 'BOTH' ? ['CIVIL', 'MEP'] : sel.kind === 'NONE' ? [] : [sel.kind]; };
     var nameOf = function (o) { try { return h.owner(o); } catch (e) { return ''; } };
     var ov = document.createElement('div'); ov.className = 'ppo-ov';
-    function preview() {
-      var K = kinds(), n = 0, from = {};
+    function preview(k) {
+      var c = sel[k]; if (c.mode === 'none') return 'Not set — these SRs follow the tracker.';
+      var n = 0, from = {};
       cm.forEach(function (o) {
-        if (o.st !== 'O') return; var k = waKind(o); if (K.indexOf(k) < 0) return;
+        if (o.st !== 'O' || waKind(o) !== k) return;
         var z = String(o.fz || '').toUpperCase() === 'K' ? 'H' : String(o.fz || '').toUpperCase(), a = String(o.area || '').trim().toUpperCase();
-        if (sel.areas.indexOf(a) < 0 && sel.zones.indexOf(z) < 0) return;
+        if (c.areas.indexOf(a) < 0 && c.zones.indexOf(z) < 0) return;
         n++; var was = nameOf(o) || '—'; if ((u.sup_names || []).indexOf(was) < 0) from[was] = (from[was] || 0) + 1;
       });
-      var fr = Object.keys(from).sort(function (a, b) { return from[b] - from[a]; }).map(function (k) { return from[k] + ' from ' + k; });
-      return '<b>' + n + '</b> open SR' + (n === 1 ? '' : 's') + ' in this work area' + (fr.length ? ' — moving to ' + esc(u.full_name || u.email) + ': ' + esc(fr.join(', ')) : ' (already his)');
+      var fr = Object.keys(from).sort(function (a, b) { return from[b] - from[a]; }).map(function (x) { return from[x] + ' of ' + x; });
+      return '<b>' + n + '</b> open ' + (k === 'CIVIL' ? 'civil' : 'MEP') + ' SRs. ' + (!fr.length ? 'Already his.' : c.mode === 'own' ? 'Moving to him: ' + esc(fr.join(', ')) + '.' : 'He also sees them (they stay with: ' + esc(fr.join(', ')) + ').');
     }
-    function draw() {
-      var K = kinds(), ql = q.toLowerCase();
+    function section(k) {
+      var c = sel[k], ql = q[k].toLowerCase(), lab = k === 'CIVIL' ? 'Civil' : 'MEP';
+      return '<section class="wa-sec"><h4>' + lab + ' works</h4><div class="wa-k">' + [['none', 'Not set (as in the tracker)'], ['own', 'Only him — take them from the other supervisor'], ['share', 'Shared — he also sees them']].map(function (x) { return '<label><input type="radio" name="waM' + k + '" value="' + x[0] + '"' + (c.mode === x[0] ? ' checked' : '') + '> ' + x[1] + '</label>'; }).join('') + '</div>' +
+        (c.mode === 'none' ? '' : '<div class="wa-sub">Whole zones</div><div class="wa-k">' + WA_ZONES.map(function (z) { var oth = others[k + '|zone|' + z]; return '<label><input type="checkbox" data-waz="' + k + '|' + z + '"' + (c.zones.indexOf(z) >= 0 ? ' checked' : '') + '> Zone ' + z + (oth ? ' <span class="muted">(now ' + esc(oth.join(', ')) + ')</span>' : '') + '</label>'; }).join('') + '</div>' +
+          '<div class="wa-sub">Areas <span class="muted">(' + c.areas.length + ' chosen)</span></div><input data-waq="' + k + '" type="search" placeholder="Search area, e.g. Warsan" value="' + esc(q[k]) + '" style="width:100%;margin-bottom:6px">' +
+          '<div class="wa-list" data-wal="' + k + '">' + AL.filter(function (e) { return !ql || e.a.toLowerCase().indexOf(ql) >= 0 || c.areas.indexOf(e.a) >= 0; }).map(function (e) {
+            var oth = others[k + '|area|' + e.a];
+            return '<label><input type="checkbox" data-waa="' + k + '|' + esc(e.a) + '"' + (c.areas.indexOf(e.a) >= 0 ? ' checked' : '') + '> ' + esc(e.a) + ' <span class="muted">· Zone ' + esc(Object.keys(e.z).join('/')) + ' · ' + e.open[k] + ' open' + (oth ? ' · now ' + esc(oth.join(', ')) : '') + '</span></label>';
+          }).join('') + '</div>') +
+        '<div class="wa-prev">' + preview(k) + '</div></section>';
+    }
+    function draw(focus) {
       ov.innerHTML = '<div class="ppo-box wa-box" role="dialog" aria-modal="true" aria-label="Work area"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b>Work area · ' + esc(u.full_name || u.email) + ' <span class="muted" style="font-weight:400">(' + esc((u.sup_names || []).join(', ') || 'no supervisor name') + ')</span></b><button class="btn xs" data-x="1" aria-label="Close">✕</button></div>' +
         ((u.sup_names || []).length ? '' : '<div class="notice" style="margin-top:8px">Choose his supervisor name in the list first and press Save, then set the work area.</div>') +
-        '<h4 style="margin:12px 0 6px">Works</h4><div class="wa-k">' + [['CIVIL', 'Civil'], ['MEP', 'MEP'], ['BOTH', 'Civil + MEP'], ['NONE', 'As in the tracker (no work area)']].map(function (x) { return '<label><input type="radio" name="waK" value="' + x[0] + '"' + (sel.kind === x[0] ? ' checked' : '') + '> ' + x[1] + '</label>'; }).join('') + '</div>' +
-        (sel.kind === 'NONE' ? '' : '<h4 style="margin:12px 0 6px">Whole zones</h4><div class="wa-k">' + WA_ZONES.map(function (z) { var oth = K.map(function (k) { return others[k + '|zone|' + z]; }).filter(Boolean)[0]; return '<label><input type="checkbox" data-waz="' + z + '"' + (sel.zones.indexOf(z) >= 0 ? ' checked' : '') + '> Zone ' + z + (oth ? ' <span class="muted">(now ' + esc(oth) + ')</span>' : '') + '</label>'; }).join('') + '</div>' +
-          '<h4 style="margin:12px 0 6px">Areas <span class="muted" style="font-weight:400">(' + sel.areas.length + ' chosen)</span></h4><input id="waQ" type="search" placeholder="Search area, e.g. Warsan" value="' + esc(q) + '" style="width:100%;margin-bottom:6px">' +
-          '<div class="wa-list">' + AL.filter(function (e) { return !ql || e.a.toLowerCase().indexOf(ql) >= 0 || sel.areas.indexOf(e.a) >= 0; }).map(function (e) {
-            var oth = K.map(function (k) { return others[k + '|area|' + e.a]; }).filter(Boolean)[0];
-            return '<label><input type="checkbox" data-waa="' + esc(e.a) + '"' + (sel.areas.indexOf(e.a) >= 0 ? ' checked' : '') + '> ' + esc(e.a) + ' <span class="muted">· Zone ' + esc(Object.keys(e.z).join('/')) + ' · ' + e.open + ' open' + (oth ? ' · now ' + esc(oth) : '') + '</span></label>';
-          }).join('') + '</div>') +
-        '<div class="wa-prev">' + (sel.kind === 'NONE' ? 'His SRs follow the tracker again (civil zone map / tracker supervisor).' : preview()) + '</div>' +
+        section('CIVIL') + section('MEP') +
         '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn primary" id="waGo"' + ((u.sup_names || []).length ? '' : ' disabled') + '>Save work area</button><button class="btn" data-x="1">Cancel</button><span class="status" id="waSt"></span></div></div>';
       Array.prototype.forEach.call(ov.querySelectorAll('[data-x]'), function (b) { b.onclick = function () { ov.remove(); }; });
-      Array.prototype.forEach.call(ov.querySelectorAll('input[name="waK"]'), function (r) { r.onchange = function () { sel.kind = r.value; draw(); }; });
-      Array.prototype.forEach.call(ov.querySelectorAll('[data-waz]'), function (c) { c.onchange = function () { var z = c.getAttribute('data-waz'), i = sel.zones.indexOf(z); if (c.checked && i < 0) sel.zones.push(z); if (!c.checked && i >= 0) sel.zones.splice(i, 1); draw(); }; });
-      Array.prototype.forEach.call(ov.querySelectorAll('[data-waa]'), function (c) { c.onchange = function () { var a = c.getAttribute('data-waa'), i = sel.areas.indexOf(a); if (c.checked && i < 0) sel.areas.push(a); if (!c.checked && i >= 0) sel.areas.splice(i, 1); var y = ov.querySelector('.wa-list').scrollTop; draw(); ov.querySelector('.wa-list').scrollTop = y; }; });
-      var wq = ov.querySelector('#waQ'); if (wq) { wq.oninput = function () { q = wq.value; var p = wq.selectionStart; draw(); var n = ov.querySelector('#waQ'); n.focus(); n.setSelectionRange(p, p); }; }
+      ['CIVIL', 'MEP'].forEach(function (k) { Array.prototype.forEach.call(ov.querySelectorAll('input[name="waM' + k + '"]'), function (r) { r.onchange = function () { sel[k].mode = r.value; draw(); }; }); });
+      var keep = function (fn) { var box = ov.querySelector('.ppo-box'), y = box.scrollTop, ls = {}; Array.prototype.forEach.call(ov.querySelectorAll('[data-wal]'), function (l) { ls[l.getAttribute('data-wal')] = l.scrollTop; }); fn(); var b2 = ov.querySelector('.ppo-box'); b2.scrollTop = y; Array.prototype.forEach.call(ov.querySelectorAll('[data-wal]'), function (l) { l.scrollTop = ls[l.getAttribute('data-wal')] || 0; }); };
+      Array.prototype.forEach.call(ov.querySelectorAll('[data-waz]'), function (c) { c.onchange = function () { var p = c.getAttribute('data-waz').split('|'), L = sel[p[0]].zones, i = L.indexOf(p[1]); if (c.checked && i < 0) L.push(p[1]); if (!c.checked && i >= 0) L.splice(i, 1); keep(draw); }; });
+      Array.prototype.forEach.call(ov.querySelectorAll('[data-waa]'), function (c) { c.onchange = function () { var v = c.getAttribute('data-waa'), k = v.slice(0, v.indexOf('|')), a = v.slice(v.indexOf('|') + 1), L = sel[k].areas, i = L.indexOf(a); if (c.checked && i < 0) L.push(a); if (!c.checked && i >= 0) L.splice(i, 1); keep(draw); }; });
+      Array.prototype.forEach.call(ov.querySelectorAll('[data-waq]'), function (w) { w.oninput = function () { var k = w.getAttribute('data-waq'), p = w.selectionStart; q[k] = w.value; keep(draw); var n = ov.querySelector('[data-waq="' + k + '"]'); n.focus(); n.setSelectionRange(p, p); }; });
       ov.querySelector('#waGo').onclick = async function () {
         var b = this; b.disabled = true; setMsg('waSt', 'Saving…');
         try {
-          var r = await sb.rpc('sup_scope_set', { p_uid: u.id, p_kind: sel.kind, p_zones: sel.zones, p_areas: sel.areas }); if (r.error) throw r.error;
+          var r = await sb.rpc('sup_scope_set2', { p_uid: u.id, p_cfg: sel }); if (r.error) throw r.error;
           var sc = await sb.rpc('sup_scope_list'); if (!sc.error) { RAWC.scope = sc.data || []; try { var R = h.raw(); if (R && R !== RAWC) R.scope = RAWC.scope; } catch (e) { } }
           ov.remove(); H().setSt('stU', 'Work area of ' + (u.full_name || u.email) + ' saved.' + (r.data && r.data.reports_moved ? ' ' + r.data.reports_moved + ' unsigned service report(s) moved to the new supervisor.' : ''), 'ok'); drawUsersExt();
-        } catch (e) { b.disabled = false; setMsg('waSt', /sup_scope/.test(e.message || '') ? 'Run update 27 in Supabase first.' : e.message, 'err'); }
+        } catch (e) { b.disabled = false; setMsg('waSt', /sup_scope_set2|sup_scope/.test(e.message || '') ? 'Run update 28 in Supabase first.' : e.message, 'err'); }
       };
     }
     draw(); document.body.appendChild(ov);
@@ -5436,7 +5447,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   var SCOPE_M = null, SCOPE_SRC = null;
   function scopeOwner(o, k) {
     var sc = (RAW && RAW.scope) || []; if (!sc.length || (k !== 'CIVIL' && k !== 'MEP')) return '';
-    if (SCOPE_SRC !== sc) { SCOPE_M = {}; sc.forEach(function (x) { if (x.owner) SCOPE_M[x.kind + '|' + x.lvl + '|' + x.val] = x.owner; }); SCOPE_SRC = sc; }
+    if (SCOPE_SRC !== sc) { SCOPE_M = {}; sc.forEach(function (x) { if (x.owner && !x.shared) SCOPE_M[x.kind + '|' + x.lvl + '|' + x.val] = x.owner; }); SCOPE_SRC = sc; }
     var z = String(o.fz || '').toUpperCase(); if (z === 'K') z = 'H';
     return SCOPE_M[k + '|area|' + String(o.area || '').trim().toUpperCase()] || SCOPE_M[k + '|zone|' + z] || '';
   }
