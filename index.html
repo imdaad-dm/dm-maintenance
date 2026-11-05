@@ -564,6 +564,7 @@ body.viewas-phone #app{max-width:430px;margin:12px auto 24px;background:var(--bg
 /* v4.38 Closed list */
 .sv-sum.five{grid-template-columns:repeat(5,1fr)}.sv-k.k-closed{border-top-color:#2b7a9b}.sv-card.s-closed{border-left:4px solid #2b7a9b}
 .srd-site{font-weight:600}
+.sv-repb.sv-reperr{border-color:#d9534f;background:#fdecea;color:#8a1f1b}
 </style></head><body><div id="app"></div><script>
 /* ==== PORTAL CONNECTION — fill in from Supabase: Project Settings > API ==== */
 window.DM_CLOUD_CONFIG = {
@@ -1185,11 +1186,17 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     while (true) { var r = await sb.rpc(name).order('id').range(from, from + B - 1); if (r.error) throw r.error; rows = rows.concat(r.data || []); if (!r.data || r.data.length < B) break; from += B; }
     return rows;
   }
+  // "service report needed" list: one retry; if it still fails, a red bar says so (instead of no bar at all)
+  function svRepsLoad() {
+    SV.repsErr = '';
+    return rpcAll('my_reports_needed').catch(function () { return new Promise(function (ok) { setTimeout(ok, 1500); }).then(function () { return rpcAll('my_reports_needed'); }); })
+      .catch(function (e) { SV.repsErr = (e && e.message) || 'error'; return null; });
+  }
   async function supervisorApp() {
     loadingScreen(isTeam() ? 'Loading the team reports…' : 'Loading your works…');
     if (isTeam()) {
       try {
-        var tr = await Promise.all([rpcAll('my_reports_needed').catch(function () { return null; }), sb.rpc('my_sup_names'), rpcAll('my_works').catch(function () { return []; }), sb.rpc('my_today'), rpcAll('my_closed').catch(function () { return null; })]);
+        var tr = await Promise.all([svRepsLoad(), sb.rpc('my_sup_names'), rpcAll('my_works').catch(function () { return []; }), sb.rpc('my_today'), rpcAll('my_closed').catch(function () { return null; })]);
         SV.rows = tr[2] || []; SV.rows.forEach(function (r) { r.rd = +r.rd; r.pr = +r.pr || 0; }); svSetClosed(tr[4]);
         var tt = tr[3].error ? null : (tr[3].data || [])[0]; SV.today = tt ? { started: +tt.started || 0, completed: +tt.completed || 0 } : { started: 0, completed: 0 }; SV.mats = []; SV.emg = []; SV.emgSeen = SV.emgSeen || {};
         SV.reps = tr[0]; if (SV.reps) SV.reps.forEach(function (x) { x.rd = +x.rd; });
@@ -1201,7 +1208,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       return svDraw();
     }
     try {
-      var res = await Promise.all([rpcAll('my_works'), sb.rpc('my_today'), sb.rpc('my_materials'), sb.rpc('my_emergencies'), photoCounts(true), loadFlags(true), rpcAll('my_reports_needed').catch(function () { return null; }), rpcAll('my_closed').catch(function () { return null; })]);
+      var res = await Promise.all([rpcAll('my_works'), sb.rpc('my_today'), sb.rpc('my_materials'), sb.rpc('my_emergencies'), photoCounts(true), loadFlags(true), svRepsLoad(), rpcAll('my_closed').catch(function () { return null; })]);
       SV.rows = res[0] || []; svSetClosed(res[7]);
       var t = res[1].error ? null : (res[1].data || [])[0]; SV.today = t ? { started: +t.started || 0, completed: +t.completed || 0 } : { started: 0, completed: 0 };
       SV.mats = res[2].error ? [] : (res[2].data || []);
@@ -1227,13 +1234,15 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       (isTeam() ? '<div class="sv-today">👥 Team account — mark works completed, prepare the reports and send them to your supervisor · today <b>' + SV.today.completed + '</b> completed</div>' : '<div class="sv-today">Today: <b>' + SV.today.started + '</b> started &nbsp;·&nbsp; <b>' + SV.today.completed + '</b> completed</div>') + '</header>' +
       ('<div class="sv-sum' + (SV.closed ? ' five' : '') + '">' + [['todo', 'To do', '', n.todo], ['work', 'Working', '', n.work], ['done', 'Done', '', n.done]].concat(SV.closed ? [['closed', 'Closed', '', n.closed]] : []).concat([['sub', 'Contractor', '', n.sub]]).map(function (x) {
         return '<button class="sv-k k-' + x[0] + '" data-f="' + x[0] + '" aria-pressed="' + (SV.f === x[0]) + '"><b>' + x[3] + '</b><span>' + x[1] + '</span></button>'; }).join('') + '</div>') +
+      (!SV.reps && SV.repsErr ? '<button class="sv-repb sv-reperr" id="svRepRetry">⚠ Could not load the list of works that need a service report — tap to try again<span class="sv-meta" style="display:block">' + esc(SV.repsErr).slice(0, 120) + '</span></button>' : '') +
       (SV.reps ? '<button class="sv-repb' + (SV.f === 'rep' ? ' on' : '') + (SV.reps.length ? '' : ' ok') + '" data-f="rep" aria-pressed="' + (SV.f === 'rep') + '">📄 <b>' + SV.reps.length + '</b> completed work' + (SV.reps.length === 1 ? '' : 's') + ' still need a service report' + (SV.reps.length ? ' — tap to see' : ' ✓') + '</button>' : '') +
       (apOn() && SV.ap.length ? '<button class="sv-repb sv-apb' + (SV.f === 'ap' ? ' on' : '') + (apPending() ? '' : ' ok') + '" data-f="ap" aria-pressed="' + (SV.f === 'ap') + '">📷 <b>' + apPending() + '</b> finished work' + (apPending() === 1 ? '' : 's') + ' need an after photo' + (apPending() ? ' — tap to see' : ' ✓') + '</button>' : '') +
       '<div class="sv-search">' + svAreaSel() + '<input type="search" id="svQ" placeholder="Search SR, location, text" value="' + esc(SV.q) + '"></div>' +
       (isTeam() ? '' : svPushHTML() + '<div id="svEmg">' + svEmgHTML() + '</div>') +
       '<main id="svList" class="sv-list"></main><div id="svSheet"></div><div class="sv-toast" id="svToast" role="status" aria-live="polite"></div></div>';
     Array.prototype.forEach.call(document.querySelectorAll('.sv-k'), function (b) { b.onclick = function () { SV.f = b.getAttribute('data-f'); svDraw(); }; });
-    Array.prototype.forEach.call(document.querySelectorAll('.sv-repb'), function (rb) { rb.onclick = function () { var f = rb.getAttribute('data-f'); SV.f = SV.f === f ? (isTeam() ? SV.f : 'todo') : f; svDraw(); }; });
+    var rr = $('#svRepRetry'); if (rr) rr.onclick = function () { supervisorApp(); };
+    Array.prototype.forEach.call(document.querySelectorAll('.sv-repb[data-f]'), function (rb) { rb.onclick = function () { var f = rb.getAttribute('data-f'); SV.f = SV.f === f ? (isTeam() ? SV.f : 'todo') : f; svDraw(); }; });
     var asel = $('#svArea'); if (asel) asel.onchange = function () { SV.area = asel.value; svDraw(); };
     var qt; $('#svQ').oninput = function (e) { clearTimeout(qt); qt = setTimeout(function () { SV.q = e.target.value; svList(); }, 250); };
     $('#svRef').onclick = supervisorApp; $('#svOut').onclick = signOut;
