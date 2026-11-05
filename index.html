@@ -565,6 +565,11 @@ body.viewas-phone #app{max-width:430px;margin:12px auto 24px;background:var(--bg
 .sv-sum.five{grid-template-columns:repeat(5,1fr)}.sv-k.k-closed{border-top-color:#2b7a9b}.sv-card.s-closed{border-left:4px solid #2b7a9b}
 .srd-site{font-weight:600}
 .sv-repb.sv-reperr{border-color:#d9534f;background:#fdecea;color:#8a1f1b}
+.ut tr.ug th{background:var(--accent-soft,#eef3fa);text-align:left;font-size:.85rem;padding:6px 8px}
+.wa-sum{font-size:.74rem;margin-top:4px;color:var(--ink-2)}
+.wa-box{width:min(720px,100%)}.wa-k{display:flex;flex-wrap:wrap;gap:6px 16px}.wa-k label{display:flex;gap:6px;align-items:center}
+.wa-list{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px 8px;display:grid;gap:3px}.wa-list label{display:flex;gap:6px;align-items:baseline;font-size:.85rem}
+.wa-prev{margin-top:10px;padding:8px 10px;background:#fff7e6;border-radius:8px;font-size:.85rem}
 </style></head><body><div id="app"></div><script>
 /* ==== PORTAL CONNECTION — fill in from Supabase: Project Settings > API ==== */
 window.DM_CLOUD_CONFIG = {
@@ -1076,8 +1081,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var pSn = (async function () { var sq = await sb.from('snapshots').select('c,t,o,d').order('c'); if (sq.error && /\bd\b|column/i.test(sq.error.message || '')) sq = await sb.from('snapshots').select('c,t,o').order('c'); return chk(sq); })();
     var pXf = rpcAll('sr_transfers').catch(function () { return []; });
     var pWo = (async function () { try { var out = []; for (var f = 0; ; f += 1000) { var r = await sb.from('wo_list').select('wo,wtype,cat,done,cost,sr,fz,zn,trade,rd,status').order('wo').range(f, f + 999); if (r.error) return []; out = out.concat(r.data || []); if ((r.data || []).length < 1000) break; } return out; } catch (e) { return []; } })();
-    var pSv = svsLoad();
-    var all = await Promise.all([pSr, loadReports(), pPpm, pSn, pXf, pWo, pSv]);
+    var pSv = svsLoad(), pSc = scopeLoad();
+    var all = await Promise.all([pSr, loadReports(), pPpm, pSn, pXf, pWo, pSv, pSc]);
     var sr = all[0], reps = all[1], ppm = all[2], snaps = all[3], util = undefined, xf = {};
     (all[4] || []).forEach(function (x) { xf[x.id] = x; });
     var wo = all[5] || [], wot = {}; wo.forEach(function (w) { w.rd = w.rd == null ? null : +w.rd; w.cost = +w.cost || 0; if (w.sr && (!wot[w.sr] || w.wtype === 'CP' || w.wtype === 'MD')) wot[w.sr] = w.wtype; });
@@ -1087,7 +1092,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var cfg = cfgRow.config || {}, lg = cfgRow.logos || {}, dl = logos();
     return {
       config: cfg, logos: { left: lg.left || dl.left, lw: lg.lw || dl.lw, right: lg.right || dl.right, rw: lg.rw || dl.rw },
-      pptTpl: window.DM_PPT_TPL || null, cm: sr, ppm: ppm, util: util, wo: wo, svs: all[6], snapshots: snaps.map(function (s) { return { c: +s.c, t: s.t, o: s.o, d: s.d || null }; }), reports: reps.list, syncKeys: reps.keys,
+      pptTpl: window.DM_PPT_TPL || null, cm: sr, ppm: ppm, util: util, wo: wo, svs: all[6], scope: all[7] || [], snapshots: snaps.map(function (s) { return { c: +s.c, t: s.t, o: s.o, d: s.d || null }; }), reports: reps.list, syncKeys: reps.keys,
       meta: { ppmFile: (cfg.ppmUpload && cfg.ppmUpload.file) || cfg.ppmFile || '', cmFile: cfg.lastUpload ? cfg.lastUpload.file : 'SR Master Tracker', updated: cfg.lastUpload ? cfg.lastUpload.at : '' }
     };
   }
@@ -1105,6 +1110,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       return out;
     } catch (e) { return null; }
   }
+  async function scopeLoad() { try { var r = await sb.rpc('sup_scope_list'); return r.error ? [] : (r.data || []); } catch (e) { return []; } }
   function svsOf(id) { var R = RAWC && RAWC.svs; return R ? (R[String(id)] || false) : undefined; }
   async function enter() {
     loadingScreen('Checking your account…');
@@ -1785,13 +1791,33 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       try {
         var ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password,sup_names,team_of,perms').order('created_at'); if (ur0.error && /perms/.test(ur0.error.message || '')) ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password,sup_names,team_of').order('created_at'); if (ur0.error && /team_of/.test(ur0.error.message || '')) ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password,sup_names').order('created_at'); if (ur0.error && /sup_names/.test(ur0.error.message || '')) ur0 = await sb.from('profiles').select('id,email,full_name,role,active,created_at,must_set_password').order('created_at'); USERS = chk(ur0);
         var SUPN = (h.supNames ? h.supNames() : []);
-        el.innerHTML = '<div class="tw"><table class="t"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Supervisor name (labour supervisors)</th><th>Status</th><th>Active</th><th></th></tr></thead><tbody>' + USERS.map(function (u) {
+        try { var scr = await sb.rpc('sup_scope_list'); if (!scr.error) { RAWC.scope = scr.data || []; } } catch (e) { }
+        var UQ = (drawUsers.q || ''), grp = ROLES.map(function (r) { return r[0]; }).concat(['']);
+        var byRole = {}; USERS.forEach(function (u) { var k = grp.indexOf(u.role || '') >= 0 ? (u.role || '') : ''; (byRole[k] = byRole[k] || []).push(u); });
+        var rowOf = function (u) {
           var me = u.id === profile.id;
-          return '<tr><td><input data-un="' + u.id + '" value="' + esc(u.full_name || '') + '" style="width:150px"></td><td>' + esc(u.email) + '</td><td><select data-ur="' + u.id + '"' + (me ? ' disabled' : '') + '><option value="">No access</option>' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></td><td>' + (u.role === 'supervisor' ? '<select multiple size="4" data-usn="' + u.id + '" aria-label="Supervisor names" style="min-width:190px">' + SUPN.concat((u.sup_names || []).filter(function (x) { return SUPN.indexOf(x) < 0; })).map(function (n) { return '<option value="' + esc(n) + '"' + ((u.sup_names || []).indexOf(n) >= 0 ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Ctrl+click for more than one</div>' : (u.role === 'team' || u.role === 'ppm_team') ? '<label class="muted" style="font-size:.72rem;display:block" for="utf' + u.id + '">Team of ' + (u.role === 'ppm_team' ? 'PPM supervisor' : 'supervisor') + '</label><select id="utf' + u.id + '" data-utf="' + u.id + '" style="min-width:190px"><option value="">Choose the supervisor…</option>' + USERS.filter(function (x) { return x.role === (u.role === 'ppm_team' ? 'ppm_supervisor' : 'supervisor'); }).map(function (x) { return '<option value="' + x.id + '"' + (u.team_of === x.id ? ' selected' : '') + '>' + esc(x.full_name || x.email) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Prepares reports only; the supervisor sends them</div>' : '<span class="muted">—</span>') + '</td><td>' + (u.must_set_password ? '<span class="pill avg">Invited, password not set</span>' : '<span class="pill good">Active account</span>') + '</td><td><input type="checkbox" data-ua="' + u.id + '"' + (u.active ? ' checked' : '') + (me ? ' disabled' : '') + '></td><td><button class="btn xs" data-us="' + u.id + '">Save</button> ' + (u.must_set_password ? '<button class="btn xs" data-ri="' + esc(u.email) + '" data-rn="' + esc(u.full_name || '') + '">Resend invitation</button>' : '<button class="btn xs" data-rs="' + esc(u.email) + '" title="Email this user a link to set a new password">Reset password</button>') +
+          return '<tr data-uq="' + esc([u.full_name, u.email, roleLabel(u.role)].concat(u.sup_names || []).join(' ').toLowerCase()) + '"><td><input data-un=""' + u.id + '" value="' + esc(u.full_name || '') + '" style="width:150px"></td><td>' + esc(u.email) + '</td><td><select data-ur="' + u.id + '"' + (me ? ' disabled' : '') + '><option value="">No access</option>' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></td><td>' + (u.role === 'supervisor' ? '<select multiple size="4" data-usn="' + u.id + '" aria-label="Supervisor names" style="min-width:190px">' + SUPN.concat((u.sup_names || []).filter(function (x) { return SUPN.indexOf(x) < 0; })).map(function (n) { return '<option value="' + esc(n) + '"' + ((u.sup_names || []).indexOf(n) >= 0 ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Ctrl+click for more than one</div>' + scopeSummary(u.id) : (u.role === 'team' || u.role === 'ppm_team') ? '<label class="muted" style="font-size:.72rem;display:block" for="utf' + u.id + '">Team of ' + (u.role === 'ppm_team' ? 'PPM supervisor' : 'supervisor') + '</label><select id="utf' + u.id + '" data-utf="' + u.id + '" style="min-width:190px"><option value="">Choose the supervisor…</option>' + USERS.filter(function (x) { return x.role === (u.role === 'ppm_team' ? 'ppm_supervisor' : 'supervisor'); }).map(function (x) { return '<option value="' + x.id + '"' + (u.team_of === x.id ? ' selected' : '') + '>' + esc(x.full_name || x.email) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Prepares reports only; the supervisor sends them</div>' : '<span class="muted">—</span>') + '</td><td>' + (u.must_set_password ? '<span class="pill avg">Invited, password not set</span>' : '<span class="pill good">Active account</span>') + '</td><td><input type="checkbox" data-ua="' + u.id + '"' + (u.active ? ' checked' : '') + (me ? ' disabled' : '') + '></td><td><button class="btn xs" data-us="' + u.id + '">Save</button> ' + (u.must_set_password ? '<button class="btn xs" data-ri="' + esc(u.email) + '" data-rn="' + esc(u.full_name || '') + '">Resend invitation</button>' : '<button class="btn xs" data-rs="' + esc(u.email) + '" title="Email this user a link to set a new password">Reset password</button>') +
             (['operator', 'manager', 'dm_engineer', 'imdaad_engineer', 'ppm_engineer', 'store_keeper'].indexOf(u.role) >= 0 ? ' <button class="btn xs" data-upm="' + u.id + '"' + (u.perms ? ' style="border-color:#c09a52"' : '') + ' title="Permissions of this person only">Permissions' + (u.perms ? ' ★' : '') + '</button>' : '') +
             (me ? '' : ' <button class="btn xs" data-utp="' + u.id + '" data-uem="' + esc(u.email) + '" title="Set a temporary password (no email); the person chooses a new one at first sign-in">Temp password</button>') +
+            (u.role === 'supervisor' ? ' <button class="btn xs" data-uwa="' + u.id + '" title="Civil / MEP / both, zones and areas of this supervisor">Work area</button>' : '') +
             (me ? '' : ' <button class="btn xs danger" data-udel="' + u.id + '" data-uem="' + esc(u.email) + '">Delete</button>') + '</td></tr><tr class="upm-row" id="upm_' + u.id + '" hidden><td colspan="7"></td></tr>';
-        }).join('') + '</tbody></table></div>';
+        };
+        el.innerHTML = '<div class="f" style="max-width:360px;margin:0 0 10px"><label for="uSrch">Search users</label><input id="uSrch" type="search" placeholder="Name, email, role or supervisor name" value="' + esc(UQ) + '"></div>' +
+          '<div class="tw"><table class="t ut"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Supervisor name (labour supervisors)</th><th>Status</th><th>Active</th><th></th></tr></thead>' +
+          grp.filter(function (k) { return (byRole[k] || []).length; }).map(function (k) {
+            var L = byRole[k].slice().sort(function (a, b) { return String(a.full_name || a.email).localeCompare(String(b.full_name || b.email)); });
+            return '<tbody data-ugrp="' + esc(k) + '"><tr class="ug"><th colspan="7">' + esc(k ? roleLabel(k) : 'No access / waiting') + ' <span class="muted" data-ugn>(' + L.length + ')</span></th></tr>' + L.map(rowOf).join('') + '</tbody>';
+          }).join('') + '</table></div><p class="muted" id="uNone" hidden>No user matches the search.</p>';
+        var uFilter = function () {
+          var q = drawUsers.q = ($('#uSrch').value || '').trim().toLowerCase(), any = false;
+          Array.prototype.forEach.call(el.querySelectorAll('tbody[data-ugrp]'), function (tb) {
+            var n = 0; Array.prototype.forEach.call(tb.querySelectorAll('tr[data-uq]'), function (tr) { var ok = !q || tr.getAttribute('data-uq').indexOf(q) >= 0; tr.hidden = !ok; var nx = tr.nextElementSibling; if (nx && nx.classList.contains('upm-row') && !ok) nx.hidden = true; if (ok) n++; });
+            tb.hidden = !n; tb.querySelector('[data-ugn]').textContent = '(' + n + ')'; if (n) any = true;
+          });
+          $('#uNone').hidden = any;
+        };
+        $('#uSrch').oninput = uFilter; if (UQ) uFilter();
+        Array.prototype.forEach.call(document.querySelectorAll('[data-uwa]'), function (b) { b.onclick = function () { workAreaSheet(USERS.filter(function (x) { return x.id === b.getAttribute('data-uwa'); })[0]); }; });
         Array.prototype.forEach.call(document.querySelectorAll('[data-us]'), function (b) {
           b.onclick = async function () {
             var id = b.getAttribute('data-us'), q = function (a) { return document.querySelector('[' + a + '="' + id + '"]'); };
@@ -1847,6 +1873,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       } catch (e) { el.innerHTML = '<div class="notice">Could not load users: ' + esc(e.message) + '</div>'; }
     }
     drawUsers();
+    DRAW_USERS = drawUsers;
     async function drawStorage() {
       var el = $('#stoT'); if (!el) return;
       el.innerHTML = '<div class="notice">Reading sizes…</div>';
@@ -2113,6 +2140,71 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         return { select: function (c, o) { var x = b.select(c, o); if (t === 'svc_reports' && VIEW && VIEW.supUid) x = x.eq('uid', VIEW.supUid); return x; }, insert: deny, update: deny, upsert: deny, delete: deny };
       }
     };
+  }
+  /* ---------- Admin > Users > Work area: Civil / MEP / both + zones + areas of one supervisor ---------- */
+  var WA_ZONES = ['A', 'B', 'C', 'D', 'H'], DRAW_USERS = null;
+  function drawUsersExt() { if (DRAW_USERS) DRAW_USERS(); }
+  function scopeOf(uid) {
+    var r = (RAWC && RAWC.scope) || [], mine = r.filter(function (x) { return x.uid === uid; });
+    var k = { CIVIL: 0, MEP: 0 }; mine.forEach(function (x) { k[x.kind] = 1; });
+    var uniq = function (lvl) { return mine.filter(function (x) { return x.lvl === lvl; }).map(function (x) { return x.val; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort(); };
+    return { kind: k.CIVIL && k.MEP ? 'BOTH' : k.CIVIL ? 'CIVIL' : k.MEP ? 'MEP' : 'NONE', zones: uniq('zone'), areas: uniq('area') };
+  }
+  function scopeSummary(uid) {
+    var s = scopeOf(uid); if (s.kind === 'NONE') return '<div class="muted wa-sum">Work area: as in the tracker</div>';
+    var lab = { CIVIL: 'Civil', MEP: 'MEP', BOTH: 'Civil + MEP' }[s.kind], parts = [];
+    if (s.zones.length) parts.push('Zone ' + s.zones.join(', ')); if (s.areas.length) parts.push(s.areas.length > 4 ? s.areas.slice(0, 4).join(', ') + ' +' + (s.areas.length - 4) : s.areas.join(', '));
+    return '<div class="wa-sum"><b>' + esc(lab) + '</b> · ' + esc(parts.join(' · ')) + '</div>';
+  }
+  function waKind(o) { var h = H(); try { return h.kind(o); } catch (e) { return /^(CIVIL|CARP)$/i.test(o.tr || '') ? 'CIVIL' : 'MEP'; } }
+  function workAreaSheet(u) {
+    if (!u) return;
+    var h = H(), cm = (h.cm ? h.cm() : (RAWC.cm || [])), cur = scopeOf(u.id), sel = { kind: cur.kind === 'NONE' ? 'BOTH' : cur.kind, zones: cur.zones.slice(), areas: cur.areas.slice() }, q = '';
+    var others = {}; ((RAWC && RAWC.scope) || []).forEach(function (x) { if (x.uid !== u.id) others[x.kind + '|' + x.lvl + '|' + x.val] = x.full_name || x.owner; });
+    var areas = {}; cm.forEach(function (o) { var a = String(o.area || '').trim().toUpperCase(); if (!a) return; var z = String(o.fz || '').toUpperCase() === 'K' ? 'H' : String(o.fz || '').toUpperCase(); var e = areas[a] = areas[a] || { a: a, z: {}, open: 0 }; e.z[z] = 1; if (o.st === 'O') e.open++; });
+    var AL = Object.keys(areas).sort().map(function (k) { return areas[k]; });
+    var kinds = function () { return sel.kind === 'BOTH' ? ['CIVIL', 'MEP'] : sel.kind === 'NONE' ? [] : [sel.kind]; };
+    var nameOf = function (o) { try { return h.owner(o); } catch (e) { return ''; } };
+    var ov = document.createElement('div'); ov.className = 'ppo-ov';
+    function preview() {
+      var K = kinds(), n = 0, from = {};
+      cm.forEach(function (o) {
+        if (o.st !== 'O') return; var k = waKind(o); if (K.indexOf(k) < 0) return;
+        var z = String(o.fz || '').toUpperCase() === 'K' ? 'H' : String(o.fz || '').toUpperCase(), a = String(o.area || '').trim().toUpperCase();
+        if (sel.areas.indexOf(a) < 0 && sel.zones.indexOf(z) < 0) return;
+        n++; var was = nameOf(o) || '—'; if ((u.sup_names || []).indexOf(was) < 0) from[was] = (from[was] || 0) + 1;
+      });
+      var fr = Object.keys(from).sort(function (a, b) { return from[b] - from[a]; }).map(function (k) { return from[k] + ' from ' + k; });
+      return '<b>' + n + '</b> open SR' + (n === 1 ? '' : 's') + ' in this work area' + (fr.length ? ' — moving to ' + esc(u.full_name || u.email) + ': ' + esc(fr.join(', ')) : ' (already his)');
+    }
+    function draw() {
+      var K = kinds(), ql = q.toLowerCase();
+      ov.innerHTML = '<div class="ppo-box wa-box" role="dialog" aria-modal="true" aria-label="Work area"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b>Work area · ' + esc(u.full_name || u.email) + ' <span class="muted" style="font-weight:400">(' + esc((u.sup_names || []).join(', ') || 'no supervisor name') + ')</span></b><button class="btn xs" data-x="1" aria-label="Close">✕</button></div>' +
+        ((u.sup_names || []).length ? '' : '<div class="notice" style="margin-top:8px">Choose his supervisor name in the list first and press Save, then set the work area.</div>') +
+        '<h4 style="margin:12px 0 6px">Works</h4><div class="wa-k">' + [['CIVIL', 'Civil'], ['MEP', 'MEP'], ['BOTH', 'Civil + MEP'], ['NONE', 'As in the tracker (no work area)']].map(function (x) { return '<label><input type="radio" name="waK" value="' + x[0] + '"' + (sel.kind === x[0] ? ' checked' : '') + '> ' + x[1] + '</label>'; }).join('') + '</div>' +
+        (sel.kind === 'NONE' ? '' : '<h4 style="margin:12px 0 6px">Whole zones</h4><div class="wa-k">' + WA_ZONES.map(function (z) { var oth = K.map(function (k) { return others[k + '|zone|' + z]; }).filter(Boolean)[0]; return '<label><input type="checkbox" data-waz="' + z + '"' + (sel.zones.indexOf(z) >= 0 ? ' checked' : '') + '> Zone ' + z + (oth ? ' <span class="muted">(now ' + esc(oth) + ')</span>' : '') + '</label>'; }).join('') + '</div>' +
+          '<h4 style="margin:12px 0 6px">Areas <span class="muted" style="font-weight:400">(' + sel.areas.length + ' chosen)</span></h4><input id="waQ" type="search" placeholder="Search area, e.g. Warsan" value="' + esc(q) + '" style="width:100%;margin-bottom:6px">' +
+          '<div class="wa-list">' + AL.filter(function (e) { return !ql || e.a.toLowerCase().indexOf(ql) >= 0 || sel.areas.indexOf(e.a) >= 0; }).map(function (e) {
+            var oth = K.map(function (k) { return others[k + '|area|' + e.a]; }).filter(Boolean)[0];
+            return '<label><input type="checkbox" data-waa="' + esc(e.a) + '"' + (sel.areas.indexOf(e.a) >= 0 ? ' checked' : '') + '> ' + esc(e.a) + ' <span class="muted">· Zone ' + esc(Object.keys(e.z).join('/')) + ' · ' + e.open + ' open' + (oth ? ' · now ' + esc(oth) : '') + '</span></label>';
+          }).join('') + '</div>') +
+        '<div class="wa-prev">' + (sel.kind === 'NONE' ? 'His SRs follow the tracker again (civil zone map / tracker supervisor).' : preview()) + '</div>' +
+        '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn primary" id="waGo"' + ((u.sup_names || []).length ? '' : ' disabled') + '>Save work area</button><button class="btn" data-x="1">Cancel</button><span class="status" id="waSt"></span></div></div>';
+      Array.prototype.forEach.call(ov.querySelectorAll('[data-x]'), function (b) { b.onclick = function () { ov.remove(); }; });
+      Array.prototype.forEach.call(ov.querySelectorAll('input[name="waK"]'), function (r) { r.onchange = function () { sel.kind = r.value; draw(); }; });
+      Array.prototype.forEach.call(ov.querySelectorAll('[data-waz]'), function (c) { c.onchange = function () { var z = c.getAttribute('data-waz'), i = sel.zones.indexOf(z); if (c.checked && i < 0) sel.zones.push(z); if (!c.checked && i >= 0) sel.zones.splice(i, 1); draw(); }; });
+      Array.prototype.forEach.call(ov.querySelectorAll('[data-waa]'), function (c) { c.onchange = function () { var a = c.getAttribute('data-waa'), i = sel.areas.indexOf(a); if (c.checked && i < 0) sel.areas.push(a); if (!c.checked && i >= 0) sel.areas.splice(i, 1); var y = ov.querySelector('.wa-list').scrollTop; draw(); ov.querySelector('.wa-list').scrollTop = y; }; });
+      var wq = ov.querySelector('#waQ'); if (wq) { wq.oninput = function () { q = wq.value; var p = wq.selectionStart; draw(); var n = ov.querySelector('#waQ'); n.focus(); n.setSelectionRange(p, p); }; }
+      ov.querySelector('#waGo').onclick = async function () {
+        var b = this; b.disabled = true; setMsg('waSt', 'Saving…');
+        try {
+          var r = await sb.rpc('sup_scope_set', { p_uid: u.id, p_kind: sel.kind, p_zones: sel.zones, p_areas: sel.areas }); if (r.error) throw r.error;
+          var sc = await sb.rpc('sup_scope_list'); if (!sc.error) { RAWC.scope = sc.data || []; try { var R = h.raw(); if (R && R !== RAWC) R.scope = RAWC.scope; } catch (e) { } }
+          ov.remove(); H().setSt('stU', 'Work area of ' + (u.full_name || u.email) + ' saved.' + (r.data && r.data.reports_moved ? ' ' + r.data.reports_moved + ' unsigned service report(s) moved to the new supervisor.' : ''), 'ok'); drawUsersExt();
+        } catch (e) { b.disabled = false; setMsg('waSt', /sup_scope/.test(e.message || '') ? 'Run update 27 in Supabase first.' : e.message, 'err'); }
+      };
+    }
+    draw(); document.body.appendChild(ov);
   }
   function viewAsButton() {
     var m = document.querySelector('.top .meta'); if (!m || VIEW || !profile || profile.role !== 'admin' || document.getElementById('btnViewAs')) return;
@@ -5341,7 +5433,14 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function wtDisc(o) { return CIVIL_WT.indexOf(o.wt) >= 0 ? 'Civil' : 'MEP'; }
   // who does the work, from the tracker Service Type: CIVIL / CARP = civil (supervisor of the zone), AD-HOC = ad-hoc (no supervisor), others = MEP (tracker supervisor)
   function srKind(o) { if (o.xk === 'CIVIL' || o.xk === 'MEP') return o.xk; var wty = String(o.wot || o.wt || '').toUpperCase(); if (wty === 'CP' || wty === 'MD') return 'ADHOC'; var t = String(o.tr || '').toUpperCase(); return t === 'CIVIL' || t === 'CARP' ? 'CIVIL' : t === 'AD-HOC' || t === 'ADHOC' ? 'ADHOC' : 'MEP'; }
-  function labSup(o) { var k = srKind(o); if (k === 'CIVIL') { var m = {}; try { m = rmCivilMap(); } catch (e) { m = RM_CIVIL_DEF; } return m[o.fz] || 'Unassigned (civil)'; } if (k === 'ADHOC') return 'AD-HOC'; return o.sup || 'Unassigned (MEP)'; }
+  var SCOPE_M = null, SCOPE_SRC = null;
+  function scopeOwner(o, k) {
+    var sc = (RAW && RAW.scope) || []; if (!sc.length || (k !== 'CIVIL' && k !== 'MEP')) return '';
+    if (SCOPE_SRC !== sc) { SCOPE_M = {}; sc.forEach(function (x) { if (x.owner) SCOPE_M[x.kind + '|' + x.lvl + '|' + x.val] = x.owner; }); SCOPE_SRC = sc; }
+    var z = String(o.fz || '').toUpperCase(); if (z === 'K') z = 'H';
+    return SCOPE_M[k + '|area|' + String(o.area || '').trim().toUpperCase()] || SCOPE_M[k + '|zone|' + z] || '';
+  }
+  function labSup(o) { var k = srKind(o), so = scopeOwner(o, k); if (so) return so; if (k === 'CIVIL') { var m = {}; try { m = rmCivilMap(); } catch (e) { m = RM_CIVIL_DEF; } return m[o.fz] || 'Unassigned (civil)'; } if (k === 'ADHOC') return 'AD-HOC'; return o.sup || 'Unassigned (MEP)'; }
   function regScoped(cm) { return REGF.scope === 'O' ? cm.filter(function (o) { return o.st === 'O'; }) : cm; }
   // same split as RM works: open works marked for a contractor (quotation) are counted under "Contractor works", not under the team
   var REG_SUB = 'Contractor works (quotation)';
@@ -7410,7 +7509,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   window.DMApp = {
     start: function (raw, ctx) { RAW = raw; CFG = initCfg(raw); ROLE = ctx.role; PERMS = ctx.perms; USER = ctx.user; STORE = !!ctx.store; boot(); },
     h: { fmt: fmt, dstr: dstr, iso: iso, esc: esc, panel: panel, section: section, setSt: setSt, toast: toast, readWorkbook: readWorkbook, count: count, pct: pct, fp: fp,
-      tabs: function () { return TABS; }, supNames: function () { var m = Object.assign({}, RM_CIVIL_DEF, (RMCFG && RMCFG.civil) || {}), n = {}; Object.keys(m).forEach(function (z) { if (m[z]) n[m[z]] = 1; }); CM.forEach(function (o) { if (o.st === 'O' && srKind(o) === 'MEP' && o.sup) n[o.sup] = 1; }); return Object.keys(n).sort(); }, cm: function () { return CM; }, cut: function () { return CUT; }, snapDetail: snapDetail, raw: function () { return RAW; }, cfg: function () { return CFG; }, render: function () { render(); }, clone: clone, saveFile: saveFile, kind: function (o) { return srKind(o); } }
+      tabs: function () { return TABS; }, supNames: function () { var m = Object.assign({}, RM_CIVIL_DEF, (RMCFG && RMCFG.civil) || {}), n = {}; Object.keys(m).forEach(function (z) { if (m[z]) n[m[z]] = 1; }); CM.forEach(function (o) { if (o.st === 'O' && srKind(o) === 'MEP' && o.sup) n[o.sup] = 1; }); return Object.keys(n).sort(); }, cm: function () { return CM; }, cut: function () { return CUT; }, snapDetail: snapDetail, raw: function () { return RAW; }, cfg: function () { return CFG; }, render: function () { render(); }, clone: clone, saveFile: saveFile, kind: function (o) { return srKind(o); }, owner: function (o) { return labSup(o); } }
   };
   if (!CLOUD) { if (typeof Chart === 'undefined') { window.addEventListener('load', boot); } else boot(); }
 })();
