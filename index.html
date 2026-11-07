@@ -1048,7 +1048,13 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       return { list: list, keys: keys };
     } catch (e) { return { list: null, keys: [] }; }
   }
-  async function reportsReload() { var r = await loadReports(); RAWC.reports = r.list; RAWC.syncKeys = r.keys; try { var R = H().raw(); if (R && R !== RAWC) { R.reports = r.list; R.syncKeys = r.keys; } } catch (e) { } return r; }
+  // service reports = reports signed by the customer in the portal (+ the old list received by email / Excel, kept as history)
+  function repsMerge(list, svs) {
+    if (!list) return list; var m = {}; list.forEach(function (r) { m[String(r.sr)] = r; });
+    if (svs) Object.keys(svs).forEach(function (k) { var v = svs[k]; if (v && v.status === 'signed') m[String(k)] = { sr: String(k), src: 'portal', at: v.signed_at, added_at: v.signed_at }; });
+    return Object.keys(m).map(function (k) { return m[k]; });
+  }
+  async function reportsReload() { var r = await loadReports(); r.list = repsMerge(r.list, RAWC && RAWC.svs); RAWC.reports = r.list; RAWC.syncKeys = r.keys; try { var R = H().raw(); if (R && R !== RAWC) { R.reports = r.list; R.syncKeys = r.keys; } } catch (e) { } return r; }
   async function reportsAdd(srs, src) {
     var n = 0, B = 5000;
     for (var i = 0; i < srs.length; i += B) n += chk(await sb.rpc('reports_add', { p_items: srs.slice(i, i + B), p_src: src })) || 0;
@@ -1085,6 +1091,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var pSv = svsLoad(), pSc = scopeLoad();
     var all = await Promise.all([pSr, loadReports(), pPpm, pSn, pXf, pWo, pSv, pSc]);
     var sr = all[0], reps = all[1], ppm = all[2], snaps = all[3], util = undefined, xf = {};
+    reps.list = repsMerge(reps.list, all[6]);
     (all[4] || []).forEach(function (x) { xf[x.id] = x; });
     var wo = all[5] || [], wot = {}; wo.forEach(function (w) { w.rd = w.rd == null ? null : +w.rd; w.cost = +w.cost || 0; if (w.sr && (!wot[w.sr] || w.wtype === 'CP' || w.wtype === 'MD')) wot[w.sr] = w.wtype; });
     progress(1, 'Opening dashboard…');
@@ -1797,7 +1804,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         var byRole = {}; USERS.forEach(function (u) { var k = grp.indexOf(u.role || '') >= 0 ? (u.role || '') : ''; (byRole[k] = byRole[k] || []).push(u); });
         var rowOf = function (u) {
           var me = u.id === profile.id;
-          return '<tr data-uq="' + esc([u.full_name, u.email, roleLabel(u.role)].concat(u.sup_names || []).join(' ').toLowerCase()) + '"><td><input data-un=""' + u.id + '" value="' + esc(u.full_name || '') + '" style="width:150px"></td><td>' + esc(u.email) + '</td><td><select data-ur="' + u.id + '"' + (me ? ' disabled' : '') + '><option value="">No access</option>' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></td><td>' + (u.role === 'supervisor' ? '<select multiple size="4" data-usn="' + u.id + '" aria-label="Supervisor names" style="min-width:190px">' + SUPN.concat((u.sup_names || []).filter(function (x) { return SUPN.indexOf(x) < 0; })).map(function (n) { return '<option value="' + esc(n) + '"' + ((u.sup_names || []).indexOf(n) >= 0 ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Ctrl+click for more than one</div>' + scopeSummary(u.id) : (u.role === 'team' || u.role === 'ppm_team') ? '<label class="muted" style="font-size:.72rem;display:block" for="utf' + u.id + '">Team of ' + (u.role === 'ppm_team' ? 'PPM supervisor' : 'supervisor') + '</label><select id="utf' + u.id + '" data-utf="' + u.id + '" style="min-width:190px"><option value="">Choose the supervisor…</option>' + USERS.filter(function (x) { return x.role === (u.role === 'ppm_team' ? 'ppm_supervisor' : 'supervisor'); }).map(function (x) { return '<option value="' + x.id + '"' + (u.team_of === x.id ? ' selected' : '') + '>' + esc(x.full_name || x.email) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Prepares reports only; the supervisor sends them</div>' : '<span class="muted">—</span>') + '</td><td>' + (u.must_set_password ? '<span class="pill avg">Invited, password not set</span>' : '<span class="pill good">Active account</span>') + '</td><td><input type="checkbox" data-ua="' + u.id + '"' + (u.active ? ' checked' : '') + (me ? ' disabled' : '') + '></td><td><button class="btn xs" data-us="' + u.id + '">Save</button> ' + (u.must_set_password ? '<button class="btn xs" data-ri="' + esc(u.email) + '" data-rn="' + esc(u.full_name || '') + '">Resend invitation</button>' : '<button class="btn xs" data-rs="' + esc(u.email) + '" title="Email this user a link to set a new password">Reset password</button>') +
+          return '<tr data-uq="' + esc([u.full_name, u.email, roleLabel(u.role)].concat(u.sup_names || []).join(' ').toLowerCase()) + '"><td><input data-un="' + u.id + '" value="' + esc(u.full_name || '') + '" style="width:150px"></td><td>' + esc(u.email) + '</td><td><select data-ur="' + u.id + '"' + (me ? ' disabled' : '') + '><option value="">No access</option>' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select></td><td>' + (u.role === 'supervisor' ? '<select multiple size="4" data-usn="' + u.id + '" aria-label="Supervisor names" style="min-width:190px">' + SUPN.concat((u.sup_names || []).filter(function (x) { return SUPN.indexOf(x) < 0; })).map(function (n) { return '<option value="' + esc(n) + '"' + ((u.sup_names || []).indexOf(n) >= 0 ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Ctrl+click for more than one</div>' + scopeSummary(u.id) : (u.role === 'team' || u.role === 'ppm_team') ? '<label class="muted" style="font-size:.72rem;display:block" for="utf' + u.id + '">Team of ' + (u.role === 'ppm_team' ? 'PPM supervisor' : 'supervisor') + '</label><select id="utf' + u.id + '" data-utf="' + u.id + '" style="min-width:190px"><option value="">Choose the supervisor…</option>' + USERS.filter(function (x) { return x.role === (u.role === 'ppm_team' ? 'ppm_supervisor' : 'supervisor'); }).map(function (x) { return '<option value="' + x.id + '"' + (u.team_of === x.id ? ' selected' : '') + '>' + esc(x.full_name || x.email) + '</option>'; }).join('') + '</select><div class="muted" style="font-size:.72rem">Prepares reports only; the supervisor sends them</div>' : '<span class="muted">—</span>') + '</td><td>' + (u.must_set_password ? '<span class="pill avg">Invited, password not set</span>' : '<span class="pill good">Active account</span>') + '</td><td><input type="checkbox" data-ua="' + u.id + '"' + (u.active ? ' checked' : '') + (me ? ' disabled' : '') + '></td><td><button class="btn xs" data-us="' + u.id + '">Save</button> ' + (u.must_set_password ? '<button class="btn xs" data-ri="' + esc(u.email) + '" data-rn="' + esc(u.full_name || '') + '">Resend invitation</button>' : '<button class="btn xs" data-rs="' + esc(u.email) + '" title="Email this user a link to set a new password">Reset password</button>') +
             (['operator', 'manager', 'dm_engineer', 'imdaad_engineer', 'ppm_engineer', 'store_keeper'].indexOf(u.role) >= 0 ? ' <button class="btn xs" data-upm="' + u.id + '"' + (u.perms ? ' style="border-color:#c09a52"' : '') + ' title="Permissions of this person only">Permissions' + (u.perms ? ' ★' : '') + '</button>' : '') +
             (me ? '' : ' <button class="btn xs" data-utp="' + u.id + '" data-uem="' + esc(u.email) + '" title="Set a temporary password (no email); the person chooses a new one at first sign-in">Temp password</button>') +
             (u.role === 'supervisor' ? ' <button class="btn xs" data-uwa="' + u.id + '" title="Civil / MEP / both, zones and areas of this supervisor">Work area</button>' : '') +
@@ -4837,6 +4844,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   var REPF = { sup: '' };
   function dubaiToday() { return floorDay(Date.now() + 4 * 3600000); }
   function repStatus(o) { return o.st === 'C' && o.site !== 'na'; }
+  function repSrc(s) { return s === 'portal' ? 'Portal (signed)' : 'Old report (email / Excel)'; }
   function reportsCompute(cm) {
     var list = RAW.reports || [], map = {};
     list.forEach(function (r) { map[String(r.sr)] = r; });
@@ -4845,7 +4853,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     for (var i = 13; i >= 0; i--) days.push(today - i * DAY);
     var done = cm.filter(repStatus), D = { map: map, days: days, today: today };
     D.done = done.length; D.with = count(done, function (o) { return !!map[o.id]; }); D.need = D.done - D.with; D.cov = pct(D.with, D.done);
-    var nowMs = Date.now(), recent = function (h) { return count(list, function (r) { var t = r.at ? Date.parse(r.at) : 0; return t && nowMs - t <= h * 3600000; }); };
+    var nowMs = Date.now(), recent = function (h) { return count(list, function (r) { var t = r.src === 'portal' && r.at ? Date.parse(r.at) : 0; return t && nowMs - t <= h * 3600000; }); };
     D.r24 = recent(24); D.r7 = recent(24 * 7); D.total = list.length;
     D.tracked = count(CM, function (o) { return o.closed_seen != null; }) > 0;
     var sups = uniq(done.map(function (o) { return labSup(o); })).sort();
@@ -4871,7 +4879,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     });
     var tl0 = supRow('Total', done, 'tot'); tl0.per = 'Total'; D.lab.push(tl0);
     D.readyList = done.filter(function (o) { return !o.mxc && map[o.id]; }).sort(function (a, b) { return a.rd - b.rd; })
-      .map(function (o) { var r = map[o.id]; return { sr: o.id, wo: o.wo, month: mkLabel(o.mk), sup: labSup(o), zone: zl(o.fz), trade: tl(o.tr), loc: o.loc2, rd: dstr(o.rd), mx: o.mx, rep: r.src === 'outlook' ? 'Outlook' : r.src === 'paste' ? 'Pasted' : 'Excel' }; });
+      .map(function (o) { var r = map[o.id]; return { sr: o.id, wo: o.wo, month: mkLabel(o.mk), sup: labSup(o), zone: zl(o.fz), trade: tl(o.tr), loc: o.loc2, rd: dstr(o.rd), mx: o.mx, rep: repSrc(r.src) }; });
     D.mxOpenTot = count(done, function (o) { return !o.mxc; }); D.readyTot = D.readyList.length;
     function dayRows(fn) {
       var rows = sups.map(function (s) { var r = { sup: s, total: 0 }; days.forEach(function (d, i) { r['d' + i] = count(bs[s], function (o) { return o.closed_seen === d && fn(o); }); r.total += r['d' + i]; }); r.before = count(bs[s], function (o) { return (o.closed_seen == null || o.closed_seen < days[0]) && fn(o); }); return r; });
@@ -4884,7 +4892,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       .sort(function (a, b) { return (b.closed_seen || 0) - (a.closed_seen || 0) || b.rd - a.rd; })
       .map(function (o) { return { sr: o.id, wo: o.wo, sup: labSup(o), zone: zl(o.fz), trade: tl(o.tr), loc: o.loc2, rd: dstr(o.rd), cs: o.closed_seen != null ? dstr(o.closed_seen) : 'Before tracking', ist: o.ist, mx: o.mx }; });
     D.other = list.filter(function (r) { return !ids[r.sr]; }).sort(function (a, b) { return Date.parse(b.at || b.added_at) - Date.parse(a.at || a.added_at); })
-      .map(function (r) { return { sr: r.sr, src: r.src === 'outlook' ? 'Outlook' : r.src === 'paste' ? 'Pasted' : 'Excel', at: r.at ? dmDxb(new Date(r.at).getTime()) : '', added: String(r.added_at || '').slice(0, 10) }; });
+      .map(function (r) { return { sr: r.sr, src: repSrc(r.src), at: r.at ? dmDxb(new Date(r.at).getTime()) : '', added: String(r.added_at || '').slice(0, 10) }; });
     D.openWith = count(cm, function (o) { return o.st === 'O' && map[o.id]; });
     D.sups = sups;
     return D;
@@ -4918,15 +4926,14 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var D = reportsCompute(cm), S = reportsSpecs(D), last = syncAge(), stale = !last || Date.now() - last > 3600000;
     var out = section('R0', 'Service reports from the phones', 'تقارير الخدمة من الهاتف', 'Reports prepared by the labour supervisors on the phone and signed by the customer (on site or by private link). A signed report counts as the service report of the SR. Download the PDF (same layout as the FM Service Report form) or the Excel form, upload it to Maximo, then mark it uploaded.', '<div id="svcOff"><div class="notice">Loading…</div></div>');
     if (['admin', 'operator', 'imdaad_engineer', 'manager'].indexOf(ROLE) >= 0) out += section('RAP', 'After photos (temporary list)', 'صور بعد التنفيذ (قائمة مؤقتة)', 'Finished SRs where the customer asked for an after photo. Upload the SR list and the before photos; each supervisor sees his SRs on the phone (by his area), adds the after photo and sends it here. Select SRs and download one A4 PDF (before | after, one SR per page).', '<div id="apOff"><div class="notice">Loading…</div></div>');
-    out += section('R', 'Service reports', 'تقارير الخدمة', 'A completed SR has a service report when its number is in the Outlook group <b>DM - Reports</b> (email subject) or in an uploaded report list. Completed = Final Status closed, excluding not-in-scope / duplicate / cancelled.',
+    out += section('R', 'Service reports', 'تقارير الخدمة', 'A completed SR has a service report when the report is <b>signed by the customer in the portal</b>. Reports received earlier by email or Excel are kept as history. Completed = Final Status closed, excluding not-in-scope / duplicate / cancelled.',
       '<div class="kpis">' +
       kpiTile('Completed SRs', fmt(D.done), 'for the current filters') +
       kpiTile('With service report', fmt(D.with), '<span class="pill ' + band(D.cov).cls + '">' + fp(D.cov) + '</span> coverage') +
       kpiTile('Report needed', '<span class="od">' + fmt(D.need) + '</span>', fp(pct(D.need, D.done)) + ' of completed') +
-      kpiTile('Reports received (Outlook)', fmt(D.r24), 'emails in the last 24 hours · ' + fmt(D.r7) + ' in 7 days') +
+      kpiTile('Signed in the portal', fmt(D.r24), 'last 24 hours · ' + fmt(D.r7) + ' in 7 days') +
       kpiTile('To close in Maximo', fmt(D.mxOpenTot), fmt(D.readyTot) + ' already have a report') +
       kpiTile('Report numbers in portal', fmt(D.total), fmt(D.other.length) + ' not in the tracker') +
-      kpiTile('Outlook sync', last ? agoTxt(last) : '—', last ? (stale ? '<span class="pill up">No run for over an hour — is the PC on with Outlook open?</span>' : '<span class="pill down">Running</span>') : 'Not installed yet') +
       '</div>' + (D.tracked ? '' : '<div class="notice" style="margin-top:12px"><b>Daily closures start from the next tracker upload.</b> The tracker has no closing date for most SRs, so the portal records the day each SR is first seen closed in an uploaded tracker. SRs closed before this update show under "Earlier".</div>'));
     var mxNote = 'To close in Maximo = completed work whose Maximo Status (column M) is still ' + esc(String(CFG.mxOpen).split('|').join(' / ')) + '; any other status is already closed or cancelled.';
     out += section('R1', 'By month', 'حسب الشهر', mxNote + ' Month = month the SR was reported.', tableHTML(S.month));
@@ -4937,18 +4944,6 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     out += section('R5', 'Closed per day', 'المغلق يومياً', 'Day an SR was first seen closed in an uploaded tracker (upload day, Dubai time). "Earlier" = closed before the last 14 days or before this update.', tablePanel(S.daily) + '<div style="margin-top:16px">' + tablePanel(S.dailyNeed) + '</div>');
     out += section('R6', 'Service reports needed', 'التقارير المطلوبة', 'Newest closures first.', '<div class="filters" style="margin:0 0 10px;padding:0"><div class="f"><label for="repSup">Supervisor</label><select id="repSup">' + opt('', 'All supervisors', REPF.sup) + D.sups.map(function (s) { return opt(s, s, REPF.sup); }).join('') + '</select></div></div>' + tableHTML(S.need, { max: 520, limit: 400 }));
     if (D.other.length) out += section('R7', 'Report numbers not in the tracker', 'أرقام غير موجودة في التراكر', 'Probably SRs from other channels (direct calls) or typing mistakes in the email subject.', tableHTML(S.other, { max: 360, limit: 300 }));
-    if (ROLE === 'admin' || ROLE === 'operator') out += section('R8', 'Add service report numbers', 'إضافة أرقام التقارير', '',
-      '<div class="grid">' + panel('Upload a list', 'Excel or CSV — SR numbers in the first column or a column named "SR"', '<div class="drop" id="dropRep" tabindex="0">Drop the Excel file here or click to choose</div><input type="file" id="fileRep" accept=".xlsx,.xls,.csv" hidden>') +
-      panel('Paste from Outlook', 'select the emails in DM - Reports, Ctrl+A, Ctrl+C, paste here', '<textarea id="repPaste" style="width:100%;min-height:110px" placeholder="Paste here"></textarea><div style="margin-top:8px"><button class="btn" id="repPasteGo">Read numbers</button></div>') + '</div>' +
-      '<div id="repPend" style="margin-top:12px"></div><div class="status" id="repSt"></div>');
-    if (ROLE === 'admin') {
-      var ks = RAW.syncKeys || [];
-      out += section('R9', 'Automatic Outlook sync', 'الربط التلقائي مع Outlook', 'A small script on a PC with Outlook Classic reads the email subjects in <b>DM - Reports</b> every 10 minutes and sends only the SR numbers here. Each script has its own key; revoke a key to stop that PC.',
-        panel('Sync keys', '', (ks.length ? '<div class="tw"><table class="t"><thead><tr><th>Name</th><th>Created</th><th>Last sync</th><th class="n">Numbers sent</th><th class="n">New</th><th></th></tr></thead><tbody>' + ks.map(function (k) { return '<tr><td>' + esc(k.label) + '</td><td>' + esc(dmDxb(k.created_at, true)) + '</td><td>' + (k.last_used ? esc(agoTxt(Date.parse(k.last_used))) : 'never') + '</td><td class="n">' + fmt(k.last_count) + '</td><td class="n">' + fmt(k.last_new) + '</td><td><button class="btn xs" data-revoke="' + k.id + '">Revoke</button></td></tr>'; }).join('') + '</tbody></table></div>' : '<p>No script installed yet.</p>') +
-          '<div class="form" style="margin-top:12px"><div class="f"><label for="syncLbl">PC name</label><input id="syncLbl" value="My PC" maxlength="60"></div><div class="f"><label for="syncGrp">Outlook group</label><input id="syncGrp" value="DM - Reports" maxlength="80"></div><div class="f"><label for="syncMail">Group email address (optional)</label><input id="syncMail" placeholder="e.g. dmreports@imdaad.ae" maxlength="120"></div></div>' +
-          '<div style="margin-top:10px"><button class="btn primary" id="syncNew">Create key and install</button></div><div class="status" id="syncSt"></div><div id="syncOut"></div>' +
-          '<p style="margin-top:12px">Check it works: the <b>Outlook sync</b> tile at the top shows the last run, and the PC keeps a log at <code>%LOCALAPPDATA%\\DMReportsSync\\sync.log</code> (press Win+R and paste that path). Outlook Classic must be open; the new Outlook app cannot be read. To stop a PC, click <b>Revoke</b>.</p>'));
-    }
     return out;
   }
   function repExtract(text) {
@@ -7437,7 +7432,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         ['Location', esc(o.loc2)], ['Supervisor (tracker)', esc(o.sup || '—')], ['Labour supervisor', esc(labSup(o))],
         ['Reported by', esc(o.rbn || '—')], ['Department', esc(o.dept || '—')], ['Contact', o.tel ? '<a href="tel:' + esc(o.tel) + '">' + esc(o.tel) + '</a>' : '—']
       ];
-      if (rep !== undefined) rows.push(['Service report', rep ? '<span class="pill good">Received</span>' + (rep.at ? ' ' + esc(dmDxb(rep.at, true)) : '') : '<span class="pill na">Not received</span>']);
+      if (rep !== undefined) rows.push(['Service report', rep ? '<span class="pill good">' + (rep.src === 'portal' ? 'Signed in the portal' : 'Old report (email)') + '</span>' + (rep.at ? ' ' + esc(dmDxb(rep.at, true)) : '') : '<span class="pill na">Not received</span>']);
       if (CLOUD && window.DM_CLOUD.flagOf && window.DM_CLOUD.flagOf(o.id)) { var fg = window.DM_CLOUD.flagOf(o.id); rows.unshift(['SR status', window.DM_CLOUD.flagPill(o.id) + (fg.note ? '<div class="muted" style="font-size:.8rem">' + esc(fg.note) + '</div>' : '')]); }
       if (rm) rows.push(['RM works', esc([rm.st === 'done' ? 'Completed ' + (rm.doneAt || '') : rm.st === 'inprog' ? 'In progress since ' + (rm.startAt || '') : rm.st === 'sub' || rm.need === 'yes' ? 'Contractor' : 'To do', rm.note || ''].filter(Boolean).join(' · '))]);
       body = '<p class="srd-sum srd-lead" dir="auto">' + esc(o.sum || '—') + '</p>' +
