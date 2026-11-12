@@ -571,6 +571,10 @@ body.viewas-phone #app{max-width:430px;margin:12px auto 24px;background:var(--bg
 .wa-list{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px 8px;display:grid;gap:3px}.wa-list label{display:flex;gap:6px;align-items:baseline;font-size:.85rem}
 .wa-prev{margin-top:10px;padding:8px 10px;background:#fff7e6;border-radius:8px;font-size:.85rem}
 .wa-sec{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:12px}.wa-sec h4{margin:2px 0 8px}.wa-sub{font-size:.8rem;font-weight:600;margin:10px 0 4px}
+.pill.new{background:#1f9d55;color:#fff;border-color:#1f9d55;font-weight:700;letter-spacing:.04em}
+.sv-card.is-new{border:2px solid #1f9d55;box-shadow:0 0 0 3px rgba(31,157,85,.12)}
+tr.is-new td{background:#eefaf2}
+.srd-ws{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.srd-ws .muted{flex-basis:100%}
 </style></head><body><div id="app"></div><script>
 /* ==== PORTAL CONNECTION — fill in from Supabase: Project Settings > API ==== */
 window.DM_CLOUD_CONFIG = {
@@ -1328,10 +1332,11 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
           (st === 'work' ? '<button class="sv-link" data-a="unstart"' + (busy ? ' disabled' : '') + '>↩ Undo start (pressed by mistake)</button>' : '') +
           (v === 'no' ? '<button class="sv-link" data-a="yes"' + (busy ? ' disabled' : '') + '>Needs a contractor instead?</button>' : '');
       }
-      return '<article class="sv-card s-' + st + '" data-id="' + esc(r.id) + '">' +
-        '<div class="sv-row"><b class="sv-sr">SR ' + esc(r.id) + '</b><span class="pill ' + p[2] + '">' + p[0] + '</span><span class="sv-days' + (days > 30 ? ' old' : '') + '">' + days + ' d</span></div>' +
+      return '<article class="sv-card s-' + st + (days === 0 ? ' is-new' : '') + '" data-id="' + esc(r.id) + '">' +
+        '<div class="sv-row"><b class="sv-sr">SR ' + esc(r.id) + '</b>' + (days === 0 ? '<span class="pill new">NEW</span>' : '') + '<span class="pill ' + p[2] + '">' + p[0] + '</span><span class="sv-days' + (days > 30 ? ' old' : '') + '">' + days + ' d</span></div>' +
         '<div class="sv-meta">' + esc(SV_TR[r.tr] || r.tr || '') + ' · Zone ' + esc(r.fz || '?') + ' · ' + esc(svArea(r)) + (r.wo ? ' · WO ' + esc(r.wo) : '') + '</div>' +
         '<div class="sv-loc">' + esc(loc) + '</div><div class="sv-sum2">' + esc(r.summary || '') + '</div>' + svTr(r.summary) + (mat ? '<div style="margin-top:6px">' + mat + '</div>' : '') +
+        (d.mxDone ? '<div class="sv-meta" style="margin-top:6px">✓ Closed in Maximo (engineer, ' + esc(d.mxDone) + ')</div>' : '') +
         (flagOf(r.id) ? '<div style="margin-top:6px">' + flagPill(r.id) + (flagOf(r.id).state === 'returned' ? (flagOf(r.id).ret_note ? ' <span class="sv-meta">' + esc(flagOf(r.id).ret_note) + '</span>' : '') : (flagOf(r.id).note ? ' <span class="sv-meta">' + esc(flagOf(r.id).note) + '</span>' : '')) + '</div>' : '') +
         (photoCount(r.id) ? '<button class="sv-ph" data-a="photos">📷 ' + photoCount(r.id) + ' photo' + (photoCount(r.id) > 1 ? 's' : '') + ' from Maximo</button>' : '') + acts +
         (st !== 'done' ? '<button class="sv-link" data-a="xfer">⇄ Transfer to Civil / MEP</button>' : '') +
@@ -1342,8 +1347,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var acts = st === 'sub' ? '<div class="sv-lock">Contractor work — only the supervisor changes it.</div>'
       : st === 'done' ? '<div class="sv-donel">✓ Completed ' + esc(d.doneAt || '') + '</div>' + (String(d.doneAt || '').slice(0, 10) === today ? '<div class="sv-btns one">' + svBtn('b-undo', 'undo', '↩ Undo (mistake)', '', null, busy) + '</div>' : '')
       : (st === 'work' ? '<div class="sv-since">Working since ' + esc(d.startAt || '') + '</div>' : '') + '<div class="sv-btns one">' + svBtn('b-done', 'done', '✓ Completed', '', null, busy) + '</div>';
-    return '<article class="sv-card s-' + st + '" data-id="' + esc(r.id) + '">' +
-      '<div class="sv-row"><b class="sv-sr">SR ' + esc(r.id) + '</b><span class="pill ' + p[2] + '">' + p[0] + '</span><span class="sv-days' + (days > 30 ? ' old' : '') + '">' + days + ' d</span></div>' +
+    return '<article class="sv-card s-' + st + (days === 0 ? ' is-new' : '') + '" data-id="' + esc(r.id) + '">' +
+      '<div class="sv-row"><b class="sv-sr">SR ' + esc(r.id) + '</b>' + (days === 0 ? '<span class="pill new">NEW</span>' : '') + '<span class="pill ' + p[2] + '">' + p[0] + '</span><span class="sv-days' + (days > 30 ? ' old' : '') + '">' + days + ' d</span></div>' +
       '<div class="sv-meta">' + esc(SV_TR[r.tr] || r.tr || '') + ' · Zone ' + esc(r.fz || '?') + ' · ' + esc(svArea(r)) + (r.wo ? ' · WO ' + esc(r.wo) : '') + '</div>' +
       '<div class="sv-loc">' + esc(loc) + '</div><div class="sv-sum2">' + esc(r.summary || '') + '</div>' + svTr(r.summary) + (mat ? '<div style="margin-top:6px">' + mat + '</div>' : '') + acts + '</article>';
   }
@@ -1412,7 +1417,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       if (!svInArea(r)) return false;
       if (q && (r.id + ' ' + (r.wo || '') + ' ' + (r.summary || '') + ' ' + (r.locd || '') + ' ' + (r.area || '')).toLowerCase().indexOf(q) < 0) return false;
       return true;
-    }).sort(function (a, b) { var pa = a.pr || 9, pb = b.pr || 9; return (pa > 2 ? 3 : pa) - (pb > 2 ? 3 : pb) || a.rd - b.rd; });
+    }).sort(function (a, b) { var na = svDays(a.rd) === 0 ? 0 : 1, nb = svDays(b.rd) === 0 ? 0 : 1, pa = a.pr || 9, pb = b.pr || 9; return na - nb || (pa > 2 ? 3 : pa) - (pb > 2 ? 3 : pb) || a.rd - b.rd; });
     if (SV.f === 'done') list.sort(function (a, b) { return String(svD(b).doneAt || '') < String(svD(a).doneAt || '') ? -1 : 1; });
     var shown = list.slice(0, 150), today = svDubaiDay();
     var html = shown.map(function (r) { return svCardHTML(r, today); }).join('');
@@ -1547,7 +1552,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       (prev.length ? '<div class="sv-prev">' + prev.map(function (m) { var s = SV_MAT[m.status] || [m.status, '', 'na']; return '<div><span class="pill ' + s[2] + '">' + esc(s[0]) + '</span> ' + esc(dmDxb(m.created_at, true)) + ' — ' + esc((m.items || []).map(function (i) { return i.name + ' ' + (i.qty || '') + ' ' + (i.unit || ''); }).join(', ')) + '</div>'; }).join('') + '</div>' : '') +
       '<div id="svItems">' + itemRow() + itemRow() + '</div><button class="sv-link" id="svAddIt">+ Add item</button>' +
       '<label class="sv-lbl" for="svMN">Note (optional)</label><input id="svMN" class="sv-in" maxlength="300">' +
+      '<label class="sv-lbl">Photos (optional, up to 4)</label>' + svPhotoPicker('svMP', false) +
       '<button class="sv-go" id="svMGo">Send request</button>');
+    var mph = []; svBindPicker('svMP', mph, 4, function () { });
     $('#svX').onclick = svClose;
     $('#svAddIt').onclick = function () { var box = $('#svItems'); if (box.children.length < 20) box.insertAdjacentHTML('beforeend', itemRow()); };
     $('#svMGo').onclick = async function () {
@@ -1556,10 +1563,11 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       if (items.some(function (o) { return !o.qty; })) return svToast('Enter the quantity for each material.', true);
       var go = this; go.disabled = true; go.textContent = 'Sending…';
       try {
-        var r = await sb.rpc('sup_material', { p_sr: row.id, p_items: items, p_note: ($('#svMN') || {}).value || null, p_photos: [] });
+        var paths = []; if (mph.length) { go.textContent = 'Uploading photos…'; paths = await svUpload(row, mph.map(function (b) { return b.blob; }), 'mat'); go.textContent = 'Sending…'; }
+        var r = await sb.rpc('sup_material', { p_sr: row.id, p_items: items, p_note: ($('#svMN') || {}).value || null, p_photos: paths });
         if (r.error) throw r.error;
         row.rm = Object.assign({}, row.rm || {}, { mat: 'requested' });
-        SV.mats.unshift({ id: r.data, sr: row.id, items: items, status: 'requested', created_at: new Date().toISOString() });
+        SV.mats.unshift({ id: r.data, sr: row.id, items: items, photos: paths, status: 'requested', created_at: new Date().toISOString() });
         svClose(); var y = window.scrollY; svDraw(); window.scrollTo(0, y); svToast('Material request sent — SR ' + row.id);
       } catch (e) { go.disabled = false; go.textContent = 'Send request'; svToast('Not sent: ' + String((e && e.message) || e).replace(/^RM:\s*/, ''), true); }
     };
@@ -2054,6 +2062,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     return rows;
   }
   async function materials(all) { var out = []; for (var f = 0; ; f += 1000) { var r = await sb.from('rm_material').select('*').order('created_at', { ascending: false }).order('id').range(f, f + 999); if (r.error) throw r.error; out = out.concat(r.data || []); if (!all || (r.data || []).length < 1000) break; } return out; }
+  async function engStatus(sr, st) { var r = await sb.rpc('sr_eng_status', { p_sr: String(sr), p_status: st }); if (r.error) throw r.error; return r.data; }
   async function matDecide(id, status, note) { var r = await sb.rpc('material_decide', { p_id: id, p_status: status, p_note: note || null }); if (r.error) throw r.error; }
   var PH_CACHE = {};
   async function photoUrls(paths) {
@@ -3021,6 +3030,34 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   var SVO_MX = null;
   function svoMx(sr) { if (!SVO_MX || SVO_MX.n !== ((RAWC && RAWC.cm) || []).length) { SVO_MX = { n: ((RAWC && RAWC.cm) || []).length, m: {} }; ((RAWC && RAWC.cm) || []).forEach(function (o) { SVO_MX.m[o.id] = String(o.mx || '').trim().toUpperCase(); }); } return SVO_MX.m[sr] || ''; }
   function svoMxClosed(r) { if (r.mx_closed_at) return true; var m = svoMx(r.sr), open = String((RAWC && RAWC.config && RAWC.config.mxOpen) || 'WAPPR|ASSIGNED|PENDING').toUpperCase().split('|'); return !!m && open.indexOf(m) < 0; }
+  // CAFM operator / admin: all the details of the reports in the list, one row per report
+  async function svoXlsx(rows, btn) {
+    var old = btn.textContent; btn.disabled = true; btn.textContent = 'Building…';
+    try {
+      await svcLib('xl', function () { return !!window.ExcelJS; });
+      var wb = new window.ExcelJS.Workbook(); wb.creator = 'DM Maintenance Portal';
+      var ws = wb.addWorksheet('Service reports', { views: [{ state: 'frozen', ySplit: 1 }] });
+      var C = [['SR', 10], ['Work order', 12], ['Status', 11], ['Supervisor', 18], ['Prepared by (team)', 18], ['Facility', 22], ['Location', 34], ['Zone', 8], ['Category', 10], ['Priority', 9], ['Reported date', 12], ['Reported time', 10], ['Reported by', 18], ['Phone', 13],
+        ['Work from', 16], ['Work to', 16], ['Work done 1', 40], ['Work done 2', 30], ['Work done 3', 30], ['Materials', 44], ['Technician ID 1', 14], ['Technician ID 2', 14], ['Team name on report', 20],
+        ['Customer name', 20], ['Customer designation', 18], ['Quality', 16], ['Response', 16], ['Customer comments', 34], ['Signed', 17], ['Signed how', 10], ['Before photos', 8], ['After photos', 8], ['Uploaded to Maximo', 17], ['Created', 17], ['Last change', 17]];
+      ws.columns = C.map(function (c) { return { header: c[0], width: c[1] }; });
+      var dt = function (x) { return x ? dmDxb(x) : ''; }, st = { signed: 'Signed', sent: 'Link sent', ready: 'Ready', draft: 'Draft' };
+      rows.forEach(function (r) {
+        var d = r.data || {}, c = r.cust || {}, L = d.lines || [], ph = r.photos || {}, cnt = function (k) { var v = ph[k]; return Array.isArray(v) ? v.length : v ? 1 : 0; };
+        ws.addRow([isNaN(+r.sr) ? r.sr : +r.sr, d.wo || '', st[r.status] || r.status, r.owner || '', r.prepared_name || '', d.facility || '', d.loc || '', d.zone || '', d.cat || '', d.pri || '', d.rdate || '', d.rtime || '', d.rby || '', d.phone || '',
+          String(d.from || '').replace('T', ' '), String(d.to || '').replace('T', ' '), (L[0] || {}).d || '', (L[1] || {}).d || '', (L[2] || {}).d || '',
+          (d.mats || []).map(function (m) { return (m.d || '') + ' — ' + (m.q || '') + (m.u ? ' ' + m.u : ''); }).join('; '), (d.techs || [])[0] || '', (d.techs || [])[1] || '', d.team || '',
+          c.name || '', c.designation || '', c.quality || '', c.response || '', c.comments || '', dt(r.signed_at), r.status === 'signed' ? (c.method === 'link' ? 'Link' : 'On site') : '', cnt('before'), cnt('after'), dt(r.mx_at), dt(r.created_at), dt(r.updated_at)]);
+      });
+      ws.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }; ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3A5F' } };
+      ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: C.length } };
+      ws.eachRow(function (row, i) { if (i > 1) row.alignment = { vertical: 'top', wrapText: true }; });
+      var buf = await wb.xlsx.writeBuffer();
+      await H().saveFile('DM_Service_Reports_' + svcDubaiDay() + '.xlsx', new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      setMsg('svoSt2', rows.length + ' report(s) exported.', 'ok');
+    } catch (e) { setMsg('svoSt2', 'Export failed: ' + (e.message || e), 'err'); }
+    btn.disabled = false; btn.textContent = old;
+  }
   function svoList() {
     var f = SVO.f, q = f.q.trim().toLowerCase();
     var L = SVO.rows.filter(function (r) {
@@ -3048,7 +3085,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="f"><label for="svoOw">Supervisor</label><select id="svoOw">' + o('', 'All supervisors', f.own) + owners.map(function (x) { return o(x, x, f.own); }).join('') + '</select></div>' +
       '<div class="f"><label for="svoMx">Maximo</label><select id="svoMx">' + o('', 'All', f.mx) + o('no', 'Not uploaded yet', f.mx) + o('yes', 'Uploaded', f.mx) + o('open', 'Signed – not closed in Maximo', f.mx) + o('wappr', 'Signed – WO waiting approval (WAPPR)', f.mx) + '</select></div>' +
       '<div class="f"><label for="svoQ">Search</label><input id="svoQ" type="search" value="' + esc(f.q) + '" placeholder="SR, location, customer"></div></div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn primary" id="svoZip"' + (nsel ? '' : ' disabled') + '>⬇ Download PDF (' + nsel + ' selected, ZIP)</button><button class="btn" id="svoMxOn"' + (nsel ? '' : ' disabled') + '>Mark uploaded to Maximo</button><button class="btn" id="svoMxOff"' + (nsel ? '' : ' disabled') + '>Undo uploaded</button><span class="status" id="svoSt2"></span></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn primary" id="svoZip"' + (nsel ? '' : ' disabled') + '>⬇ Download PDF (' + nsel + ' selected, ZIP)</button><button class="btn" id="svoMxOn"' + (nsel ? '' : ' disabled') + '>Mark uploaded to Maximo</button><button class="btn" id="svoMxOff"' + (nsel ? '' : ' disabled') + '>Undo uploaded</button>' + (apCanEdit() ? '<button class="btn" id="svoXl" title="Every report in the list below (current filters) with all its details">⬇ Report details (Excel, ' + list.length + ')</button>' : '') + '<span class="status" id="svoSt2"></span></div>' +
       '<div class="tw" style="max-height:520px"><table class="t"><thead><tr><th><input type="checkbox" id="svoAll" aria-label="Select all"></th><th>SR</th><th>Location</th><th>Supervisor</th><th>Status</th><th>Customer</th><th>Quality / Response</th><th>Signed</th><th>Maximo</th><th></th></tr></thead><tbody>' +
       list.slice(0, 400).map(function (r) {
         var d = r.data || {}, c = r.cust || {}, st = { signed: '<span class="pill good">Signed</span>', sent: '<span class="pill avg">Link sent</span>', ready: '<span class="pill avg">Ready</span>', draft: '<span class="pill na">Draft</span>' }[r.status];
@@ -3068,6 +3105,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     svcAll('[data-svr]').forEach(function (b) { b.onclick = async function () { if (!confirm('Re-open SR ' + b.getAttribute('data-svr') + '? It goes back to the supervisor as a draft; any customer signature is removed and the customer signs again.')) return; var r = await sb.rpc('svc_withdraw', { p_sr: b.getAttribute('data-svr'), p_action: 'edit' }); if (r.error) return setMsg('svoSt2', r.error.message, 'err'); svcOffice(SVO.el); }; });
     svcAll('[data-svd]').forEach(function (b) { b.onclick = async function () { if (!confirm('Delete the report of SR ' + b.getAttribute('data-svd') + '? This cannot be undone. If it was signed, the SR needs a service report again.')) return; var r = await sb.rpc('svc_withdraw', { p_sr: b.getAttribute('data-svd'), p_action: 'delete' }); if (r.error) return setMsg('svoSt2', r.error.message, 'err'); svcOffice(SVO.el); }; });
     var sel = function () { return list.filter(function (r) { return SVO.sel[r.sr]; }); };
+    var sx = $('#svoXl'); if (sx) sx.onclick = function () { svoXlsx(svoList(), sx); };
     $('#svoZip').onclick = async function () {
       var b = this, S = sel(); b.disabled = true;
       try {
@@ -3134,6 +3172,37 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     '.svp{width:100%;border-collapse:collapse;margin-top:-1px}.svp td{border:1px solid #000;padding:2px 5px;vertical-align:middle;height:16px}.svp-r{text-align:right}' +
     '.svp-v{color:#0a5aa8}.svp-c{text-align:center;width:14%}.svp-bx{text-align:center;width:11%}.svp-tk{font-size:13px;font-weight:700}.svp-ct{text-align:center}' +
     '.svp-hd td{text-align:center;font-weight:700}.svp-pic{height:236px;text-align:center}.svp-pic2{height:226px;text-align:center;width:50%}.svp-sg{height:64px;vertical-align:top}.svp-sg img{vertical-align:middle}.svp-sm{font-size:8px;color:#555;margin-top:2px}';
+  // invisible text over the page image, so PDF readers (pdfplumber, search, copy) can read the report
+  function pdfTextLayer(pdf, node, x0, y0, wmm, hmm) {
+    try {
+      var R = node.getBoundingClientRect(); if (!R.width || !R.height) return;
+      var kx = wmm / R.width, ky = hmm / R.height, PT = 72 / 25.4, w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null), t, rg = document.createRange();
+      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(0, 0, 0);
+      while ((t = w.nextNode())) {
+        var txt = String(t.nodeValue || '').replace(/\s+/g, ' ').trim(); if (!txt) continue;
+        var el = t.parentElement; if (!el || el.closest('style,script')) continue;
+        var cs = getComputedStyle(el); if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+        if (cs.textTransform === 'uppercase') txt = txt.toUpperCase();
+        txt = txt.replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').replace(/[\u2013\u2014]/g, '-').replace(/\u2714|\u2713/g, 'X').replace(/[^\x20-\x7E\xA0-\xFF]/g, '').replace(/\s+/g, ' ').trim(); if (!txt) continue;
+        rg.selectNodeContents(t); var rs = rg.getClientRects(); if (!rs.length) continue;
+        pdf.setFontSize(Math.max(3, parseFloat(cs.fontSize || '10') * kx * PT));
+        var lines = [{ s: txt, r: rs[0], w: rs[0].width }];
+        if (rs.length > 1) {   // wrapped text: one piece per line, at the place of that line
+          lines = []; var raw = t.nodeValue, re = /\S+/g, m, cur = null;
+          while ((m = re.exec(raw))) {
+            rg.setStart(t, m.index); rg.setEnd(t, m.index + m[0].length); var wr = rg.getBoundingClientRect(); if (!wr.width) continue;
+            if (cur && Math.abs(wr.top - cur.r.top) < 2) { cur.s += ' ' + m[0]; cur.w = wr.right - cur.r.left; } else { cur = { s: m[0], r: wr, w: wr.width }; lines.push(cur); }
+          }
+          lines.forEach(function (l) { if (cs.textTransform === 'uppercase') l.s = l.s.toUpperCase(); l.s = l.s.replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').replace(/[\u2013\u2014]/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, '').trim(); });
+        }
+        lines.forEach(function (l) {
+          if (!l.s) return; var opt = { baseline: 'top', renderingMode: 'invisible' };
+          if (l.s.length > 1) { var tw = pdf.getTextWidth(l.s), want = l.w * kx; if (want > 0) opt.charSpace = (want - tw) / (l.s.length - 1); }   // same width as on the page, so words do not overlap
+          pdf.text(l.s, x0 + (l.r.left - R.left) * kx, y0 + (l.r.top - R.top) * ky, opt);
+        });
+      }
+    } catch (e) { }
+  }
   async function svcPdf(r) {
     await svcLib('h2c', function () { return !!window.html2canvas; }); await svcLib('pdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); });
     var I = await svcDataUrls(svcRepPaths(r)), pages = svcPdfHTML(r, I);
@@ -3141,7 +3210,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     try {
       await Promise.all(Array.prototype.map.call(host.querySelectorAll('img'), function (im) { return im.complete ? 0 : new Promise(function (res) { im.onload = im.onerror = res; }); }));
       var pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' }), pg = host.querySelectorAll('.svp-pg');
-      for (var i = 0; i < pg.length; i++) { var cv = await window.html2canvas(pg[i], { scale: 2, backgroundColor: '#ffffff', logging: false }); if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', 0.86), 'JPEG', 0, 0, 210, 297); }
+      for (var i = 0; i < pg.length; i++) { var cv = await window.html2canvas(pg[i], { scale: 2, backgroundColor: '#ffffff', logging: false }); if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', 0.86), 'JPEG', 0, 0, 210, 297); pdfTextLayer(pdf, pg[i], 0, 0, 210, 297); }
       pdf.setProperties({ title: 'Service Report SR ' + r.sr, author: 'Imdaad FM' });
       return pdf.output('blob');
     } finally { host.remove(); }
@@ -4122,14 +4191,14 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         await Promise.all(Array.prototype.map.call(host.querySelectorAll('img'), function (im) { return im.complete ? 0 : new Promise(function (res) { im.onload = im.onerror = res; }); }));
         var node = host.querySelector('.pp-pg'), cv = await window.html2canvas(node, { scale: 1.6, backgroundColor: '#ffffff', logging: false });
         var hmm = 210 * cv.height / cv.width, wmm = 210, x0 = 0; if (hmm > 297) { wmm = 210 * 297 / hmm; hmm = 297; x0 = (210 - wmm) / 2; }
-        if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', 0.85), 'JPEG', x0, 0, wmm, hmm);
+        if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', 0.85), 'JPEG', x0, 0, wmm, hmm); pdfTextLayer(pdf, node, x0, 0, wmm, hmm);
       }
     } finally { host.remove(); }
     pdf.setProperties({ title: 'PPM report WO ' + r.wo, author: 'Imdaad FM' });
     return pdf.output('blob');
   }
 
-  window.DM_CLOUD = { svsOf: svsOf, firstPhotos: firstPhotos, ppmOffice: ppmOffice, sfOffice: sfOffice, sfCan: sfCan, apOffice: apOffice, svcOffice: svcOffice, reportsAdd: reportsAdd, reportsRemove: reportsRemove, reportsReload: reportsReload, syncKeyNew: syncKeyNew, syncKeyRevoke: syncKeyRevoke, syncScript: syncScript, syncCmd: syncCmd, emgList: emgList, emgFlag: emgFlag, emgClear: emgClear, emgPushStatus: emgPushStatus, emgSaveCfg: emgSaveCfg, purgePhotos: purgePhotos, rmActivity: rmActivity, materials: materials, matDecide: matDecide, photoUrls: photoUrls, loadUtil: loadUtil, utilSave: utilSave, utilDropMonth: utilDropMonth, utilZoneSet: utilZoneSet, photoCounts: photoCounts, photoCount: photoCount, loadFlags: loadFlags, flagOf: flagOf, flagLabel: flagLabel, flagPill: flagPill, flagCanSet: flagCanSet, flagFormHTML: flagFormHTML, flagFormBind: flagFormBind, FLAGS: FLAGS, srPhotos: srPhotos, photoStrip: photoStrip, gallery: gallery, mxAllowed: mxAllowed, mxKeyNew: mxKeyNew, mxStatus: mxStatus, mxScript: mxScript, rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
+  window.DM_CLOUD = { engStatus: engStatus, svsOf: svsOf, firstPhotos: firstPhotos, ppmOffice: ppmOffice, sfOffice: sfOffice, sfCan: sfCan, apOffice: apOffice, svcOffice: svcOffice, reportsAdd: reportsAdd, reportsRemove: reportsRemove, reportsReload: reportsReload, syncKeyNew: syncKeyNew, syncKeyRevoke: syncKeyRevoke, syncScript: syncScript, syncCmd: syncCmd, emgList: emgList, emgFlag: emgFlag, emgClear: emgClear, emgPushStatus: emgPushStatus, emgSaveCfg: emgSaveCfg, purgePhotos: purgePhotos, rmActivity: rmActivity, materials: materials, matDecide: matDecide, photoUrls: photoUrls, loadUtil: loadUtil, utilSave: utilSave, utilDropMonth: utilDropMonth, utilZoneSet: utilZoneSet, photoCounts: photoCounts, photoCount: photoCount, loadFlags: loadFlags, flagOf: flagOf, flagLabel: flagLabel, flagPill: flagPill, flagCanSet: flagCanSet, flagFormHTML: flagFormHTML, flagFormBind: flagFormBind, FLAGS: FLAGS, srPhotos: srPhotos, photoStrip: photoStrip, gallery: gallery, mxAllowed: mxAllowed, mxKeyNew: mxKeyNew, mxStatus: mxStatus, mxScript: mxScript, rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
 
   /* ---------- route: direct to Supabase, or through the relay when supabase.co is blocked (e.g. UAE mobile data) ---------- */
   function probe(base, ms) {
@@ -6308,18 +6377,20 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (!RM_MAT.rows) return head + '<p class="muted">Loading material requests…</p>';
     var all = RM_MAT.rows.filter(function (m) { return rmDiscOk(m.sr); }), cnt = {}; RM_MST.forEach(function (x) { cnt[x[0]] = 0; }); all.forEach(function (m) { cnt[m.status] = (cnt[m.status] || 0) + 1; }); cnt[''] = all.length;
     var flow = '<div class="rmflow">' + RM_MST.map(function (x) { return '<button class="rmstep s-' + ({ requested: 'await', approved: 'appr', issued: 'po', rejected: 'rej', '': 'all' })[x[0]] + '" data-mf="' + x[0] + '" aria-pressed="' + (RMV.mst === x[0]) + '"><span class="v">' + fmt(cnt[x[0]] || 0) + '</span><span class="l">' + esc(x[1]) + '</span></button>'; }).join('') + '</div>';
-    var list = all.filter(function (m) { return !RMV.mst || m.status === RMV.mst; });
+    var list = all.filter(function (m) { return !RMV.mst || m.status === RMV.mst; }).sort(function (a, b) { var na = rmDubaiDayOf(a.created_at) === rmDubaiDay() ? 0 : 1, nb = rmDubaiDayOf(b.created_at) === rmDubaiDay() ? 0 : 1; return na - nb || (a.created_at < b.created_at ? 1 : -1); });
     var body = list.map(function (m) {
       var o = rmSr(m.sr), can = o ? rmCan(o) : rmScope() === 'all', act = '';
       if (can && m.status === 'requested') act = '<input data-mnote="' + m.id + '" placeholder="Note (optional)" style="width:140px"><div style="margin-top:4px;display:flex;gap:4px"><button class="btn xs primary" data-md="' + m.id + '" data-to="approved">Approve</button><button class="btn xs danger" data-md="' + m.id + '" data-to="rejected">Reject</button></div>';
       else if ((can || STORE) && m.status === 'approved') act = '<button class="btn xs primary" data-md="' + m.id + '" data-to="issued">Mark issued</button>';
       var items = (m.items || []).map(function (i) { return '<div>• ' + esc(i.name) + ' — <b>' + esc(i.qty || '') + '</b> ' + esc(i.unit || '') + '</div>'; }).join('');
-      return '<tr><td>' + esc(dmDxb(m.created_at, true)) + '</td><td><b>' + esc(m.sr) + '</b>' + (o ? '<div class="muted">' + esc(o.grp) + ' · ' + esc(tl(o.tr)) + '</div>' : '<div class="muted">closed / not in tracker</div>') + '</td><td>' + esc(m.sup_name || '') + '</td><td class="wrapc">' + esc(o ? shorten(o.loc2, 70) : '') + '</td><td class="wrapc">' + items + '</td><td class="wrapc">' + esc(m.note || '') + '</td><td>' + rmPhotos(m.photos) + '</td>' +
+      var isNew = rmDubaiDayOf(m.created_at) === rmDubaiDay();
+      return '<tr' + (isNew ? ' class="is-new"' : '') + '><td>' + esc(dmDxb(m.created_at, true)) + (isNew ? ' <span class="pill new">NEW</span>' : '') + '</td><td><b>' + esc(m.sr) + '</b>' + (o ? '<div class="muted">' + esc(o.grp) + ' · ' + esc(tl(o.tr)) + '</div>' : '<div class="muted">closed / not in tracker</div>') + '</td><td>' + esc(m.sup_name || '') + '</td><td class="wrapc">' + esc(o ? shorten(o.loc2, 70) : '') + '</td><td class="wrapc">' + items + '</td><td class="wrapc">' + esc(m.note || '') + '</td><td>' + rmPhotos(m.photos) + '</td>' +
         '<td><span class="pill ' + (RM_MCLS[m.status] || 'na') + '">' + esc(m.status) + '</span>' + (m.decision_note ? '<div class="muted">' + esc(m.decision_note) + '</div>' : '') + (m.decided_at ? '<div class="muted">' + esc(dmDxb(m.decided_at, true)) + '</div>' : '') + '</td><td>' + act + '</td></tr>';
     }).join('');
     return head + flow + '<div class="tw"><table class="t rmt"><thead><tr><th>Date</th><th>SR</th><th>Supervisor</th><th>Location</th><th>Materials</th><th>Note</th><th>Photos</th><th>Status</th><th>Action</th></tr></thead><tbody>' + (body || '<tr><td colspan="9" class="muted">No requests here.</td></tr>') + '</tbody></table></div>';
   }
   // all material requests -> Excel, one row per item (store keeper, engineers, admin)
+  function rmDubaiDayOf(t) { return t ? new Date(Date.parse(t) + 4 * 3600000).toISOString().slice(0, 10) : ''; }
   async function rmMatXlsx(btn) {
     var old = btn.textContent; btn.disabled = true; btn.textContent = 'Building…';
     try {
@@ -7405,11 +7476,13 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       return { t: 'Closed on site (customer signed)', s: (wappr ? 'WO waiting approval (WAPPR)' : 'not closed in Maximo') + ' · ' + dd + ' day' + (dd === 1 ? '' : 's') + ' since the signature', cls: wappr ? 'poor' : 'avg', gap: true };
     }
     if (o.mxc) return { t: 'Closed in Maximo', s: '', cls: 'good' };
+    if (rm && rm.mxDone) return { t: 'Closed in Maximo', s: 'marked by ' + (rm.mxBy || 'the engineer') + ' · ' + rm.mxDone, cls: 'good' };
     if (o.site === 'na') return { t: 'Not in scope / cancelled', s: 'not closed in Maximo', cls: 'na' };
     if (o.site === 'done' || (rm && rm.st === 'done')) return { t: 'Done on site', s: sv === undefined ? 'not closed in Maximo' : sv ? 'service report not signed yet (' + ({ draft: 'draft', ready: 'ready', sent: 'link sent' }[sv.status] || sv.status) + ')' : 'waiting for the service report and customer signature', cls: 'avg', gap: true };
     if (rm && rm.st === 'inprog') return { t: 'Work in progress', s: '', cls: 'poor' };
     return { t: o.st === 'O' ? 'Open' : 'Closed in the tracker', s: o.st === 'O' ? '' : 'Maximo: ' + (o.mx || '—'), cls: o.st === 'O' ? 'poor' : 'na' };
   }
+  function engStatusOk(o) { return CLOUD && !STORE && ['admin', 'imdaad_engineer', 'manager'].indexOf(ROLE) >= 0 && RM_W && rmCan(o) && !!window.DM_CLOUD.engStatus; }
   function srDetail(id) {
     id = String(id).trim();
     var o = CM.filter(function (x) { return String(x.id) === id; })[0];
@@ -7439,6 +7512,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         (/[\u0600-\u06FF]/.test(o.sum || '') ? '<a class="btn xs" target="_blank" rel="noopener noreferrer" href="https://translate.google.com/?sl=ar&tl=en&op=translate&text=' + encodeURIComponent(String(o.sum).slice(0, 1500)) + '">Translate to English ↗</a>' : '') +
         (CLOUD && window.DM_CLOUD.mxAllowed && window.DM_CLOUD.mxAllowed() ? '<h4>Photos from Maximo</h4>' + (o.st === 'O' ? '<div id="srdPh"></div>' : '<p class="muted">Closed SR — photos are kept only while an SR is open.</p>') : '') +
         '<h4>Details</h4><dl class="srd-g">' + rows.map(function (r) { return '<div><dt>' + esc(r[0]) + '</dt><dd>' + r[1] + '</dd></div>'; }).join('') + '</dl>' +
+        (engStatusOk(o) ? '<h4>Work status</h4><div class="srd-ws"><select id="srdWs" aria-label="Work status">' + [['open', 'Open / not completed'], ['done', 'Completed on site'], ['mx', 'Closed in Maximo']].map(function (x) { var cur = rm && rm.mxDone ? 'mx' : rm && rm.st === 'done' ? 'done' : 'open'; return '<option value="' + x[0] + '"' + (cur === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select> <button class="btn xs primary" id="srdWsGo">Save</button> <span class="status" id="srdWsSt"></span>' + (rm && rm.mxDone ? '<div class="muted" style="font-size:.78rem">Closed in Maximo by ' + esc(rm.mxBy || 'engineer') + ' · ' + esc(rm.mxDone) + '</div>' : rm && rm.doneBy ? '<div class="muted" style="font-size:.78rem">Completed by ' + esc(rm.doneBy) + ' · ' + esc(rm.doneAt || '') + '</div>' : '') + '</div>' : '') +
         (CLOUD && window.DM_CLOUD.flagCanSet && window.DM_CLOUD.flagCanSet() ? '<h4>Update status</h4>' + window.DM_CLOUD.flagFormHTML(o.id, 'srdFl') : '') +
         (o.rem || o.cnote ? '<h4>Remarks</h4><p class="srd-sum" dir="auto">' + esc([o.rem, o.cnote].filter(Boolean).join(' · ')) + '</p>' : '');
     }
@@ -7448,6 +7522,11 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     function key(e) { if (e.key === 'Escape' && !document.querySelector('.gal')) close(); }
     $('#srdX').onclick = close; box.onclick = function (e) { if (e.target === box) close(); }; document.addEventListener('keydown', key); $('#srdX').focus();
     var ph = $('#srdPh'); if (ph) window.DM_CLOUD.photoStrip(ph, id);
+    var wsg = $('#srdWsGo'); if (wsg) wsg.onclick = async function () {
+      var v = $('#srdWs').value; wsg.disabled = true; setSt('srdWsSt', 'Saving…');
+      try { var d = await window.DM_CLOUD.engStatus(id, v); RMS[id] = Object.assign({}, d || {}, { sr: id }); toast('SR ' + id + ': ' + $('#srdWs').selectedOptions[0].text); srDetail(id); }
+      catch (e) { wsg.disabled = false; setSt('srdWsSt', /sr_eng_status/.test(e.message || '') ? 'Run update 30 in Supabase first.' : String(e.message || e).replace(/^RM:\s*/, ''), 'err'); }
+    };
     if ($('#srdFl')) window.DM_CLOUD.flagFormBind(id, 'srdFl', function () { o.flag = window.DM_CLOUD.flagLabel(id); setTimeout(function () { srDetail(id); if ($('#regTable') && typeof REG !== 'undefined') render(); }, 500); });
   }
   function phThumb(u) { return /\/functions\/v1\/photos\?/.test(u) ? u + '&w=t' : u; }
