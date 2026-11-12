@@ -1248,7 +1248,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     $('#app').innerHTML = '<div class="sv">' +
       '<header class="sv-top"><div class="sv-logos">' + (L.left ? '<img src="' + L.left + '" alt="Imdaad">' : '') + (L.right ? '<img src="' + L.right + '" alt="Dubai Municipality">' : '') + '</div>' +
       '<div class="sv-h"><div><h1>' + (isTeam() ? 'Team reports' : 'My works ') + '</h1><div class="sv-who">' + esc(profile.full_name || profile.email) + (names ? ' · ' + esc(names) : '') + '</div></div>' +
-      '<div class="sv-act"><button class="sv-ib" id="svRef" aria-label="Refresh">↻</button><details class="sv-menu"><summary class="sv-ib" aria-label="Account">☰</summary><div class="sv-pop"><form id="svPw"><label for="svP">New password</label><input id="svP" type="password" minlength="8" autocomplete="new-password"><button class="btn" type="submit">Change password</button><div class="status" id="svPwSt"></div></form><button class="btn" id="svOut">Sign out</button></div></details></div></div>' +
+      '<div class="sv-act"><button class="sv-ib" id="svRef" aria-label="Refresh">↻</button><details class="sv-menu"><summary class="sv-ib" aria-label="Account">☰</summary><div class="sv-pop"><form id="svPw"><label for="svP">New password</label><input id="svP" type="password" minlength="8" autocomplete="new-password"><button class="btn" type="submit">Change password</button><div class="status" id="svPwSt"></div></form><button class="btn" id="svOut">Sign out</button><div class="muted" style="font-size:.7rem;margin-top:6px">Portal version ' + DM_VER + '</div></div></details></div></div>' +
       (isTeam() ? '<div class="sv-today">👥 Team account — mark works completed, prepare the reports and send them to your supervisor · today <b>' + SV.today.completed + '</b> completed</div>' : '<div class="sv-today">Today: <b>' + SV.today.started + '</b> started &nbsp;·&nbsp; <b>' + SV.today.completed + '</b> completed</div>') + '</header>' +
       ('<div class="sv-sum' + (SV.closed ? ' five' : '') + '">' + [['todo', 'To do', '', n.todo], ['work', 'Working', '', n.work], ['done', 'Done', '', n.done]].concat(SV.closed ? [['closed', 'Closed', '', n.closed]] : []).concat([['sub', 'Contractor', '', n.sub]]).map(function (x) {
         return '<button class="sv-k k-' + x[0] + '" data-f="' + x[0] + '" aria-pressed="' + (SV.f === x[0]) + '"><b>' + x[3] + '</b><span>' + x[1] + '</span></button>'; }).join('') + '</div>') +
@@ -1588,7 +1588,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function afterShell() {
     saveSnapDetail();
     var pop = $('#acctPop'); if (!pop) return;
-    pop.innerHTML = '<div id="apPush" style="font-size:.8rem;min-width:220px;margin-bottom:8px"></div><form id="cpF" style="display:grid;gap:6px;min-width:220px"><label for="cpP" style="font-size:.75rem">New password</label><input id="cpP" type="password" minlength="8" autocomplete="new-password" style="border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--surface)"><button class="btn" type="submit">Change password</button><div class="status" id="cpSt"></div></form><button class="btn" id="soBtn2">Sign out</button>';
+    pop.innerHTML = '<div class="muted" style="font-size:.72rem;margin-bottom:6px">Portal version ' + DM_VER + '</div><div id="apPush" style="font-size:.8rem;min-width:220px;margin-bottom:8px"></div><form id="cpF" style="display:grid;gap:6px;min-width:220px"><label for="cpP" style="font-size:.75rem">New password</label><input id="cpP" type="password" minlength="8" autocomplete="new-password" style="border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--surface)"><button class="btn" type="submit">Change password</button><div class="status" id="cpSt"></div></form><button class="btn" id="soBtn2">Sign out</button>';
     $('#cpF').onsubmit = async function (e) { e.preventDefault(); var r = await sb.auth.updateUser({ password: $('#cpP').value }); setMsg('cpSt', r.error ? r.error.message : 'Password changed.', r.error ? 'err' : 'ok'); };
     $('#soBtn2').onclick = signOut;
     viewAsButton();
@@ -3186,23 +3186,22 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         txt = txt.replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').replace(/[\u2013\u2014]/g, '-').replace(/\u2714|\u2713/g, 'X').replace(/[^\x20-\x7E\xA0-\xFF]/g, '').replace(/\s+/g, ' ').trim(); if (!txt) continue;
         rg.selectNodeContents(t); var rs = rg.getClientRects(); if (!rs.length) continue;
         pdf.setFontSize(Math.max(3, parseFloat(cs.fontSize || '10') * kx * PT));
-        var lines = [{ s: txt, r: rs[0], w: rs[0].width }];
-        if (rs.length > 1) {   // wrapped text: one piece per line, at the place of that line
-          lines = []; var raw = t.nodeValue, re = /\S+/g, m, cur = null;
-          while ((m = re.exec(raw))) {
-            rg.setStart(t, m.index); rg.setEnd(t, m.index + m[0].length); var wr = rg.getBoundingClientRect(); if (!wr.width) continue;
-            if (cur && Math.abs(wr.top - cur.r.top) < 2) { cur.s += ' ' + m[0]; cur.w = wr.right - cur.r.left; } else { cur = { s: m[0], r: wr, w: wr.width }; lines.push(cur); }
-          }
-          lines.forEach(function (l) { if (cs.textTransform === 'uppercase') l.s = l.s.toUpperCase(); l.s = l.s.replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').replace(/[\u2013\u2014]/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, '').trim(); });
+        // one piece per run of words on the same line (wrapped text and wide gaps are placed where they are on the page)
+        var lines = [], raw = t.nodeValue, re = /\S+/g, m, cur = null, gap = parseFloat(cs.fontSize || '10') * 0.7;
+        while ((m = re.exec(raw))) {
+          rg.setStart(t, m.index); rg.setEnd(t, m.index + m[0].length); var wr = rg.getBoundingClientRect(); if (!wr.width) continue;
+          if (cur && Math.abs(wr.top - cur.r.top) < 2 && wr.left - cur.right < gap) { cur.s += ' ' + m[0]; cur.right = wr.right; } else { cur = { s: m[0], r: wr, right: wr.right }; lines.push(cur); }
         }
+        lines.forEach(function (l) { l.w = l.right - l.r.left; if (cs.textTransform === 'uppercase') l.s = l.s.toUpperCase(); l.s = l.s.replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').replace(/[\u2013\u2014]/g, '-').replace(/\u2714|\u2713/g, 'X').replace(/[^\x20-\x7E\xA0-\xFF]/g, '').trim(); });
         lines.forEach(function (l) {
-          if (!l.s) return; var opt = { baseline: 'top', renderingMode: 'invisible' };
+          if (!l.s) return; try { var opt = { baseline: 'top', renderingMode: 'invisible' };
           if (l.s.length > 1) { var tw = pdf.getTextWidth(l.s), want = l.w * kx; if (want > 0) opt.charSpace = (want - tw) / (l.s.length - 1); }   // same width as on the page, so words do not overlap
-          pdf.text(l.s, x0 + (l.r.left - R.left) * kx, y0 + (l.r.top - R.top) * ky, opt);
+          pdf.text(l.s, x0 + (l.r.left - R.left) * kx, y0 + (l.r.top - R.top) * ky, opt); } catch (e) { }
         });
       }
     } catch (e) { }
   }
+  var DM_VER = 'v4.45';
   async function svcPdf(r) {
     await svcLib('h2c', function () { return !!window.html2canvas; }); await svcLib('pdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); });
     var I = await svcDataUrls(svcRepPaths(r)), pages = svcPdfHTML(r, I);
@@ -3211,7 +3210,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       await Promise.all(Array.prototype.map.call(host.querySelectorAll('img'), function (im) { return im.complete ? 0 : new Promise(function (res) { im.onload = im.onerror = res; }); }));
       var pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' }), pg = host.querySelectorAll('.svp-pg');
       for (var i = 0; i < pg.length; i++) { var cv = await window.html2canvas(pg[i], { scale: 2, backgroundColor: '#ffffff', logging: false }); if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', 0.86), 'JPEG', 0, 0, 210, 297); pdfTextLayer(pdf, pg[i], 0, 0, 210, 297); }
-      pdf.setProperties({ title: 'Service Report SR ' + r.sr, author: 'Imdaad FM' });
+      pdf.setProperties({ title: 'Service Report SR ' + r.sr, author: 'Imdaad FM', creator: 'DM Portal ' + DM_VER + ' (text layer)' });
       return pdf.output('blob');
     } finally { host.remove(); }
   }
@@ -3688,7 +3687,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     $('#app').innerHTML = '<div class="sv">' +
       '<header class="sv-top"><div class="sv-logos">' + (L.left ? '<img src="' + L.left + '" alt="Imdaad">' : '') + (L.right ? '<img src="' + L.right + '" alt="Dubai Municipality">' : '') + '</div>' +
       '<div class="sv-h"><div><h1>PPM works</h1><div class="sv-who">' + esc(profile.full_name || profile.email) + (ppmTeam() ? ' · team' : '') + '</div></div>' +
-      '<div class="sv-act"><button class="sv-ib" id="ppRef" aria-label="Refresh">↻</button>' + (ppmSup() ? '<button class="sv-ib" id="ppSet" aria-label="My signature">⚙</button>' : '') + '<details class="sv-menu"><summary class="sv-ib" aria-label="Account">☰</summary><div class="sv-pop"><form id="svPw"><label for="svP">New password</label><input id="svP" type="password" minlength="8" autocomplete="new-password"><button class="btn" type="submit">Change password</button><div class="status" id="svPwSt"></div></form><button class="btn" id="svOut">Sign out</button></div></details></div></div>' +
+      '<div class="sv-act"><button class="sv-ib" id="ppRef" aria-label="Refresh">↻</button>' + (ppmSup() ? '<button class="sv-ib" id="ppSet" aria-label="My signature">⚙</button>' : '') + '<details class="sv-menu"><summary class="sv-ib" aria-label="Account">☰</summary><div class="sv-pop"><form id="svPw"><label for="svP">New password</label><input id="svP" type="password" minlength="8" autocomplete="new-password"><button class="btn" type="submit">Change password</button><div class="status" id="svPwSt"></div></form><button class="btn" id="svOut">Sign out</button><div class="muted" style="font-size:.7rem;margin-top:6px">Portal version ' + DM_VER + '</div></div></details></div></div>' +
       '<div class="sv-today">' + (ppmTeam() ? '👥 Team account — prepare the reports and send them to your supervisor' : 'Preventive maintenance reports · ' + PPM.works.filter(function (w) { return w.active; }).length + ' works in the list') + '</div></header>' +
       (ppmSup() && !(PPM.set && PPM.set.sig_path) ? '<div class="svc-pend" style="margin:8px 12px 0">First time: press <b>⚙</b> and save your signature. It is added to every report.</div>' : '') +
       '<div class="svc-tabs" role="tablist" style="margin:10px 12px 0">' + tabs.map(function (t) { return '<button role="tab" class="svc-tab" data-ppt="' + t[0] + '" aria-selected="' + (PPM.tab === t[0]) + '">' + t[1] + (n[t[0]] ? ' <i>' + n[t[0]] + '</i>' : '') + '</button>'; }).join('') + '</div>' +
@@ -4194,7 +4193,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
         if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', 0.85), 'JPEG', x0, 0, wmm, hmm); pdfTextLayer(pdf, node, x0, 0, wmm, hmm);
       }
     } finally { host.remove(); }
-    pdf.setProperties({ title: 'PPM report WO ' + r.wo, author: 'Imdaad FM' });
+    pdf.setProperties({ title: 'PPM report WO ' + r.wo, author: 'Imdaad FM', creator: 'DM Portal ' + DM_VER + ' (text layer)' });
     return pdf.output('blob');
   }
 
