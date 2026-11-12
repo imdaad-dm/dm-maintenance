@@ -3201,7 +3201,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       }
     } catch (e) { }
   }
-  var DM_VER = 'v4.45';
+  var DM_VER = 'v4.46';
   async function svcPdf(r) {
     await svcLib('h2c', function () { return !!window.html2canvas; }); await svcLib('pdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); });
     var I = await svcDataUrls(svcRepPaths(r)), pages = svcPdfHTML(r, I);
@@ -3394,7 +3394,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="filters" style="margin:12px 0 8px;padding:0"><div class="f"><label for="apF1">Status</label><select id="apF1">' + o('', 'All', f.st) + o('done', 'After photo received', f.st) + o('pending', 'Waiting', f.st) + o('nobefore', 'No before photo', f.st) + o('notrk', 'Not in the tracker', f.st) + '</select></div>' +
       '<div class="f"><label for="apF2">Supervisor</label><select id="apF2">' + o('', 'All supervisors', f.own) + owners.map(function (x) { return o(x, x, f.own); }).join('') + '</select></div>' + (lists.length > 1 ? '<div class="f"><label for="apF3">List</label><select id="apF3">' + o('', 'All lists', f.list) + lists.map(function (x) { return o(x, x, f.list); }).join('') + '</select></div>' : '') +
       '<div class="f"><label for="apF4">Search</label><input id="apF4" type="search" value="' + esc(f.q) + '" placeholder="SR, location"></div></div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn primary" id="apPdf"' + (nsel ? '' : ' disabled') + '>⬇ Before/After PDF (' + nsel + ' selected)</button>' + '<button class="btn" id="apNoB" title="Excel list of the SRs in the list that have no before photo yet">⬇ SRs with no before photo (' + nob + ')</button>' + (apCanEdit() ? '<button class="btn" id="apReset"' + (nsel ? '' : ' disabled') + '>Back to waiting</button><button class="btn" id="apDel"' + (nsel ? '' : ' disabled') + '>Remove from list</button>' : '') + '<span class="status" id="apSt3"></span></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn primary" id="apPdf"' + (nsel ? '' : ' disabled') + '>⬇ Before/After PDF (' + nsel + ' selected)</button><button class="btn primary" id="apPdf1"' + (nsel ? '' : ' disabled') + ' title="A separate PDF for each SR, named with the SR number (several SRs: one ZIP)">⬇ One PDF per SR (' + nsel + ')</button>' + '<button class="btn" id="apNoB" title="Excel list of the SRs in the list that have no before photo yet">⬇ SRs with no before photo (' + nob + ')</button>' + (apCanEdit() ? '<button class="btn" id="apReset"' + (nsel ? '' : ' disabled') + '>Back to waiting</button><button class="btn" id="apDel"' + (nsel ? '' : ' disabled') + '>Remove from list</button>' : '') + '<span class="status" id="apSt3"></span></div>' +
       '<div class="tw" style="max-height:520px"><table class="t"><thead><tr><th><input type="checkbox" id="apAll" aria-label="Select all"></th><th>SR</th><th>Location</th><th>Zone</th><th>Supervisor</th><th class="n">Before</th><th class="n">After</th><th>Status</th><th>Sent by</th></tr></thead><tbody>' +
       list.slice(0, 500).map(function (x) { return '<tr><td><input type="checkbox" data-aps="' + esc(x.sr) + '"' + (APO.sel[x.sr] ? ' checked' : '') + '></td><td>' + esc(x.sr) + '</td><td>' + esc(String(x.locd || (x.in_tracker ? '' : 'Not in the tracker')).replace(/_/g, ' · ')) + '</td><td>' + esc(x.fz || '') + '</td><td>' + esc(x.owner || '') + '</td><td class="n">' + apBefore(x).length + '</td><td class="n">' + (x.after || []).length + '</td><td>' + (x.status === 'done' ? '<span class="pill good">Received</span>' : '<span class="pill avg">Waiting</span>') + '</td><td>' + (x.done_at ? esc(x.done_name || '') + ' · ' + esc(dmDxb(x.done_at)) : '—') + '</td></tr>'; }).join('') +
       '</tbody></table></div>' + (list.length > 500 ? '<p class="muted">Showing 500 of ' + list.length + '. Use the filters; "select all" selects all ' + list.length + '.</p>' : '');
@@ -3406,6 +3406,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     $('#apAll').onchange = function (e) { list.forEach(function (x) { if (e.target.checked) APO.sel[x.sr] = 1; else delete APO.sel[x.sr]; }); apDraw(); };
     var sel = function () { return list.filter(function (x) { return APO.sel[x.sr]; }); };
     $('#apPdf').onclick = function () { apPdf(sel()); };
+    $('#apPdf1').onclick = function () { apPdf(sel(), true); };
     $('#apNoB').onclick = function () { apExportNoBefore(); };
     if (apCanEdit()) {
       $('#apReset').onclick = async function () { var S = sel().map(function (x) { return x.sr; }); if (!confirm(S.length + ' SR(s) back to "waiting"? Their after photos are removed from the list.')) return; var r = await sb.rpc('ap_reset', { p_srs: S }); if (r.error) return setMsg('apSt3', r.error.message, 'err'); apOffice(APO.el); };
@@ -3504,30 +3505,40 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<tr><td class="k">Reported</td><td>' + esc(svcDate(x.rd)) + '</td><td class="k">After photo</td><td>' + (x.done_at ? esc(dmDxb(x.done_at, true)) + ' · ' + esc(x.done_name || '') : '—') + '</td></tr>' + (x.note ? '<tr><td class="k">Note</td><td colspan="3">' + esc(x.note) + '</td></tr>' : '') + '</table>' +
       '<div class="app-g">' + col('b', 'BEFORE · قبل' + more, nb) + col('a', 'AFTER · بعد' + more, na) + '</div><div class="app-f"><span>www.imdaad.ae · 800 8200</span><span>Page ' + k + ' of ' + n + '</span></div></div>';
   }
-  async function apPdf(S) {
+  // perSr: one PDF per SR, named with the SR number (several SRs -> one ZIP)
+  async function apPdf(S, perSr) {
     if (!S.length) return;
-    var b = $('#apPdf'); b.disabled = true;
+    var b = $(perSr ? '#apPdf1' : '#apPdf'); if (b) b.disabled = true;
     try {
       await svcLib('h2c', function () { return !!window.html2canvas; }); await svcLib('pdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); });
-      var pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
-      var total = S.reduce(function (t, x) { return t + apPages(x).length; }, 0), k = 0;
+      if (perSr && S.length > 1) await svcLib('zip', function () { return !!window.JSZip; });
+      var mk = function () { return new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true }); };
+      var total = S.reduce(function (t, x) { return t + apPages(x).length; }, 0), k = 0, pdf = perSr ? null : mk(), z = perSr && S.length > 1 ? new JSZip() : null, one = null;
       var host = document.createElement('div'); host.style.cssText = 'position:fixed;left:-10000px;top:0;z-index:-1'; document.body.appendChild(host);
       try {
         for (var i = 0; i < S.length; i++) {
           var x = S[i], P = apPages(x), I = await svcDataUrls(apBefore(x).concat(x.after || []));
+          if (perSr) pdf = mk();
           for (var j = 0; j < P.length; j++) {
             k++; setMsg('apSt3', 'Preparing page ' + k + ' of ' + total + ' (SR ' + (i + 1) + ' of ' + S.length + ')…');
-            host.innerHTML = '<style>' + APP_CSS + '</style>' + apPageHTML(x, I, k, total, P[j]);
+            host.innerHTML = '<style>' + APP_CSS + '</style>' + apPageHTML(x, I, perSr ? j + 1 : k, perSr ? P.length : total, P[j]);
             await Promise.all(Array.prototype.map.call(host.querySelectorAll('img'), function (im) { return im.complete ? 0 : new Promise(function (res) { im.onload = im.onerror = res; }); }));
-            var cv = await window.html2canvas(host.querySelector('.app-pg'), { scale: 1.6, backgroundColor: '#ffffff', logging: false });
-            if (k > 1) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', 0.82), 'JPEG', 0, 0, 210, 297);
+            var node = host.querySelector('.app-pg'), cv = await window.html2canvas(node, { scale: 1.6, backgroundColor: '#ffffff', logging: false });
+            if (perSr ? j > 0 : k > 1) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', 0.82), 'JPEG', 0, 0, 210, 297); pdfTextLayer(pdf, node, 0, 0, 210, 297);
+          }
+          if (perSr) {
+            pdf.setProperties({ title: 'Before / After photos SR ' + x.sr, author: 'Imdaad FM', creator: 'DM Portal ' + DM_VER });
+            var nm = String(x.sr).replace(/[^A-Za-z0-9_-]/g, '_') + '.pdf';
+            if (z) z.file(nm, pdf.output('blob')); else one = { b: pdf.output('blob'), n: nm };
           }
         }
       } finally { host.remove(); }
-      pdf.setProperties({ title: 'Before / After photos', author: 'Imdaad FM' });
-      svcSave(pdf.output('blob'), 'Before_After_Photos_' + svcDubaiDay() + '_' + S.length + '_SRs.pdf'); setMsg('apSt3', S.length + ' SR(s) · ' + total + ' page(s) downloaded.', 'ok');
+      if (!perSr) { pdf.setProperties({ title: 'Before / After photos', author: 'Imdaad FM', creator: 'DM Portal ' + DM_VER }); svcSave(pdf.output('blob'), 'Before_After_Photos_' + svcDubaiDay() + '_' + S.length + '_SRs.pdf'); }
+      else if (z) { setMsg('apSt3', 'Packing ' + S.length + ' PDF files…'); svcSave(await z.generateAsync({ type: 'blob' }), 'Before_After_Photos_' + svcDubaiDay() + '_' + S.length + '_SRs.zip'); }
+      else svcSave(one.b, one.n);
+      setMsg('apSt3', S.length + ' SR(s) · ' + total + ' page(s) downloaded' + (perSr ? (S.length > 1 ? ' — one PDF per SR inside the ZIP, named with the SR number.' : '.') : '.'), 'ok');
     } catch (e) { setMsg('apSt3', e.message || String(e), 'err'); }
-    b.disabled = false;
+    if (b) b.disabled = false;
   }
 
 
