@@ -3201,7 +3201,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       }
     } catch (e) { }
   }
-  var DM_VER = 'v4.46';
+  var DM_VER = 'v4.47';
   async function svcPdf(r) {
     await svcLib('h2c', function () { return !!window.html2canvas; }); await svcLib('pdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); });
     var I = await svcDataUrls(svcRepPaths(r)), pages = svcPdfHTML(r, I);
@@ -3377,6 +3377,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var f = APO.f, q = f.q.trim().toLowerCase();
     return APO.rows.filter(function (x) {
       if (f.st === 'done' && x.status !== 'done') return false; if (f.st === 'pending' && x.status === 'done') return false;
+      if (f.st === 'newdl' && (x.status !== 'done' || x.dl_at)) return false; if (f.st === 'dl' && !x.dl_at) return false;
       if (f.st === 'nobefore' && apBefore(x).length) return false; if (f.st === 'notrk' && x.in_tracker) return false;
       if (f.own && x.owner !== f.own) return false; if (f.list && (x.list_name || '') !== f.list) return false;
       return !q || (x.sr + ' ' + (x.locd || '') + ' ' + (x.summary || '') + ' ' + (x.owner || '')).toLowerCase().indexOf(q) >= 0;
@@ -3391,12 +3392,12 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       (apCanEdit() ? '<div class="grid" style="margin-top:12px"><div class="panel"><h3>1 · SR list<small>Excel (all sheets, first column) or paste numbers</small></h3><div class="form"><div class="f"><label for="apLn">List name</label><input id="apLn" placeholder="e.g. Civil/MEP Oct-2026" maxlength="60"></div><div class="f"><label for="apXl">Excel file</label><input type="file" id="apXl" accept=".xlsx,.xls,.csv"></div><div class="f full"><label for="apPs">Or paste SR numbers</label><textarea id="apPs" rows="2" style="width:100%"></textarea></div><div class="f full"><button class="btn primary" id="apAddL">Add to the list</button></div></div><div class="status" id="apSt1"></div></div>' +
         '<div class="panel"><h3>2 · Before photos<small>from your PC — the SR number must be in the file or folder name</small></h3><p class="muted" style="margin:0 0 8px">Examples: <code>12345.jpg</code>, <code>12345_2.jpg</code>, <code>SR 12345 (1).jpeg</code> or a folder <code>12345\\photo.jpg</code>. Photos are made smaller (about 200 KB) before upload. Photos already uploaded are skipped, so you can run it again.</p><div class="form"><div class="f"><label for="apDir">Choose a folder</label><input type="file" id="apDir" webkitdirectory multiple></div><div class="f"><label for="apFs">Or choose photos</label><input type="file" id="apFs" accept="image/*" multiple></div></div><div id="apPrev"></div><div class="status" id="apSt2"></div></div></div>' : '') +
       '<div class="panel" style="margin-top:12px"><h3>By supervisor</h3><div class="tw"><table class="t"><thead><tr><th>Supervisor</th><th class="n">SRs</th><th class="n">After photo received</th><th class="n">Waiting</th><th class="n">Done %</th></tr></thead><tbody>' + Object.keys(byOwn).sort().map(function (k) { var v = byOwn[k]; return '<tr><td>' + esc(k) + '</td><td class="n">' + v[0] + '</td><td class="n">' + v[1] + '</td><td class="n">' + (v[0] - v[1]) + '</td><td class="n">' + Math.round(100 * v[1] / v[0]) + '%</td></tr>'; }).join('') + '</tbody></table></div></div>' +
-      '<div class="filters" style="margin:12px 0 8px;padding:0"><div class="f"><label for="apF1">Status</label><select id="apF1">' + o('', 'All', f.st) + o('done', 'After photo received', f.st) + o('pending', 'Waiting', f.st) + o('nobefore', 'No before photo', f.st) + o('notrk', 'Not in the tracker', f.st) + '</select></div>' +
+      '<div class="filters" style="margin:12px 0 8px;padding:0"><div class="f"><label for="apF1">Status</label><select id="apF1">' + o('', 'All', f.st) + o('newdl', 'Received – not downloaded yet', f.st) + o('done', 'After photo received', f.st) + o('dl', 'Already downloaded', f.st) + o('pending', 'Waiting', f.st) + o('nobefore', 'No before photo', f.st) + o('notrk', 'Not in the tracker', f.st) + '</select></div>' +
       '<div class="f"><label for="apF2">Supervisor</label><select id="apF2">' + o('', 'All supervisors', f.own) + owners.map(function (x) { return o(x, x, f.own); }).join('') + '</select></div>' + (lists.length > 1 ? '<div class="f"><label for="apF3">List</label><select id="apF3">' + o('', 'All lists', f.list) + lists.map(function (x) { return o(x, x, f.list); }).join('') + '</select></div>' : '') +
       '<div class="f"><label for="apF4">Search</label><input id="apF4" type="search" value="' + esc(f.q) + '" placeholder="SR, location"></div></div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn primary" id="apPdf"' + (nsel ? '' : ' disabled') + '>⬇ Before/After PDF (' + nsel + ' selected)</button><button class="btn primary" id="apPdf1"' + (nsel ? '' : ' disabled') + ' title="A separate PDF for each SR, named with the SR number (several SRs: one ZIP)">⬇ One PDF per SR (' + nsel + ')</button>' + '<button class="btn" id="apNoB" title="Excel list of the SRs in the list that have no before photo yet">⬇ SRs with no before photo (' + nob + ')</button>' + (apCanEdit() ? '<button class="btn" id="apReset"' + (nsel ? '' : ' disabled') + '>Back to waiting</button><button class="btn" id="apDel"' + (nsel ? '' : ' disabled') + '>Remove from list</button>' : '') + '<span class="status" id="apSt3"></span></div>' +
-      '<div class="tw" style="max-height:520px"><table class="t"><thead><tr><th><input type="checkbox" id="apAll" aria-label="Select all"></th><th>SR</th><th>Location</th><th>Zone</th><th>Supervisor</th><th class="n">Before</th><th class="n">After</th><th>Status</th><th>Sent by</th></tr></thead><tbody>' +
-      list.slice(0, 500).map(function (x) { return '<tr><td><input type="checkbox" data-aps="' + esc(x.sr) + '"' + (APO.sel[x.sr] ? ' checked' : '') + '></td><td>' + esc(x.sr) + '</td><td>' + esc(String(x.locd || (x.in_tracker ? '' : 'Not in the tracker')).replace(/_/g, ' · ')) + '</td><td>' + esc(x.fz || '') + '</td><td>' + esc(x.owner || '') + '</td><td class="n">' + apBefore(x).length + '</td><td class="n">' + (x.after || []).length + '</td><td>' + (x.status === 'done' ? '<span class="pill good">Received</span>' : '<span class="pill avg">Waiting</span>') + '</td><td>' + (x.done_at ? esc(x.done_name || '') + ' · ' + esc(dmDxb(x.done_at)) : '—') + '</td></tr>'; }).join('') +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">' + (function () { var nn = R.filter(function (x) { return x.status === 'done' && !x.dl_at; }).length; return '<button class="btn primary" id="apNew"' + (nn ? '' : ' disabled') + ' title="Only the SRs with an after photo that were not downloaded before — one PDF per SR, named with the SR number">⬇ New after photos only (' + nn + ')</button>'; })() + '<button class="btn primary" id="apPdf"' + (nsel ? '' : ' disabled') + '>⬇ Before/After PDF (' + nsel + ' selected)</button><button class="btn primary" id="apPdf1"' + (nsel ? '' : ' disabled') + ' title="A separate PDF for each SR, named with the SR number (several SRs: one ZIP)">⬇ One PDF per SR (' + nsel + ')</button><button class="btn" id="apDlOn"' + (nsel ? '' : ' disabled') + ' title="Mark the selected SRs as already downloaded (e.g. downloaded before this option existed)">Mark downloaded</button><button class="btn" id="apDlOff"' + (nsel ? '' : ' disabled') + '>Undo downloaded</button>' + '<button class="btn" id="apNoB" title="Excel list of the SRs in the list that have no before photo yet">⬇ SRs with no before photo (' + nob + ')</button>' + (apCanEdit() ? '<button class="btn" id="apReset"' + (nsel ? '' : ' disabled') + '>Back to waiting</button><button class="btn" id="apDel"' + (nsel ? '' : ' disabled') + '>Remove from list</button>' : '') + '<span class="status" id="apSt3"></span></div>' +
+      '<div class="tw" style="max-height:520px"><table class="t"><thead><tr><th><input type="checkbox" id="apAll" aria-label="Select all"></th><th>SR</th><th>Location</th><th>Zone</th><th>Supervisor</th><th class="n">Before</th><th class="n">After</th><th>Status</th><th>Sent by</th><th>Downloaded</th></tr></thead><tbody>' +
+      list.slice(0, 500).map(function (x) { return '<tr><td><input type="checkbox" data-aps="' + esc(x.sr) + '"' + (APO.sel[x.sr] ? ' checked' : '') + '></td><td>' + esc(x.sr) + '</td><td>' + esc(String(x.locd || (x.in_tracker ? '' : 'Not in the tracker')).replace(/_/g, ' · ')) + '</td><td>' + esc(x.fz || '') + '</td><td>' + esc(x.owner || '') + '</td><td class="n">' + apBefore(x).length + '</td><td class="n">' + (x.after || []).length + '</td><td>' + (x.status === 'done' ? '<span class="pill good">Received</span>' : '<span class="pill avg">Waiting</span>') + '</td><td>' + (x.done_at ? esc(x.done_name || '') + ' · ' + esc(dmDxb(x.done_at)) : '—') + '</td><td>' + (x.dl_at ? '✓ ' + esc(dmDxb(x.dl_at)) + (x.dl_name ? '<div class="muted" style="font-size:.72rem">' + esc(x.dl_name) + '</div>' : '') : '—') + '</td></tr>'; }).join('') +
       '</tbody></table></div>' + (list.length > 500 ? '<p class="muted">Showing 500 of ' + list.length + '. Use the filters; "select all" selects all ' + list.length + '.</p>' : '');
     var re = function () { APO.sel = {}; apDraw(); };
     $('#apF1').onchange = function (e) { APO.f.st = e.target.value; re(); }; $('#apF2').onchange = function (e) { APO.f.own = e.target.value; re(); }; if ($('#apF3')) $('#apF3').onchange = function (e) { APO.f.list = e.target.value; re(); };
@@ -3407,6 +3408,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var sel = function () { return list.filter(function (x) { return APO.sel[x.sr]; }); };
     $('#apPdf').onclick = function () { apPdf(sel()); };
     $('#apPdf1').onclick = function () { apPdf(sel(), true); };
+    var an = $('#apNew'); if (an) an.onclick = function () { var S = APO.rows.filter(function (x) { return x.status === 'done' && !x.dl_at; }); if (S.length) { an.disabled = true; apPdf(S, true); } };
+    var mk = function (on) { return async function () { var S = sel().map(function (x) { return x.sr; }); if (!S.length) return; try { await apMarkDl(S, on); APO.sel = {}; apDraw(); setMsg('apSt3', S.length + ' SR(s) ' + (on ? 'marked downloaded.' : 'no longer marked downloaded.'), 'ok'); } catch (e) { setMsg('apSt3', /ap_mark_dl/.test(e.message || '') ? 'Run update 31 in Supabase first.' : e.message, 'err'); } }; };
+    $('#apDlOn').onclick = mk(true); $('#apDlOff').onclick = mk(false);
     $('#apNoB').onclick = function () { apExportNoBefore(); };
     if (apCanEdit()) {
       $('#apReset').onclick = async function () { var S = sel().map(function (x) { return x.sr; }); if (!confirm(S.length + ' SR(s) back to "waiting"? Their after photos are removed from the list.')) return; var r = await sb.rpc('ap_reset', { p_srs: S }); if (r.error) return setMsg('apSt3', r.error.message, 'err'); apOffice(APO.el); };
@@ -3505,6 +3509,11 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<tr><td class="k">Reported</td><td>' + esc(svcDate(x.rd)) + '</td><td class="k">After photo</td><td>' + (x.done_at ? esc(dmDxb(x.done_at, true)) + ' · ' + esc(x.done_name || '') : '—') + '</td></tr>' + (x.note ? '<tr><td class="k">Note</td><td colspan="3">' + esc(x.note) + '</td></tr>' : '') + '</table>' +
       '<div class="app-g">' + col('b', 'BEFORE · قبل' + more, nb) + col('a', 'AFTER · بعد' + more, na) + '</div><div class="app-f"><span>www.imdaad.ae · 800 8200</span><span>Page ' + k + ' of ' + n + '</span></div></div>';
   }
+  async function apMarkDl(srs, on) {
+    var r = await sb.rpc('ap_mark_dl', { p_srs: srs, p_on: on }); if (r.error) throw r.error;
+    var nm = (profile && (profile.full_name || profile.email)) || '', now = new Date().toISOString();
+    APO.rows.forEach(function (x) { if (srs.indexOf(x.sr) >= 0) { x.dl_at = on ? now : null; x.dl_name = on ? nm : null; } });
+  }
   // perSr: one PDF per SR, named with the SR number (several SRs -> one ZIP)
   async function apPdf(S, perSr) {
     if (!S.length) return;
@@ -3536,7 +3545,10 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       if (!perSr) { pdf.setProperties({ title: 'Before / After photos', author: 'Imdaad FM', creator: 'DM Portal ' + DM_VER }); svcSave(pdf.output('blob'), 'Before_After_Photos_' + svcDubaiDay() + '_' + S.length + '_SRs.pdf'); }
       else if (z) { setMsg('apSt3', 'Packing ' + S.length + ' PDF files…'); svcSave(await z.generateAsync({ type: 'blob' }), 'Before_After_Photos_' + svcDubaiDay() + '_' + S.length + '_SRs.zip'); }
       else svcSave(one.b, one.n);
-      setMsg('apSt3', S.length + ' SR(s) · ' + total + ' page(s) downloaded' + (perSr ? (S.length > 1 ? ' — one PDF per SR inside the ZIP, named with the SR number.' : '.') : '.'), 'ok');
+      var got = S.filter(function (x) { return x.status === 'done'; }).map(function (x) { return x.sr; }), mkd = '';
+      if (got.length) { try { await apMarkDl(got, true); mkd = ' ' + got.length + ' marked downloaded.'; } catch (e) { mkd = ' (could not mark them downloaded: run update 31)'; } }
+      APO.sel = {}; apDraw();
+      setMsg('apSt3', S.length + ' SR(s) · ' + total + ' page(s) downloaded' + (perSr ? (S.length > 1 ? ' — one PDF per SR inside the ZIP, named with the SR number.' : '.') : '.') + mkd, 'ok');
     } catch (e) { setMsg('apSt3', e.message || String(e), 'err'); }
     if (b) b.disabled = false;
   }
