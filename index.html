@@ -2114,10 +2114,10 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   async function matDecide(id, status, note) { var r = await sb.rpc('material_decide', { p_id: id, p_status: status, p_note: note || null }); if (r.error) throw r.error; }
   var PH_CACHE = {};
   async function photoUrls(paths) {
-    var need = paths.filter(function (p) { var c = PH_CACHE[p]; return !c || c.t < Date.now() - 50 * 60000; });
+    var need = paths.filter(function (p) { var c = PH_CACHE[p]; return !c || c.t < Date.now() - 12 * 3600000; });   // links stay the same for the day
     var nb = need.filter(function (p) { return /^b2:/.test(p); }); need = need.filter(function (p) { return !/^b2:/.test(p); });
     if (nb.length) { try { for (var q = 0; q < nb.length; q += 300) { var sj = await phPost('a=sign', JSON.stringify({ paths: nb.slice(q, q + 300) })); Object.keys(sj.urls || {}).forEach(function (k) { PH_CACHE[k] = { u: viaRoute(sj.urls[k]), t: Date.now() }; }); } } catch (e) { } }
-    if (need.length) { var r = await sb.storage.from('rm-photos').createSignedUrls(need, 3600); if (!r.error) (r.data || []).forEach(function (x) { if (x.signedUrl) PH_CACHE[x.path] = { u: x.signedUrl, t: Date.now() }; }); }
+    if (need.length) { var r = await sb.storage.from('rm-photos').createSignedUrls(need, 86400); if (!r.error) (r.data || []).forEach(function (x) { if (x.signedUrl) PH_CACHE[x.path] = { u: x.signedUrl, t: Date.now() }; }); }
     var out = {}; paths.forEach(function (p) { if (PH_CACHE[p]) out[p] = PH_CACHE[p].u; }); return out;
   }
 
@@ -3249,7 +3249,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       }
     } catch (e) { }
   }
-  var DM_VER = 'v4.48';
+  var DM_VER = 'v4.49';
   async function svcPdf(r) {
     await svcLib('h2c', function () { return !!window.html2canvas; }); await svcLib('pdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); });
     var I = await svcDataUrls(svcRepPaths(r)), pages = svcPdfHTML(r, I);
