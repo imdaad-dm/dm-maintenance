@@ -579,6 +579,9 @@ tr.is-new td{background:#eefaf2}
 .ofc-box{background:var(--bg,#f4f6f9);width:min(560px,100%);border-radius:12px;padding:0 0 16px;min-height:60vh}
 .ofc-h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:12px 14px;background:#1f3a5f;color:#fff;border-radius:12px 12px 0 0}.ofc-h .sv-meta{color:#cfe0f5}
 .ofc-box .sv-list{padding:12px}.sv-toast{z-index:40}
+.pill.rw{background:#c0392b;color:#fff;border-color:#c0392b;font-weight:700;letter-spacing:.03em}
+.sv-card.s-rw{border-left:4px solid #c0392b}.sv-rwm{margin-top:6px;padding:6px 8px;background:#fdecea;color:#8a1f1b;border-radius:6px;font-size:.84rem}
+.sv-repb.sv-rwb{border-color:#c0392b;background:#fff4f2}.sv-repb.sv-rwb.ok{background:#eefaf2;border-color:#1f9d55}
 </style></head><body><div id="app"></div><script>
 /* ==== PORTAL CONNECTION — fill in from Supabase: Project Settings > API ==== */
 window.DM_CLOUD_CONFIG = {
@@ -1218,7 +1221,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     loadingScreen(isTeam() ? 'Loading the team reports…' : 'Loading your works…');
     if (isTeam()) {
       try {
-        var tr = await Promise.all([svRepsLoad(), sb.rpc('my_sup_names'), rpcAll('my_works').catch(function () { return []; }), sb.rpc('my_today'), rpcAll('my_closed').catch(function () { return null; })]);
+        var tr = await Promise.all([svRepsLoad(), sb.rpc('my_sup_names'), rpcAll('my_works').catch(function () { return []; }), sb.rpc('my_today'), rpcAll('my_closed').catch(function () { return null; }), rpcAll('my_rework').catch(function () { return null; })]);
+        svSetRw(tr[5]);
         SV.rows = tr[2] || []; SV.rows.forEach(function (r) { r.rd = +r.rd; r.pr = +r.pr || 0; }); svSetClosed(tr[4]);
         var tt = tr[3].error ? null : (tr[3].data || [])[0]; SV.today = tt ? { started: +tt.started || 0, completed: +tt.completed || 0 } : { started: 0, completed: 0 }; SV.mats = []; SV.emg = []; SV.emgSeen = SV.emgSeen || {};
         SV.reps = tr[0]; if (SV.reps) SV.reps.forEach(function (x) { x.rd = +x.rd; });
@@ -1230,8 +1234,8 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       return svDraw();
     }
     try {
-      var res = await Promise.all([rpcAll('my_works'), sb.rpc('my_today'), sb.rpc('my_materials'), sb.rpc('my_emergencies'), photoCounts(true), loadFlags(true), svRepsLoad(), rpcAll('my_closed').catch(function () { return null; })]);
-      SV.rows = res[0] || []; svSetClosed(res[7]);
+      var res = await Promise.all([rpcAll('my_works'), sb.rpc('my_today'), sb.rpc('my_materials'), sb.rpc('my_emergencies'), photoCounts(true), loadFlags(true), svRepsLoad(), rpcAll('my_closed').catch(function () { return null; }), rpcAll('my_rework').catch(function () { return null; })]);
+      SV.rows = res[0] || []; svSetClosed(res[7]); svSetRw(res[8]);
       var t = res[1].error ? null : (res[1].data || [])[0]; SV.today = t ? { started: +t.started || 0, completed: +t.completed || 0 } : { started: 0, completed: 0 };
       SV.mats = res[2].error ? [] : (res[2].data || []);
       SV.emg = res[3].error ? [] : (res[3].data || []);
@@ -1257,6 +1261,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       (isTeam() ? '<div class="sv-today">👥 Team account — mark works completed, prepare the reports and send them to your supervisor · today <b>' + SV.today.completed + '</b> completed</div>' : '<div class="sv-today">Today: <b>' + SV.today.started + '</b> started &nbsp;·&nbsp; <b>' + SV.today.completed + '</b> completed</div>') + '</header>' +
       ('<div class="sv-sum' + (SV.closed ? ' five' : '') + '">' + [['todo', 'To do', '', n.todo], ['work', 'Working', '', n.work], ['done', 'Done', '', n.done]].concat(SV.closed ? [['closed', 'Closed', '', n.closed]] : []).concat([['sub', 'Contractor', '', n.sub]]).map(function (x) {
         return '<button class="sv-k k-' + x[0] + '" data-f="' + x[0] + '" aria-pressed="' + (SV.f === x[0]) + '"><b>' + x[3] + '</b><span>' + x[1] + '</span></button>'; }).join('') + '</div>') +
+      (SV.rw && SV.rw.length ? '<button class="sv-repb sv-rwb' + (SV.f === 'rw' ? ' on' : '') + (svRwOpen().length ? '' : ' ok') + '" data-f="rw" aria-pressed="' + (SV.f === 'rw') + '">🔁 <b>Rework</b> · ' + svRwOpen().length + ' report' + (svRwOpen().length === 1 ? '' : 's') + ' to redo (DM comments)' + (svRwOpen().length ? ' — tap to see' : ' ✓') + '</button>' : '') +
       (!SV.reps && SV.repsErr ? '<button class="sv-repb sv-reperr" id="svRepRetry">⚠ Could not load the list of works that need a service report — tap to try again<span class="sv-meta" style="display:block">' + esc(SV.repsErr).slice(0, 120) + '</span></button>' : '') +
       (SV.reps ? '<button class="sv-repb' + (SV.f === 'rep' ? ' on' : '') + (SV.reps.length ? '' : ' ok') + '" data-f="rep" aria-pressed="' + (SV.f === 'rep') + '">📄 <b>' + SV.reps.length + '</b> completed work' + (SV.reps.length === 1 ? '' : 's') + ' still need a service report' + (SV.reps.length ? ' — tap to see' : ' ✓') + '</button>' : '') +
       (apOn() && SV.ap.length ? '<button class="sv-repb sv-apb' + (SV.f === 'ap' ? ' on' : '') + (apPending() ? '' : ' ok') + '" data-f="ap" aria-pressed="' + (SV.f === 'ap') + '">📷 <b>' + apPending() + '</b> finished work' + (apPending() === 1 ? '' : 's') + ' need an after photo' + (apPending() ? ' — tap to see' : ' ✓') + '</button>' : '') +
@@ -1390,6 +1395,30 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="sv-meta">' + esc(SV_TR[r.tr] || r.tr || '') + ' · Zone ' + esc(r.fz || '?') + ' · ' + esc(svArea(r)) + (r.wo ? ' · WO ' + esc(r.wo) : '') + '</div>' +
       '<div class="sv-loc">' + esc(loc) + '</div><div class="sv-sum2">' + esc(r.summary || '') + '</div>' + svTr(r.summary) + (mat ? '<div style="margin-top:6px">' + mat + '</div>' : '') + acts + '</article>';
   }
+  // ---------- Rework: reports DM asked to redo (office uploads the list)
+  function svSetRw(rows) { if (!rows) { SV.rw = null; SV.rwMap = {}; return; } rows.forEach(function (x) { x.rd = +x.rd || 0; }); SV.rw = rows; SV.rwMap = {}; rows.forEach(function (x) { SV.rwMap[x.id] = x; }); }
+  function svRwDone(x) { return x.status === 'done' || (svcOn() && svcOf(x.id).st === 'signed'); }
+  function svRwOpen() { return (SV.rw || []).filter(function (x) { return !svRwDone(x); }); }
+  function svRwList() {
+    var q = SV.q.trim().toLowerCase(), tab = SV.rwTab || 'open';
+    var all = (SV.rw || []).filter(function (x) { return svInArea(x) && (!q || (x.id + ' ' + (x.wo || '') + ' ' + (x.summary || '') + ' ' + (x.locd || '') + ' ' + (x.memo || '')).toLowerCase().indexOf(q) >= 0); });
+    var open = all.filter(function (x) { return !svRwDone(x); }), done = all.filter(svRwDone), list = (tab === 'done' ? done : open).sort(function (a, b) { return a.rd - b.rd; });
+    var h = '<div class="svc-tabs" role="tablist"><button role="tab" class="svc-tab" data-rwt="open" aria-selected="' + (tab === 'open') + '">To redo' + (open.length ? ' <i>' + open.length + '</i>' : '') + '</button><button role="tab" class="svc-tab" data-rwt="done" aria-selected="' + (tab === 'done') + '">Signed again (' + done.length + ')</button></div>' +
+      '<div class="sv-hint" style="margin:0 0 8px">DM sent these reports back. Make the report again (photos before and after + customer signature) and send it to the customer.</div>';
+    h += list.slice(0, 200).map(function (x) {
+      var o = svcOn() ? svcOf(x.id) : { st: 'todo' }, ph = x.photo_src === 'wo' ? '📷 Before and after photos ready from the photos list' : x.photo_src === 'sr' ? '📷 After photo ready from the photos list' : '';
+      var head = '<div class="sv-rwm">DM: ' + esc(x.memo || 'Rework') + '</div>' + (ph && o.st === 'todo' ? '<div class="sv-meta">' + ph + '</div>' : '');
+      if (o.st === 'todo') return '<article class="sv-card s-rw" data-id="' + esc(x.id) + '"><div class="sv-row"><b class="sv-sr">SR ' + esc(x.id) + '</b><span class="pill rw">REWORK</span><span class="sv-days">' + svDays(x.rd) + ' d</span></div>' +
+        '<div class="sv-meta">' + esc(SV_TR[x.tr] || x.tr || '') + ' · Zone ' + esc(x.fz || '?') + ' · ' + esc(svArea(x)) + (x.wo ? ' · WO ' + esc(x.wo) : '') + '</div><div class="sv-loc">' + esc(String(x.locd || '').replace(/_/g, ' · ')) + '</div><div class="sv-sum2">' + esc(x.summary || '') + '</div>' + head +
+        '<button class="sv-b svc-pri" data-sva="open" style="width:100%;margin-top:8px">📝 Make the report again</button></article>';
+      var saveTab = SVC.tab; SVC.tab = 'draft'; var card = svcCardHTML({ sr: x.id, o: o, d: svcData(x.id) }); SVC.tab = saveTab;
+      return card.replace('</article>', head + '</article>');
+    }).join('');
+    if (!list.length) h += '<p class="sv-empty">' + (q ? 'No match.' : tab === 'done' ? 'Nothing signed again yet.' : 'No rework left. ✓') + '</p>';
+    $('#svList').innerHTML = h;
+    svcAll('[data-rwt]').forEach(function (b) { b.onclick = function () { SV.rwTab = b.getAttribute('data-rwt'); svRwList(); }; });
+    svcBindList();
+  }
   // works signed by the customer: they leave "Done" and wait here until closed in Maximo (+7 days)
   function svSetClosed(rows) {
     if (!rows) { SV.closed = null; SV.closedSet = null; return; }
@@ -1427,6 +1456,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   // completed works still open in Maximo with no service report (the report is needed to close them)
   function svRepList() {
     if (OFC) return ofcList();
+    if (SV.f === 'rw') return svRwList();
     if (svcOn()) { $('#svList').innerHTML = svcListHTML(); svcBindList(); return; }
     var q = SV.q.trim().toLowerCase();
     var list = (SV.reps || []).filter(function (r) {
@@ -1449,6 +1479,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (SV.f === 'rep') return svRepList();
     if (SV.f === 'ap') { $('#svList').innerHTML = apListHTML(); apBindList(); return; }
     if (SV.f === 'closed') return svClosedList();
+    if (SV.f === 'rw') return svRwList();
     var q = SV.q.trim().toLowerCase();
     var list = SV.rows.filter(function (r) {
       if (svState(r) !== (SV.f === 'emg' ? 'todo' : SV.f)) return false;
@@ -2180,7 +2211,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
 
   /* ---------- admin: "View as" — see the portal exactly as another person (view only) ---------- */
   var VIEW = null, REAL = null;
-  var VIEW_AS_FNS = ['my_works', 'my_today', 'my_materials', 'my_emergencies', 'my_reports_needed', 'ap_my_list', 'my_sup_names', 'my_sup_uid', 'my_closed'];
+  var VIEW_AS_FNS = ['my_works', 'my_today', 'my_materials', 'my_emergencies', 'my_reports_needed', 'ap_my_list', 'my_sup_names', 'my_sup_uid', 'my_closed', 'my_rework'];
   var VIEW_READ_RPC = ['sr_flags_list', 'sr_photos_for', 'sr_photo_counts', 'sr_transfers', 'sr_xfer_targets', 'sr_xfer_info', 'svc_sr_info', 'ap_list', 'mx_status', 'mx_last', 'admin_storage_usage', 'sr_flags_office', 'emergency_list', 'rm_activity_list', 'my_role'];
   function viewDenied() { var t = document.getElementById('svToast'); if (t) { t.textContent = 'View only — exit "View as" to make changes'; t.className = 'sv-toast on bad'; setTimeout(function () { t.className = 'sv-toast'; }, 2500); } else { try { H().toast('View only — exit "View as" to make changes'); } catch (e) { } } }
   function viewQ(promise) {
@@ -2612,7 +2643,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     var d = x.d || {}, o = x.o, line = ((d.lines || [])[0] || {}).d || '', ph = o.loc ? o.loc.ph : svcPhIn(o.srv && o.srv.photos);
     var pill = { draft: ['Draft', 'svc-p-acc'], ready: ['Ready', 'svc-p-acc'], sent: ['Link sent', 'svc-p-warn'], signed: ['Signed', 'svc-p-good'] }[o.st];
     h = '<article class="sv-card svc-c-' + o.st + '" data-id="' + esc(sr) + '"><div class="sv-row">' + (SVC.tab === 'cust' ? '<input type="checkbox" class="svc-ck" data-svs="' + esc(sr) + '"' + (SVC.sel[sr] ? ' checked' : '') + ' aria-label="Select SR ' + esc(sr) + '">' : '') +
-      '<b class="sv-sr">SR ' + esc(sr) + '</b><span class="svc-pill ' + pill[1] + '">' + pill[0] + '</span>' + (x.o.pend ? '<span class="svc-pill svc-p-warn">⬆ not uploaded</span>' : '') + (o.st === 'draft' && d.teamDone ? '<span class="svc-pill svc-p-team">' + (isTeam() ? '✓ Sent to supervisor' : '👥 From team – review') + '</span>' : '') + '</div>' +
+      '<b class="sv-sr">SR ' + esc(sr) + '</b><span class="svc-pill ' + pill[1] + '">' + pill[0] + '</span>' + (x.o.pend ? '<span class="svc-pill svc-p-warn">⬆ not uploaded</span>' : '') + (d.rework && o.st !== 'signed' ? '<span class="pill rw">REWORK</span>' : '') + (o.st === 'draft' && d.teamDone ? '<span class="svc-pill svc-p-team">' + (isTeam() ? '✓ Sent to supervisor' : '👥 From team – review') + '</span>' : '') + '</div>' +
       (o.st === 'draft' && d.teamDone && !isTeam() && o.srv && o.srv.prepared_name ? '<div class="sv-meta">Prepared by ' + esc(o.srv.prepared_name) + '</div>' : '') +
       '<div class="sv-loc">' + esc(d.loc || '') + '</div><div class="sv-sum2">' + esc(line) + '</div>';
     if (o.st === 'draft') { var mi = svcMissing(d, ph); h += (mi.length ? '<div class="svc-miss">Missing: ' + esc(mi.join(', ')) + '</div>' : '<div class="sv-meta">Complete — open it and press ' + (isTeam() ? 'Send to supervisor' : 'Ready for customer') + '.</div>') + '<div class="svc-btn3" style="grid-template-columns:3fr 1fr"><button class="sv-b" data-sva="open">' + (d.teamDone && !isTeam() ? 'Review' : 'Continue') + '</button><button class="sv-b svc-del" data-sva="del" aria-label="Delete the draft of SR ' + esc(sr) + '">🗑</button></div>'; }
@@ -2681,7 +2712,9 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       else if (o.srv) { var inf = SVC.info[sr]; if (!inf) { try { inf = await svcInfo(sr); } catch (e) { inf = { mxphotos: [], lockey: (o.srv.data || {}).lockey, cust: (o.srv.data || {}).cust }; } } F = { sr: sr, info: inf, data: svcClone(o.srv.data), ph: svcPhIn(o.srv.photos), status: o.srv.status === 'draft' ? 'draft' : 'ready' }; }
       else { var info = await svcInfo(sr); F = { sr: sr, info: info, data: svcNew(info), ph: { before: null, after: null, extra: [] }, status: 'draft', fresh: true }; }
     } catch (e) { svToast('Could not open SR ' + sr + ': ' + (e.message || e) + (navigator.onLine === false ? ' — a new report needs network once.' : ''), true); return; }
-    F.ph.extra = F.ph.extra || []; F.step = 1; SVC.F = F; svcForm();
+    F.ph.extra = F.ph.extra || [];
+    var rw = SV.rwMap && SV.rwMap[sr]; if (rw && !svRwDone(rw)) { if (!F.ph.before && rw.before) F.ph.before = { path: rw.before }; if (!F.ph.after && rw.after) F.ph.after = { path: rw.after }; F.data.rework = rw.memo || 'Rework'; }
+    F.step = 1; SVC.F = F; svcForm();
     if (F.fresh && (F.info.mxphotos || []).length && !F.ph.before) svcPickMx(F.info.mxphotos[0], true);
   }
 
@@ -3249,7 +3282,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       }
     } catch (e) { }
   }
-  var DM_VER = 'v4.49';
+  var DM_VER = 'v4.50';
   async function svcPdf(r) {
     await svcLib('h2c', function () { return !!window.html2canvas; }); await svcLib('pdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); });
     var I = await svcDataUrls(svcRepPaths(r)), pages = svcPdfHTML(r, I);
@@ -3415,6 +3448,76 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   var APO = { rows: null, f: { st: '', own: '', q: '', list: '' }, sel: {}, el: null, files: null, stop: false };
   function apCanEdit() { return profile && (profile.role === 'admin' || profile.role === 'operator'); }
   async function apRpcAll(name) { var rows = [], from = 0; for (;;) { var r = await sb.rpc(name).order('sr').range(from, from + 999); if (r.error) throw r.error; rows = rows.concat(r.data || []); if (!r.data || r.data.length < 1000) break; from += 1000; } return rows; }
+  /* ---------- office: Rework list (DM sends reports back) ---------- */
+  var RWO = { rows: null, f: { st: 'open', own: '', q: '' }, sel: {}, el: null, pend: null };
+  async function rwOffice(el) {
+    RWO.el = el;
+    try { var out = [], r; for (var f = 0; ; f += 1000) { r = await sb.rpc('rework_list').order('sr').range(f, f + 999); if (r.error) throw r.error; out = out.concat(r.data || []); if ((r.data || []).length < 1000) break; } RWO.rows = out; }
+    catch (e) { el.innerHTML = '<div class="notice">' + (/rework_list|schema cache|does not exist/i.test(e.message || '') ? 'Not set up yet: run the update <b>33_SQL_rework.sql</b> in Supabase.' : 'Could not load: ' + esc(e.message || e)) + '</div>'; return; }
+    rwDraw();
+  }
+  function rwRepSt(x) { return x.status === 'done' ? 'done' : !x.in_portal ? 'notin' : x.rep_status || 'none'; }
+  function rwList() {
+    var f = RWO.f, q = f.q.trim().toLowerCase();
+    return RWO.rows.filter(function (x) {
+      if (f.st === 'open' && x.status !== 'open') return false; if (f.st === 'done' && x.status !== 'done') return false; if (f.st === 'notin' && x.in_portal) return false;
+      if (f.own && x.owner !== f.own) return false;
+      return !q || (x.sr + ' ' + (x.wo || '') + ' ' + (x.locd || '') + ' ' + (x.memo || '') + ' ' + (x.owner || '')).toLowerCase().indexOf(q) >= 0;
+    });
+  }
+  function rwDraw() {
+    var R = RWO.rows, el = RWO.el, can = apCanEdit(), o = function (v, t, c) { return '<option value="' + esc(v) + '"' + (v === c ? ' selected' : '') + '>' + esc(t) + '</option>'; };
+    var n = function (fn) { return R.filter(fn).length; }, list = rwList(), f = RWO.f, nsel = list.filter(function (x) { return RWO.sel[x.sr]; }).length;
+    var owners = R.map(function (x) { return x.owner; }).filter(function (x, i, a) { return x && a.indexOf(x) === i; }).sort();
+    var byOwn = {}; R.forEach(function (x) { var k = x.owner || 'Not in the portal'; byOwn[k] = byOwn[k] || [0, 0, 0]; byOwn[k][0]++; if (x.status === 'done') byOwn[k][1]++; else if (x.rep_status) byOwn[k][2]++; });
+    var stl = { done: '<span class="pill good">Signed again</span>', notin: '<span class="pill na">Not in the portal</span>', none: '<span class="pill bad">Not started</span>', draft: '<span class="pill avg">Draft</span>', ready: '<span class="pill avg">Ready</span>', sent: '<span class="pill avg">Link sent</span>', signed: '<span class="pill good">Signed</span>' };
+    el.innerHTML = '<div class="kpis">' + [['In the list', R.length, ''], ['Signed again', n(function (x) { return x.status === 'done'; }), R.length ? Math.round(100 * n(function (x) { return x.status === 'done'; }) / R.length) + '% done' : ''], ['In progress', n(function (x) { return x.status === 'open' && x.rep_status; }), 'report started on the phone'], ['Not started', n(function (x) { return x.status === 'open' && x.in_portal && !x.rep_status; }), ''], ['Not in the portal', n(function (x) { return !x.in_portal; }), 'SR not in the tracker — no supervisor sees it'], ['Photos ready', n(function (x) { return x.status === 'open' && x.photo_src; }), 'from the After-photos list']].map(function (k) { return '<div class="kpi"><span class="l">' + k[0] + '</span><span class="v">' + k[1] + '</span><span class="s">' + k[2] + '</span></div>'; }).join('') + '</div>' +
+      (can ? '<div class="panel" style="margin-top:12px"><h3>Upload the DM Rework list<small>Excel with the columns Work Order, SR Number and Last Memo (other columns are ignored). Loading an SR again opens it again.</small></h3><div class="form"><div class="f"><label for="rwLn">List name</label><input id="rwLn" placeholder="e.g. Rework Nov-2026" maxlength="60"></div><div class="f"><label for="rwF">Excel file</label><input id="rwF" type="file" accept=".xlsx,.xls"></div></div><div id="rwPend"></div><div class="status" id="rwSt"></div></div>' : '') +
+      '<div class="panel" style="margin-top:12px"><h3>By supervisor</h3><div class="tw"><table class="t"><thead><tr><th>Supervisor</th><th class="n">SRs</th><th class="n">Signed again</th><th class="n">In progress</th><th class="n">Done %</th></tr></thead><tbody>' + Object.keys(byOwn).sort().map(function (k) { var v = byOwn[k]; return '<tr><td>' + esc(k) + '</td><td class="n">' + v[0] + '</td><td class="n">' + v[1] + '</td><td class="n">' + v[2] + '</td><td class="n">' + (v[0] ? Math.round(100 * v[1] / v[0]) : 0) + '%</td></tr>'; }).join('') + '</tbody></table></div></div>' +
+      '<div class="filters" style="margin:12px 0 8px;padding:0"><div class="f"><label for="rwF1">Status</label><select id="rwF1">' + o('open', 'To redo', f.st) + o('done', 'Signed again', f.st) + o('notin', 'Not in the portal', f.st) + o('', 'All', f.st) + '</select></div><div class="f"><label for="rwF2">Supervisor</label><select id="rwF2">' + o('', 'All supervisors', f.own) + owners.map(function (x) { return o(x, x, f.own); }).join('') + '</select></div><div class="f"><label for="rwF3">Search</label><input id="rwF3" type="search" value="' + esc(f.q) + '" placeholder="SR, WO, location, comment"></div></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn" id="rwXl">⬇ List (Excel, ' + list.length + ')</button>' + (can ? '<button class="btn" id="rwDel"' + (nsel ? '' : ' disabled') + '>Remove from list (' + nsel + ')</button>' : '') + '<span class="status" id="rwSt2"></span></div>' +
+      '<div class="tw" style="max-height:520px"><table class="t"><thead><tr>' + (can ? '<th><input type="checkbox" id="rwAll" aria-label="Select all"></th>' : '') + '<th>SR</th><th>WO</th><th>Location</th><th>Supervisor</th><th>DM comment</th><th>Report</th><th>Photos</th></tr></thead><tbody>' +
+      list.slice(0, 500).map(function (x) { return '<tr>' + (can ? '<td><input type="checkbox" data-rws="' + esc(x.sr) + '"' + (RWO.sel[x.sr] ? ' checked' : '') + '></td>' : '') + '<td><a href="#" class="srl" data-sr="' + esc(x.sr) + '">' + esc(x.sr) + '</a></td><td>' + esc(x.wo || '') + '</td><td class="wrapc">' + esc(String(x.locd || '').replace(/_/g, ' · ')) + '</td><td>' + esc(x.owner || '—') + '</td><td class="wrapc">' + esc(x.memo || '') + '</td><td>' + stl[rwRepSt(x)] + (x.rep_by && x.status !== 'done' ? '<div class="muted" style="font-size:.72rem">' + esc(x.rep_by) + '</div>' : '') + (x.done_at ? '<div class="muted" style="font-size:.72rem">' + esc(dmDxb(x.done_at)) + '</div>' : '') + '</td><td>' + (x.photo_src === 'wo' ? 'Before + after' : x.photo_src === 'sr' ? 'After' : '—') + '</td></tr>'; }).join('') +
+      '</tbody></table></div>' + (list.length > 500 ? '<p class="muted">Showing 500 of ' + list.length + '. Use the filters.</p>' : '');
+    var re = function () { RWO.sel = {}; rwDraw(); };
+    $('#rwF1').onchange = function (e) { RWO.f.st = e.target.value; re(); }; $('#rwF2').onchange = function (e) { RWO.f.own = e.target.value; re(); };
+    var qt; $('#rwF3').oninput = function (e) { clearTimeout(qt); qt = setTimeout(function () { RWO.f.q = e.target.value; rwDraw(); var x = $('#rwF3'); x.focus(); x.setSelectionRange(x.value.length, x.value.length); }, 300); };
+    svcAll('[data-rws]').forEach(function (c) { c.onchange = function () { var k = c.getAttribute('data-rws'); if (c.checked) RWO.sel[k] = 1; else delete RWO.sel[k]; rwDraw(); }; });
+    var ra = $('#rwAll'); if (ra) { ra.checked = !!list.length && list.every(function (x) { return RWO.sel[x.sr]; }); ra.onchange = function (e) { list.forEach(function (x) { if (e.target.checked) RWO.sel[x.sr] = 1; else delete RWO.sel[x.sr]; }); rwDraw(); }; }
+    var rd = $('#rwDel'); if (rd) rd.onclick = async function () { var S = list.filter(function (x) { return RWO.sel[x.sr]; }).map(function (x) { return x.sr; }); if (!S.length || !confirm('Remove ' + S.length + ' SR(s) from the Rework list? Their reports stay as they are.')) return; var r = await sb.rpc('rework_remove', { p_srs: S }); if (r.error) return setMsg('rwSt2', r.error.message, 'err'); RWO.rows = RWO.rows.filter(function (x) { return S.indexOf(x.sr) < 0; }); re(); };
+    $('#rwXl').onclick = async function () {
+      try { await svcLib('xl', function () { return !!window.ExcelJS; }); var wb = new window.ExcelJS.Workbook(), ws = wb.addWorksheet('Rework', { views: [{ state: 'frozen', ySplit: 1 }] });
+        var lab = { done: 'Signed again', notin: 'Not in the portal', none: 'Not started', draft: 'Draft', ready: 'Ready', sent: 'Link sent', signed: 'Signed' };
+        ws.columns = [['SR', 10], ['Work order', 12], ['Supervisor', 20], ['Location', 40], ['DM comment', 44], ['Report', 16], ['Prepared by', 18], ['Signed again', 17], ['Photos from list', 14], ['List', 18]].map(function (c) { return { header: c[0], width: c[1] }; });
+        list.forEach(function (x) { ws.addRow([isNaN(+x.sr) ? x.sr : +x.sr, x.wo || '', x.owner || '', String(x.locd || '').replace(/_/g, ' - '), x.memo || '', lab[rwRepSt(x)], x.rep_by || '', x.done_at ? dmDxb(x.done_at) : '', x.photo_src === 'wo' ? 'Before + after' : x.photo_src === 'sr' ? 'After' : '', x.list_name || '']); });
+        ws.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }; ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3A5F' } }; ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: 10 } };
+        svcSave(new Blob([await wb.xlsx.writeBuffer()]), 'DM_Rework_' + svcDubaiDay() + '.xlsx'); } catch (e) { setMsg('rwSt2', e.message || String(e), 'err'); }
+    };
+    var fi = $('#rwF'); if (fi) fi.onchange = async function () {
+      var file = fi.files && fi.files[0]; if (!file) return; setMsg('rwSt', 'Reading ' + file.name + '…');
+      try {
+        await svcLib('xlsx', function () { return !!window.XLSX; });
+        var wb = window.XLSX.read(await file.arrayBuffer(), { type: 'array' }), out = [], seen = {};
+        wb.SheetNames.forEach(function (sn) {
+          var rows = window.XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: true, defval: null, blankrows: false }), H = -1, c = {};
+          for (var i = 0; i < Math.min(rows.length, 20) && H < 0; i++) { (rows[i] || []).forEach(function (v, k) { var t = String(v == null ? '' : v).trim().toLowerCase(); if (/^sr( ?(no\.?|number|#))?$/.test(t) || t === 'service request') c.sr = k; else if (/^(work ?order|wo|wo ?(no\.?|number))$/.test(t)) c.wo = k; else if (/memo|comment|remark/.test(t) && c.memo == null) c.memo = /last memo/.test(t) ? k : (c.memo != null ? c.memo : k); else if (/service ?type/.test(t)) c.svc = k; else if (t === 'zone') c.zone = k; if (/last memo/.test(t)) c.memo = k; }); if (c.sr != null) H = i; }
+          if (H < 0) return;
+          rows.slice(H + 1).forEach(function (r) { var sr = r[c.sr]; if (sr == null) return; sr = typeof sr === 'number' ? String(Math.round(sr)) : String(sr).trim(); if (!/^\d{1,12}$/.test(sr) || seen[sr]) return; seen[sr] = 1; var wo = c.wo != null && r[c.wo] != null ? (typeof r[c.wo] === 'number' ? String(Math.round(r[c.wo])) : String(r[c.wo]).trim()) : ''; out.push({ sr: sr, wo: wo, memo: c.memo != null && r[c.memo] != null ? String(r[c.memo]).trim() : '', svc: c.svc != null ? String(r[c.svc] || '') : '', zone: c.zone != null ? String(r[c.zone] || '') : '' }); });
+        });
+        if (!out.length) return setMsg('rwSt', 'No SR numbers found. The file needs a column named "SR Number" (and "Work Order", "Last Memo").', 'err');
+        var have = {}; RWO.rows.forEach(function (x) { have[x.sr] = x; }); var again = out.filter(function (x) { return have[x.sr]; }).length;
+        RWO.pend = out; setMsg('rwSt', '');
+        $('#rwPend').innerHTML = '<div class="notice" style="margin-top:8px"><b>' + out.length + ' SRs found</b> in ' + esc(file.name) + (again ? ' · ' + again + ' already in the list (they open again)' : '') + '. <button class="btn primary xs" id="rwGo">Load into the portal</button> <button class="btn xs" id="rwNo">Cancel</button></div>';
+        $('#rwNo').onclick = function () { RWO.pend = null; $('#rwPend').innerHTML = ''; fi.value = ''; };
+        $('#rwGo').onclick = async function () {
+          var b = this; b.disabled = true; var P = RWO.pend, tot = { rows: 0, reopened: 0 };
+          try { for (var i = 0; i < P.length; i += 1500) { setMsg('rwSt', 'Loading ' + Math.min(i + 1500, P.length) + ' of ' + P.length + '…'); var r = await sb.rpc('rework_load', { p_rows: P.slice(i, i + 1500), p_list: ($('#rwLn').value || '').trim() || file.name }); if (r.error) throw r.error; tot.rows += r.data.rows; tot.reopened += r.data.reopened; }
+            RWO.pend = null; await rwOffice(RWO.el); setMsg('rwSt', tot.rows + ' SR(s) loaded' + (tot.reopened ? ' · ' + tot.reopened + ' signed report(s) opened again as drafts' : '') + '. The supervisors see them in the Rework tab.', 'ok'); }
+          catch (e) { b.disabled = false; setMsg('rwSt', /rework_load/.test(e.message || '') ? 'Run update 33 in Supabase first.' : e.message, 'err'); }
+        };
+      } catch (e) { setMsg('rwSt', 'Could not read the file: ' + (e.message || e), 'err'); }
+    };
+  }
   async function apOffice(el) {
     if (!el) return; APO.el = el; el.innerHTML = '<div class="notice">Loading…</div>';
     try { APO.rows = await apRpcAll('ap_list'); APO.rows.forEach(function (x) { x.rd = +x.rd; }); }
@@ -4268,7 +4371,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     return pdf.output('blob');
   }
 
-  window.DM_CLOUD = { officeReport: officeReport, engStatus: engStatus, svsOf: svsOf, firstPhotos: firstPhotos, ppmOffice: ppmOffice, sfOffice: sfOffice, sfCan: sfCan, apOffice: apOffice, svcOffice: svcOffice, reportsAdd: reportsAdd, reportsRemove: reportsRemove, reportsReload: reportsReload, syncKeyNew: syncKeyNew, syncKeyRevoke: syncKeyRevoke, syncScript: syncScript, syncCmd: syncCmd, emgList: emgList, emgFlag: emgFlag, emgClear: emgClear, emgPushStatus: emgPushStatus, emgSaveCfg: emgSaveCfg, purgePhotos: purgePhotos, rmActivity: rmActivity, materials: materials, matDecide: matDecide, photoUrls: photoUrls, loadUtil: loadUtil, utilSave: utilSave, utilDropMonth: utilDropMonth, utilZoneSet: utilZoneSet, photoCounts: photoCounts, photoCount: photoCount, loadFlags: loadFlags, flagOf: flagOf, flagLabel: flagLabel, flagPill: flagPill, flagCanSet: flagCanSet, flagFormHTML: flagFormHTML, flagFormBind: flagFormBind, FLAGS: FLAGS, srPhotos: srPhotos, photoStrip: photoStrip, gallery: gallery, mxAllowed: mxAllowed, mxKeyNew: mxKeyNew, mxStatus: mxStatus, mxScript: mxScript, rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
+  window.DM_CLOUD = { rwOffice: rwOffice, officeReport: officeReport, engStatus: engStatus, svsOf: svsOf, firstPhotos: firstPhotos, ppmOffice: ppmOffice, sfOffice: sfOffice, sfCan: sfCan, apOffice: apOffice, svcOffice: svcOffice, reportsAdd: reportsAdd, reportsRemove: reportsRemove, reportsReload: reportsReload, syncKeyNew: syncKeyNew, syncKeyRevoke: syncKeyRevoke, syncScript: syncScript, syncCmd: syncCmd, emgList: emgList, emgFlag: emgFlag, emgClear: emgClear, emgPushStatus: emgPushStatus, emgSaveCfg: emgSaveCfg, purgePhotos: purgePhotos, rmActivity: rmActivity, materials: materials, matDecide: matDecide, photoUrls: photoUrls, loadUtil: loadUtil, utilSave: utilSave, utilDropMonth: utilDropMonth, utilZoneSet: utilZoneSet, photoCounts: photoCounts, photoCount: photoCount, loadFlags: loadFlags, flagOf: flagOf, flagLabel: flagLabel, flagPill: flagPill, flagCanSet: flagCanSet, flagFormHTML: flagFormHTML, flagFormBind: flagFormBind, FLAGS: FLAGS, srPhotos: srPhotos, photoStrip: photoStrip, gallery: gallery, mxAllowed: mxAllowed, mxKeyNew: mxKeyNew, mxStatus: mxStatus, mxScript: mxScript, rmDb: rmDb, rmNames: rmNames, uid: uid, roleLabel: roleLabel, dataHTML: dataHTML, logHTML: logHTML, adminPanels: adminPanels, afterRender: afterRender, afterShell: afterShell, save: save };
 
   /* ---------- route: direct to Supabase, or through the relay when supabase.co is blocked (e.g. UAE mobile data) ---------- */
   function probe(base, ms) {
@@ -5064,6 +5167,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (RAW.reports == null) return section('R', 'Service reports', 'تقارير الخدمة', '', '<div class="notice">Service reports are not set up yet. The administrator needs to run the update <b>8_SQL_service_reports.sql</b> in Supabase.</div>');
     var D = reportsCompute(cm), S = reportsSpecs(D), last = syncAge(), stale = !last || Date.now() - last > 3600000;
     var out = section('R0', 'Service reports from the phones', 'تقارير الخدمة من الهاتف', 'Reports prepared by the labour supervisors on the phone and signed by the customer (on site or by private link). A signed report counts as the service report of the SR. Download the PDF (same layout as the FM Service Report form) or the Excel form, upload it to Maximo, then mark it uploaded.', '<div id="svcOff"><div class="notice">Loading…</div></div>');
+    if (['admin', 'operator', 'imdaad_engineer', 'manager'].indexOf(ROLE) >= 0 && !STORE) out += section('RRW', 'Rework list', 'قائمة إعادة التقارير (Rework)', 'SRs that DM sent back (REWORK). Upload the DM list; each SR appears on the phone of its supervisor in the <b>Rework</b> tab with DM\'s comment. A report already signed in the portal is opened again as a draft; when the customer signs again the SR is done here.', '<div id="rwOff"><div class="notice">Loading…</div></div>');
     if (['admin', 'operator', 'imdaad_engineer', 'manager'].indexOf(ROLE) >= 0) out += section('RAP', 'After photos (temporary list)', 'صور بعد التنفيذ (قائمة مؤقتة)', 'Finished SRs where the customer asked for an after photo. Upload the SR list and the before photos; each supervisor sees his SRs on the phone (by his area), adds the after photo and sends it here. Select SRs and download one A4 PDF (before | after, one SR per page).', '<div id="apOff"><div class="notice">Loading…</div></div>');
     out += section('R', 'Service reports', 'تقارير الخدمة', 'A completed SR has a service report when the report is <b>signed by the customer in the portal</b>. Reports received earlier by email or Excel are kept as history. Completed = Final Status closed, excluding not-in-scope / duplicate / cancelled.',
       '<div class="kpis">' +
@@ -5100,6 +5204,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function bindReports(cm) {
     if (window.DM_CLOUD && window.DM_CLOUD.svcOffice) window.DM_CLOUD.svcOffice(document.getElementById('svcOff'));
     if (window.DM_CLOUD && window.DM_CLOUD.apOffice && document.getElementById('apOff')) window.DM_CLOUD.apOffice(document.getElementById('apOff'));
+    if (window.DM_CLOUD && window.DM_CLOUD.rwOffice && document.getElementById('rwOff')) window.DM_CLOUD.rwOffice(document.getElementById('rwOff'));
     var sel = $('#repSup'); if (sel) sel.onchange = function () { REPF.sup = sel.value; render(); };
     function pend(nums, src) {
       var have = (RAW.reports || []).reduce(function (m, r) { m[r.sr] = 1; return m; }, {}), ids = CM.reduce(function (m, o) { m[o.id] = 1; return m; }, {});
