@@ -3282,7 +3282,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       }
     } catch (e) { }
   }
-  var DM_VER = 'v4.50';
+  var DM_VER = 'v4.51';
   async function svcPdf(r) {
     await svcLib('h2c', function () { return !!window.html2canvas; }); await svcLib('pdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); });
     var I = await svcDataUrls(svcRepPaths(r)), pages = svcPdfHTML(r, I);
@@ -3830,6 +3830,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function ppmMyOwner() { return ppmTeam() ? profile.team_of : profile.id; }
   async function ppmPaged(table, cols, order) { var out = [], f = 0; for (;;) { var r = await sb.from(table).select(cols).order(order).range(f, f + 999); if (r.error) throw r.error; out = out.concat(r.data || []); if ((r.data || []).length < 1000) break; f += 1000; } return out; }
   async function ppmLoad() {
+    if (!VIEW) { try { await sb.rpc('ppm_rehome'); } catch (e) { } }   // reports of a changed PPM supervisor go to the current one
     var res = await Promise.all([ppmPaged('ppm_works', '*', 'wo'), ppmPaged('ppm_reports', 'wo,uid,status,data,prepared_name,updated_at,sent_at,signed_at,approved_at,cust,sup_name,mx_at', 'wo')]);
     PPM.works = res[0]; PPM.reps = {}; res[1].forEach(function (x) { PPM.reps[x.wo] = x; });
   }
