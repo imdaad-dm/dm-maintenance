@@ -1221,7 +1221,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     loadingScreen(isTeam() ? 'Loading the team reports…' : 'Loading your works…');
     if (isTeam()) {
       try {
-        var tr = await Promise.all([svRepsLoad(), sb.rpc('my_sup_names'), rpcAll('my_works').catch(function () { return []; }), sb.rpc('my_today'), rpcAll('my_closed').catch(function () { return null; }), rpcAll('my_rework').catch(function () { return null; })]);
+        var tr = await Promise.all([svRepsLoad(), sb.rpc('my_sup_names'), rpcAll('my_works').catch(function () { return []; }), sb.rpc('my_today'), rpcAll('my_closed').catch(function () { return null; }), svRwLoad()]);
         svSetRw(tr[5]);
         SV.rows = tr[2] || []; SV.rows.forEach(function (r) { r.rd = +r.rd; r.pr = +r.pr || 0; }); svSetClosed(tr[4]);
         var tt = tr[3].error ? null : (tr[3].data || [])[0]; SV.today = tt ? { started: +tt.started || 0, completed: +tt.completed || 0 } : { started: 0, completed: 0 }; SV.mats = []; SV.emg = []; SV.emgSeen = SV.emgSeen || {};
@@ -1234,7 +1234,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       return svDraw();
     }
     try {
-      var res = await Promise.all([rpcAll('my_works'), sb.rpc('my_today'), sb.rpc('my_materials'), sb.rpc('my_emergencies'), photoCounts(true), loadFlags(true), svRepsLoad(), rpcAll('my_closed').catch(function () { return null; }), rpcAll('my_rework').catch(function () { return null; })]);
+      var res = await Promise.all([rpcAll('my_works'), sb.rpc('my_today'), sb.rpc('my_materials'), sb.rpc('my_emergencies'), photoCounts(true), loadFlags(true), svRepsLoad(), rpcAll('my_closed').catch(function () { return null; }), svRwLoad()]);
       SV.rows = res[0] || []; svSetClosed(res[7]); svSetRw(res[8]);
       var t = res[1].error ? null : (res[1].data || [])[0]; SV.today = t ? { started: +t.started || 0, completed: +t.completed || 0 } : { started: 0, completed: 0 };
       SV.mats = res[2].error ? [] : (res[2].data || []);
@@ -1261,6 +1261,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       (isTeam() ? '<div class="sv-today">👥 Team account — mark works completed, prepare the reports and send them to your supervisor · today <b>' + SV.today.completed + '</b> completed</div>' : '<div class="sv-today">Today: <b>' + SV.today.started + '</b> started &nbsp;·&nbsp; <b>' + SV.today.completed + '</b> completed</div>') + '</header>' +
       ('<div class="sv-sum' + (SV.closed ? ' five' : '') + '">' + [['todo', 'To do', '', n.todo], ['work', 'Working', '', n.work], ['done', 'Done', '', n.done]].concat(SV.closed ? [['closed', 'Closed', '', n.closed]] : []).concat([['sub', 'Contractor', '', n.sub]]).map(function (x) {
         return '<button class="sv-k k-' + x[0] + '" data-f="' + x[0] + '" aria-pressed="' + (SV.f === x[0]) + '"><b>' + x[3] + '</b><span>' + x[1] + '</span></button>'; }).join('') + '</div>') +
+      (!SV.rw && SV.rwErr ? '<button class="sv-repb sv-reperr" id="svRwRetry">⚠ Could not load the Rework list — tap to try again<span class="sv-meta" style="display:block">' + esc(SV.rwErr).slice(0, 120) + '</span></button>' : '') +
       (SV.rw && SV.rw.length ? '<button class="sv-repb sv-rwb' + (SV.f === 'rw' ? ' on' : '') + (svRwOpen().length ? '' : ' ok') + '" data-f="rw" aria-pressed="' + (SV.f === 'rw') + '">🔁 <b>Rework</b> · ' + svRwOpen().length + ' report' + (svRwOpen().length === 1 ? '' : 's') + ' to redo (DM comments)' + (svRwOpen().length ? ' — tap to see' : ' ✓') + '</button>' : '') +
       (!SV.reps && SV.repsErr ? '<button class="sv-repb sv-reperr" id="svRepRetry">⚠ Could not load the list of works that need a service report — tap to try again<span class="sv-meta" style="display:block">' + esc(SV.repsErr).slice(0, 120) + '</span></button>' : '') +
       (SV.reps ? '<button class="sv-repb' + (SV.f === 'rep' ? ' on' : '') + (SV.reps.length ? '' : ' ok') + '" data-f="rep" aria-pressed="' + (SV.f === 'rep') + '">📄 <b>' + SV.reps.length + '</b> completed work' + (SV.reps.length === 1 ? '' : 's') + ' still need a service report' + (SV.reps.length ? ' — tap to see' : ' ✓') + '</button>' : '') +
@@ -1270,6 +1271,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<main id="svList" class="sv-list"></main><div id="svSheet"></div><div class="sv-toast" id="svToast" role="status" aria-live="polite"></div></div>';
     Array.prototype.forEach.call(document.querySelectorAll('.sv-k'), function (b) { b.onclick = function () { SV.f = b.getAttribute('data-f'); svDraw(); }; });
     var rr = $('#svRepRetry'); if (rr) rr.onclick = function () { supervisorApp(); };
+    var rw2 = $('#svRwRetry'); if (rw2) rw2.onclick = function () { supervisorApp(); };
     Array.prototype.forEach.call(document.querySelectorAll('.sv-repb[data-f]'), function (rb) { rb.onclick = function () { var f = rb.getAttribute('data-f'); SV.f = SV.f === f ? (isTeam() ? SV.f : 'todo') : f; svDraw(); }; });
     var asel = $('#svArea'); if (asel) asel.onchange = function () { SV.area = asel.value; svDraw(); };
     var qt; $('#svQ').oninput = function (e) { clearTimeout(qt); qt = setTimeout(function () { SV.q = e.target.value; svList(); }, 250); };
@@ -1396,6 +1398,14 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="sv-loc">' + esc(loc) + '</div><div class="sv-sum2">' + esc(r.summary || '') + '</div>' + svTr(r.summary) + (mat ? '<div style="margin-top:6px">' + mat + '</div>' : '') + acts + '</article>';
   }
   // ---------- Rework: reports DM asked to redo (office uploads the list)
+  // Rework list: one call (my_rework_all); a red bar says so if it cannot be loaded
+  function svRwLoad() {
+    SV.rwErr = '';
+    var one = VIEW ? Promise.reject(new Error('view')) : Promise.resolve(sb.rpc('my_rework_all')).then(function (r) { if (r.error) throw r.error; return r.data || []; });
+    return one.catch(function (e) { if (!VIEW && !/my_rework_all|schema cache|does not exist|Could not find/i.test((e && e.message) || '')) throw e; return rpcAll('my_rework'); })
+      .catch(function () { return new Promise(function (ok) { setTimeout(ok, 1500); }).then(function () { return rpcAll('my_rework'); }); })
+      .catch(function (e) { SV.rwErr = (e && e.message) || 'error'; return null; });
+  }
   function svSetRw(rows) { if (!rows) { SV.rw = null; SV.rwMap = {}; return; } rows.forEach(function (x) { x.rd = +x.rd || 0; }); SV.rw = rows; SV.rwMap = {}; rows.forEach(function (x) { SV.rwMap[x.id] = x; }); }
   function svRwDone(x) { return x.status === 'done' || (svcOn() && svcOf(x.id).st === 'signed'); }
   function svRwOpen() { return (SV.rw || []).filter(function (x) { return !svRwDone(x); }); }
@@ -3300,7 +3310,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       }
     } catch (e) { }
   }
-  var DM_VER = 'v4.53';
+  var DM_VER = 'v4.54';
   async function svcPdf(r) {
     await svcLib('h2c', function () { return !!window.html2canvas; }); await svcLib('pdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); });
     var I = await svcDataUrls(svcRepPaths(r)), pages = svcPdfHTML(r, I);
