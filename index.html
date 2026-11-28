@@ -1399,6 +1399,23 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   function svSetRw(rows) { if (!rows) { SV.rw = null; SV.rwMap = {}; return; } rows.forEach(function (x) { x.rd = +x.rd || 0; }); SV.rw = rows; SV.rwMap = {}; rows.forEach(function (x) { SV.rwMap[x.id] = x; }); }
   function svRwDone(x) { return x.status === 'done' || (svcOn() && svcOf(x.id).st === 'signed'); }
   function svRwOpen() { return (SV.rw || []).filter(function (x) { return !svRwDone(x); }); }
+  async function svRwTransfer(sr) {
+    if (!SV.sups) { try { var su = await sb.rpc('sup_list'); SV.sups = su.error ? [] : (su.data || []); } catch (e) { SV.sups = []; } }
+    var me = profile.role === 'team' ? profile.team_of : profile.id, L = SV.sups.filter(function (u) { return u.id !== me; });
+    if (!L.length) return svToast('No other supervisor found.', true);
+    svSheet('<div class="sv-shh"><div><b>Transfer rework · SR ' + esc(sr) + '</b></div><button class="sv-x" id="svX" aria-label="Close">✕</button></div>' +
+      '<p class="sv-meta">The SR leaves your Rework list and goes to the supervisor you choose (and his team). A draft report goes with it.</p>' +
+      '<label class="sv-lbl" for="rwTo2">Supervisor</label><select id="rwTo2" class="sv-in"><option value="">Choose…</option>' + L.map(function (u) { return '<option value="' + esc(u.id) + '">' + esc(u.full_name + (u.sup_name && u.sup_name !== String(u.full_name).toUpperCase() ? ' · ' + u.sup_name : '')) + '</option>'; }).join('') + '</select>' +
+      '<button class="sv-go" id="rwGo2">⇄ Transfer</button>');
+    $('#svX').onclick = svClose;
+    $('#rwGo2').onclick = async function () {
+      var to = $('#rwTo2').value; if (!to) return svToast('Choose the supervisor.', true);
+      var b = this; b.disabled = true; var r = await sb.rpc('rework_assign', { p_srs: [sr], p_uid: to });
+      if (r.error) { b.disabled = false; return svToast('Not transferred: ' + r.error.message, true); }
+      svClose(); SV.rw = (SV.rw || []).filter(function (x) { return x.id !== sr; }); if (SV.rwMap) delete SV.rwMap[sr]; if (SVC.list) delete SVC.list[sr];
+      svDraw(); svToast('SR ' + sr + ' transferred.');
+    };
+  }
   function svRwList() {
     var q = SV.q.trim().toLowerCase(), tab = SV.rwTab || 'open';
     var all = (SV.rw || []).filter(function (x) { return svInArea(x) && (!q || (x.id + ' ' + (x.wo || '') + ' ' + (x.summary || '') + ' ' + (x.locd || '') + ' ' + (x.memo || '')).toLowerCase().indexOf(q) >= 0); });
@@ -1407,7 +1424,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       '<div class="sv-hint" style="margin:0 0 8px">DM sent these reports back. Make the report again (photos before and after + customer signature) and send it to the customer.</div>';
     h += list.slice(0, 200).map(function (x) {
       var o = svcOn() ? svcOf(x.id) : { st: 'todo' }, ph = x.photo_src === 'wo' ? '📷 Before and after photos ready from the photos list' : x.photo_src === 'sr' ? '📷 After photo ready from the photos list' : '';
-      var head = '<div class="sv-rwm">DM: ' + esc(x.memo || 'Rework') + '</div>' + (ph && o.st === 'todo' ? '<div class="sv-meta">' + ph + '</div>' : '');
+      var head = '<div class="sv-rwm">DM: ' + esc(x.memo || 'Rework') + '</div>' + (ph && o.st === 'todo' ? '<div class="sv-meta">' + ph + '</div>' : '') + (!svRwDone(x) && o.st !== 'signed' ? '<button class="sv-link" data-rwx="' + esc(x.id) + '">⇄ Transfer to another supervisor</button>' : '');
       if (o.st === 'todo') return '<article class="sv-card s-rw" data-id="' + esc(x.id) + '"><div class="sv-row"><b class="sv-sr">SR ' + esc(x.id) + '</b><span class="pill rw">REWORK</span><span class="sv-days">' + svDays(x.rd) + ' d</span></div>' +
         '<div class="sv-meta">' + esc(SV_TR[x.tr] || x.tr || '') + ' · Zone ' + esc(x.fz || '?') + ' · ' + esc(svArea(x)) + (x.wo ? ' · WO ' + esc(x.wo) : '') + '</div><div class="sv-loc">' + esc(String(x.locd || '').replace(/_/g, ' · ')) + '</div><div class="sv-sum2">' + esc(x.summary || '') + '</div>' + head +
         '<button class="sv-b svc-pri" data-sva="open" style="width:100%;margin-top:8px">📝 Make the report again</button></article>';
@@ -1417,6 +1434,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
     if (!list.length) h += '<p class="sv-empty">' + (q ? 'No match.' : tab === 'done' ? 'Nothing signed again yet.' : 'No rework left. ✓') + '</p>';
     $('#svList').innerHTML = h;
     svcAll('[data-rwt]').forEach(function (b) { b.onclick = function () { SV.rwTab = b.getAttribute('data-rwt'); svRwList(); }; });
+    svcAll('[data-rwx]').forEach(function (b) { b.onclick = function () { svRwTransfer(b.getAttribute('data-rwx')); }; });
     svcBindList();
   }
   // works signed by the customer: they leave "Done" and wait here until closed in Maximo (+7 days)
@@ -3282,7 +3300,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       }
     } catch (e) { }
   }
-  var DM_VER = 'v4.51';
+  var DM_VER = 'v4.53';
   async function svcPdf(r) {
     await svcLib('h2c', function () { return !!window.html2canvas; }); await svcLib('pdf', function () { return !!(window.jspdf && window.jspdf.jsPDF); });
     var I = await svcDataUrls(svcRepPaths(r)), pages = svcPdfHTML(r, I);
@@ -3452,6 +3470,7 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
   var RWO = { rows: null, f: { st: 'open', own: '', q: '' }, sel: {}, el: null, pend: null };
   async function rwOffice(el) {
     RWO.el = el;
+    if (!RWO.sups) { try { var su = await sb.rpc('sup_list'); RWO.sups = su.error ? [] : (su.data || []); } catch (e) { RWO.sups = []; } }
     try { var out = [], r; for (var f = 0; ; f += 1000) { r = await sb.rpc('rework_list').order('sr').range(f, f + 999); if (r.error) throw r.error; out = out.concat(r.data || []); if ((r.data || []).length < 1000) break; } RWO.rows = out; }
     catch (e) { el.innerHTML = '<div class="notice">' + (/rework_list|schema cache|does not exist/i.test(e.message || '') ? 'Not set up yet: run the update <b>33_SQL_rework.sql</b> in Supabase.' : 'Could not load: ' + esc(e.message || e)) + '</div>'; return; }
     rwDraw();
@@ -3475,15 +3494,16 @@ if (typeof module !== 'undefined') module.exports = FAILURE_RULES;
       (can ? '<div class="panel" style="margin-top:12px"><h3>Upload the DM Rework list<small>Excel with the columns Work Order, SR Number and Last Memo (other columns are ignored). Loading an SR again opens it again.</small></h3><div class="form"><div class="f"><label for="rwLn">List name</label><input id="rwLn" placeholder="e.g. Rework Nov-2026" maxlength="60"></div><div class="f"><label for="rwF">Excel file</label><input id="rwF" type="file" accept=".xlsx,.xls"></div></div><div id="rwPend"></div><div class="status" id="rwSt"></div></div>' : '') +
       '<div class="panel" style="margin-top:12px"><h3>By supervisor</h3><div class="tw"><table class="t"><thead><tr><th>Supervisor</th><th class="n">SRs</th><th class="n">Signed again</th><th class="n">In progress</th><th class="n">Done %</th></tr></thead><tbody>' + Object.keys(byOwn).sort().map(function (k) { var v = byOwn[k]; return '<tr><td>' + esc(k) + '</td><td class="n">' + v[0] + '</td><td class="n">' + v[1] + '</td><td class="n">' + v[2] + '</td><td class="n">' + (v[0] ? Math.round(100 * v[1] / v[0]) : 0) + '%</td></tr>'; }).join('') + '</tbody></table></div></div>' +
       '<div class="filters" style="margin:12px 0 8px;padding:0"><div class="f"><label for="rwF1">Status</label><select id="rwF1">' + o('open', 'To redo', f.st) + o('done', 'Signed again', f.st) + o('notin', 'Not in the portal', f.st) + o('', 'All', f.st) + '</select></div><div class="f"><label for="rwF2">Supervisor</label><select id="rwF2">' + o('', 'All supervisors', f.own) + owners.map(function (x) { return o(x, x, f.own); }).join('') + '</select></div><div class="f"><label for="rwF3">Search</label><input id="rwF3" type="search" value="' + esc(f.q) + '" placeholder="SR, WO, location, comment"></div></div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn" id="rwXl">⬇ List (Excel, ' + list.length + ')</button>' + (can ? '<button class="btn" id="rwDel"' + (nsel ? '' : ' disabled') + '>Remove from list (' + nsel + ')</button>' : '') + '<span class="status" id="rwSt2"></span></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center"><button class="btn" id="rwXl">⬇ List (Excel, ' + list.length + ')</button>' + (can ? '<select id="rwTo" aria-label="Transfer to supervisor"><option value="">Transfer to supervisor…</option>' + (RWO.sups || []).map(function (u) { return '<option value="' + esc(u.id) + '">' + esc(u.full_name + (u.sup_name && u.sup_name !== String(u.full_name).toUpperCase() ? ' · ' + u.sup_name : '')) + '</option>'; }).join('') + '</select><button class="btn" id="rwAs"' + (nsel ? '' : ' disabled') + '>⇄ Transfer (' + nsel + ')</button><button class="btn" id="rwDel"' + (nsel ? '' : ' disabled') + '>Remove from list (' + nsel + ')</button>' : '') + '<span class="status" id="rwSt2"></span></div>' +
       '<div class="tw" style="max-height:520px"><table class="t"><thead><tr>' + (can ? '<th><input type="checkbox" id="rwAll" aria-label="Select all"></th>' : '') + '<th>SR</th><th>WO</th><th>Location</th><th>Supervisor</th><th>DM comment</th><th>Report</th><th>Photos</th></tr></thead><tbody>' +
-      list.slice(0, 500).map(function (x) { return '<tr>' + (can ? '<td><input type="checkbox" data-rws="' + esc(x.sr) + '"' + (RWO.sel[x.sr] ? ' checked' : '') + '></td>' : '') + '<td><a href="#" class="srl" data-sr="' + esc(x.sr) + '">' + esc(x.sr) + '</a></td><td>' + esc(x.wo || '') + '</td><td class="wrapc">' + esc(String(x.locd || '').replace(/_/g, ' · ')) + '</td><td>' + esc(x.owner || '—') + '</td><td class="wrapc">' + esc(x.memo || '') + '</td><td>' + stl[rwRepSt(x)] + (x.rep_by && x.status !== 'done' ? '<div class="muted" style="font-size:.72rem">' + esc(x.rep_by) + '</div>' : '') + (x.done_at ? '<div class="muted" style="font-size:.72rem">' + esc(dmDxb(x.done_at)) + '</div>' : '') + '</td><td>' + (x.photo_src === 'wo' ? 'Before + after' : x.photo_src === 'sr' ? 'After' : '—') + '</td></tr>'; }).join('') +
+      list.slice(0, 500).map(function (x) { return '<tr>' + (can ? '<td><input type="checkbox" data-rws="' + esc(x.sr) + '"' + (RWO.sel[x.sr] ? ' checked' : '') + '></td>' : '') + '<td><a href="#" class="srl" data-sr="' + esc(x.sr) + '">' + esc(x.sr) + '</a></td><td>' + esc(x.wo || '') + '</td><td class="wrapc">' + esc(String(x.locd || '').replace(/_/g, ' · ')) + '</td><td>' + esc(x.owner || '—') + (x.assigned ? ' <span class="pill avg" title="Transferred">⇄</span>' : '') + '</td><td class="wrapc">' + esc(x.memo || '') + '</td><td>' + stl[rwRepSt(x)] + (x.rep_by && x.status !== 'done' ? '<div class="muted" style="font-size:.72rem">' + esc(x.rep_by) + '</div>' : '') + (x.done_at ? '<div class="muted" style="font-size:.72rem">' + esc(dmDxb(x.done_at)) + '</div>' : '') + '</td><td>' + (x.photo_src === 'wo' ? 'Before + after' : x.photo_src === 'sr' ? 'After' : '—') + '</td></tr>'; }).join('') +
       '</tbody></table></div>' + (list.length > 500 ? '<p class="muted">Showing 500 of ' + list.length + '. Use the filters.</p>' : '');
     var re = function () { RWO.sel = {}; rwDraw(); };
     $('#rwF1').onchange = function (e) { RWO.f.st = e.target.value; re(); }; $('#rwF2').onchange = function (e) { RWO.f.own = e.target.value; re(); };
     var qt; $('#rwF3').oninput = function (e) { clearTimeout(qt); qt = setTimeout(function () { RWO.f.q = e.target.value; rwDraw(); var x = $('#rwF3'); x.focus(); x.setSelectionRange(x.value.length, x.value.length); }, 300); };
     svcAll('[data-rws]').forEach(function (c) { c.onchange = function () { var k = c.getAttribute('data-rws'); if (c.checked) RWO.sel[k] = 1; else delete RWO.sel[k]; rwDraw(); }; });
     var ra = $('#rwAll'); if (ra) { ra.checked = !!list.length && list.every(function (x) { return RWO.sel[x.sr]; }); ra.onchange = function (e) { list.forEach(function (x) { if (e.target.checked) RWO.sel[x.sr] = 1; else delete RWO.sel[x.sr]; }); rwDraw(); }; }
+    var as = $('#rwAs'); if (as) as.onclick = async function () { var to = $('#rwTo').value, S = list.filter(function (x) { return RWO.sel[x.sr]; }).map(function (x) { return x.sr; }); if (!to) return setMsg('rwSt2', 'Choose the supervisor first.', 'err'); if (!S.length) return; as.disabled = true; var r = await sb.rpc('rework_assign', { p_srs: S, p_uid: to }); if (r.error) { as.disabled = false; return setMsg('rwSt2', /rework_assign/.test(r.error.message) ? 'Run update 38 in Supabase first.' : r.error.message, 'err'); } RWO.sel = {}; await rwOffice(RWO.el); setMsg('rwSt2', r.data + ' SR(s) transferred. They are now in the Rework tab of that supervisor.', 'ok'); };
     var rd = $('#rwDel'); if (rd) rd.onclick = async function () { var S = list.filter(function (x) { return RWO.sel[x.sr]; }).map(function (x) { return x.sr; }); if (!S.length || !confirm('Remove ' + S.length + ' SR(s) from the Rework list? Their reports stay as they are.')) return; var r = await sb.rpc('rework_remove', { p_srs: S }); if (r.error) return setMsg('rwSt2', r.error.message, 'err'); RWO.rows = RWO.rows.filter(function (x) { return S.indexOf(x.sr) < 0; }); re(); };
     $('#rwXl').onclick = async function () {
       try { await svcLib('xl', function () { return !!window.ExcelJS; }); var wb = new window.ExcelJS.Workbook(), ws = wb.addWorksheet('Rework', { views: [{ state: 'frozen', ySplit: 1 }] });
